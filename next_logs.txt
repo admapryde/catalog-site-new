@@ -1,0 +1,1455 @@
+▲ Next.js 16.1.1 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.0.112:3000
+- Environments: .env.local
+
+✓ Starting...
+✓ Ready in 545ms
+ GET /login 200 in 639ms (compile: 451ms, render: 189ms)
+ POST /api/login 200 in 63ms (compile: 50ms, render: 12ms)
+ HEAD /admin 200 in 119ms (compile: 62ms, render: 57ms)
+ GET /admin 200 in 62ms (compile: 2ms, render: 60ms)
+ GET /admin 200 in 57ms (compile: 4ms, render: 53ms)
+ POST /api/login 200 in 12ms (compile: 5ms, render: 8ms)
+ GET /admin 200 in 37ms (compile: 17ms, render: 21ms)
+ GET /admin 200 in 33ms (compile: 1747µs, render: 31ms)
+ GET /admin/categories 200 in 554ms (compile: 463ms, render: 91ms)
+Supabase конфигурация не найдена или содержит заглушки. Используем моковые данные.
+ GET /api/admin/categories 200 in 518ms (compile: 507ms, render: 11ms)
+ DELETE /api/admin/categories?id=1 200 in 8ms (compile: 3ms, render: 5ms)
+ DELETE /api/admin/categories?id=2 200 in 11ms (compile: 4ms, render: 7ms)
+ DELETE /api/admin/categories?id=3 200 in 6ms (compile: 2ms, render: 4ms)
+ DELETE /api/admin/categories?id=4 200 in 8ms (compile: 3ms, render: 6ms)
+ DELETE /api/admin/categories?id=5 200 in 10ms (compile: 4ms, render: 6ms)
+ DELETE /api/admin/categories?id=6 200 in 8ms (compile: 3ms, render: 5ms)
+ DELETE /api/admin/categories?id=7 200 in 6ms (compile: 1738µs, render: 4ms)
+ DELETE /api/admin/categories?id=8 200 in 8ms (compile: 3ms, render: 5ms)
+ DELETE /api/admin/categories?id=9 200 in 8ms (compile: 4ms, render: 5ms)
+ DELETE /api/admin/categories?id=10 200 in 9ms (compile: 3ms, render: 6ms)
+ DELETE /api/admin/categories?id=11 200 in 7ms (compile: 3ms, render: 4ms)
+ DELETE /api/admin/categories?id=12 200 in 4ms (compile: 1870µs, render: 3ms)
+ DELETE /api/admin/categories?id=13 200 in 9ms (compile: 4ms, render: 5ms)
+ GET /admin/banner-groups 200 in 335ms (compile: 285ms, render: 50ms)
+ GET /api/admin/banner-groups 200 in 204ms (compile: 200ms, render: 4ms)
+ GET /api/admin/banners 200 in 127ms (compile: 117ms, render: 10ms)
+ GET /admin/products 200 in 380ms (compile: 301ms, render: 79ms)
+ GET /api/admin/products 200 in 176ms (compile: 171ms, render: 5ms)
+ GET /admin/settings 200 in 344ms (compile: 243ms, render: 102ms)
+ GET /admin 200 in 51ms (compile: 3ms, render: 48ms)
+Supabase конфигурация не найдена или содержит заглушки. Используем моковые данные.
+⨯ TypeError: Cannot convert argument to a ByteString because the character at index 271 has a value of 1043 which is greater than 255.
+    at ignore-listed frames {
+  digest: '2188856018'
+}
+ GET / 200 in 367ms (compile: 16ms, render: 351ms)
+ GET /admin/categories 200 in 73ms (compile: 3ms, render: 70ms)
+ GET /api/admin/categories 200 in 12ms (compile: 3ms, render: 9ms)
+ DELETE /api/admin/categories?id=14 200 in 8ms (compile: 4ms, render: 4ms)
+ DELETE /api/admin/categories?id=15 200 in 9ms (compile: 3ms, render: 6ms)
+ DELETE /api/admin/categories?id=16 200 in 8ms (compile: 4ms, render: 4ms)
+ DELETE /api/admin/categories?id=16 200 in 12ms (compile: 6ms, render: 6ms)
+ DELETE /api/admin/categories?id=16 200 in 9ms (compile: 3ms, render: 6ms)
+ DELETE /api/admin/categories?id=16 200 in 10ms (compile: 5ms, render: 5ms)
+ DELETE /api/admin/categories?id=16 200 in 6ms (compile: 3ms, render: 3ms)
+ DELETE /api/admin/categories?id=16 200 in 5ms (compile: 3ms, render: 3ms)
+ DELETE /api/admin/categories?id=16 200 in 12ms (compile: 5ms, render: 7ms)
+ DELETE /api/admin/categories?id=16 200 in 6ms (compile: 2ms, render: 4ms)
+ DELETE /api/admin/categories?id=16 200 in 7ms (compile: 4ms, render: 4ms)
+ DELETE /api/admin/categories?id=16 200 in 14ms (compile: 3ms, render: 11ms)
+ DELETE /api/admin/categories?id=14 200 in 8ms (compile: 4ms, render: 4ms)
+ DELETE /api/admin/categories?id=16 200 in 8ms (compile: 3ms, render: 5ms)
+ DELETE /api/admin/categories?id=16 200 in 6ms (compile: 1617µs, render: 4ms)
+ DELETE /api/admin/categories?id=16 200 in 7ms (compile: 3ms, render: 4ms)
+ DELETE /api/admin/categories?id=16 200 in 8ms (compile: 3ms, render: 5ms)
+ DELETE /api/admin/categories?id=16 200 in 7ms (compile: 3ms, render: 4ms)
+⨯ TypeError: Cannot convert argument to a ByteString because the character at index 271 has a value of 1043 which is greater than 255.
+    at ignore-listed frames {
+  digest: '2188856018'
+}
+ GET / 200 in 317ms (compile: 2ms, render: 315ms)
+ DELETE /api/admin/categories?id=16 200 in 20ms (compile: 11ms, render: 9ms)
+ DELETE /api/admin/categories?id=16 200 in 7ms (compile: 4ms, render: 3ms)
+ DELETE /api/admin/categories?id=16 200 in 8ms (compile: 4ms, render: 4ms)
+ GET /admin/banner-groups 200 in 47ms (compile: 2ms, render: 45ms)
+ GET /api/admin/banner-groups 200 in 8ms (compile: 3ms, render: 5ms)
+ GET /api/admin/banners 200 in 9ms (compile: 4ms, render: 4ms)
+ DELETE /api/admin/banner-groups?id=1 200 in 9ms (compile: 3ms, render: 6ms)
+ DELETE /api/admin/banner-groups?id=2 200 in 6ms (compile: 3ms, render: 3ms)
+ DELETE /api/admin/banner-groups?id=3 200 in 5ms (compile: 2ms, render: 3ms)
+⨯ TypeError: Cannot convert argument to a ByteString because the character at index 271 has a value of 1043 which is greater than 255.
+    at ignore-listed frames {
+  digest: '2188856018'
+}
+ GET / 200 in 279ms (compile: 4ms, render: 275ms)
+⨯ TypeError: Cannot convert argument to a ByteString because the character at index 271 has a value of 1043 which is greater than 255.
+    at ignore-listed frames {
+  digest: '2188856018'
+}
+ GET / 200 in 352ms (compile: 4ms, render: 349ms)
+ GET /admin/categories 200 in 39ms (compile: 4ms, render: 36ms)
+ GET /api/admin/categories 200 in 7ms (compile: 2ms, render: 4ms)
+ GET /admin 200 in 47ms (compile: 5ms, render: 42ms)
+ GET /admin/banner-groups 200 in 44ms (compile: 3ms, render: 41ms)
+ GET /api/admin/banner-groups 200 in 12ms (compile: 4ms, render: 7ms)
+ GET /api/admin/banners 200 in 7ms (compile: 3ms, render: 4ms)
+ GET /admin/products 200 in 37ms (compile: 2ms, render: 35ms)
+ GET /api/admin/products 200 in 8ms (compile: 4ms, render: 4ms)
+ POST /api/admin/products 500 in 15ms (compile: 4ms, render: 11ms)
+ POST /api/admin/products 500 in 10ms (compile: 2ms, render: 8ms)
+ GET /catalog 200 in 85ms (compile: 28ms, render: 57ms)
+ GET /admin/categories 200 in 48ms (compile: 3ms, render: 45ms)
+ GET /api/admin/categories 200 in 10ms (compile: 3ms, render: 7ms)
+⨯ TypeError: Cannot convert argument to a ByteString because the character at index 271 has a value of 1043 which is greater than 255.
+    at ignore-listed frames {
+  digest: '2188856018'
+}
+ GET / 200 in 309ms (compile: 2ms, render: 307ms)
+ GET /catalog 200 in 23ms (compile: 5ms, render: 18ms)
+ GET /admin/categories 200 in 63ms (compile: 2ms, render: 61ms)
+ GET /api/admin/categories 200 in 9ms (compile: 3ms, render: 6ms)
+ GET /admin/products 200 in 35ms (compile: 2ms, render: 33ms)
+ GET /api/admin/products 200 in 8ms (compile: 4ms, render: 4ms)
+ GET / 200 in 26ms (compile: 7ms, render: 19ms)
+Supabase конфигурация не найдена или содержит заглушки. Используем моковые данные.
+Error: Route "/catalog/[id]" used `params.id`. `params` is a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+    at CategoryPage (src/app/catalog/[id]/page.tsx:19:24)
+  17 |       .from('categories')
+  18 |       .select('*')
+> 19 |       .eq('id', params.id)
+     |                        ^
+  20 |       .single();
+  21 |
+  22 |     if (error || !cat) {
+⨯ TypeError: supabase.from(...).select(...).eq(...).single is not a function
+    at CategoryPage (src/app/catalog/[id]/page.tsx:20:8)
+  18 |       .select('*')
+  19 |       .eq('id', params.id)
+> 20 |       .single();
+     |        ^
+  21 |
+  22 |     if (error || !cat) {
+  23 |       return ( {
+  digest: '391752943'
+}
+ GET /catalog/1 200 in 470ms (compile: 389ms, render: 82ms)
+⨯ TypeError: Cannot convert argument to a ByteString because the character at index 271 has a value of 1043 which is greater than 255.
+    at ignore-listed frames {
+  digest: '2188856018'
+}
+ GET / 200 in 336ms (compile: 1796µs, render: 334ms)
+ GET /admin 200 in 54ms (compile: 3ms, render: 51ms)
+ GET /admin/categories 200 in 45ms (compile: 2ms, render: 43ms)
+ GET /api/admin/categories 200 in 11ms (compile: 6ms, render: 6ms)
+ DELETE /api/admin/categories?id=16 200 in 8ms (compile: 4ms, render: 4ms)
+⨯ TypeError: Cannot convert argument to a ByteString because the character at index 271 has a value of 1043 which is greater than 255.
+    at ignore-listed frames {
+  digest: '2188856018'
+}
+ GET / 200 in 331ms (compile: 6ms, render: 325ms)
+ GET /admin/banner-groups 200 in 46ms (compile: 3ms, render: 43ms)
+ GET /api/admin/banner-groups 200 in 10ms (compile: 4ms, render: 6ms)
+ GET /api/admin/banners 200 in 8ms (compile: 4ms, render: 4ms)
+ GET /admin/products 200 in 76ms (compile: 4ms, render: 72ms)
+ GET /api/admin/products 200 in 18ms (compile: 10ms, render: 8ms)
+✓ Compiled in 121ms
+Supabase конфигурация не найдена или содержит заглушки. Используем моковые данные.
+ GET /admin/products 200 in 282ms (compile: 10ms, render: 272ms)
+ GET /admin/products 200 in 91ms (compile: 3ms, render: 88ms)
+ GET / 200 in 234ms (compile: 77ms, render: 156ms)
+ GET /admin/products 200 in 48ms (compile: 3ms, render: 45ms)
+ GET / 200 in 69ms (compile: 2ms, render: 67ms)
+ GET / 200 in 30ms (compile: 2ms, render: 28ms)
+ GET /admin 200 in 38ms (compile: 2ms, render: 36ms)
+ GET /admin/categories 200 in 65ms (compile: 6ms, render: 60ms)
+Supabase конфигурация не найдена или содержит заглушки. Используем моковые данные.
+ GET /api/admin/categories 200 in 80ms (compile: 72ms, render: 8ms)
+⨯ TypeError: Cannot convert argument to a ByteString because the character at index 271 has a value of 1043 which is greater than 255.
+    at ignore-listed frames {
+  digest: '2188856018'
+}
+ GET / 200 in 329ms (compile: 3ms, render: 326ms)
+Supabase конфигурация не найдена или содержит заглушки. Используем моковые данные.
+ GET /admin/categories 200 in 188ms (compile: 11ms, render: 177ms)
+ GET / 200 in 363ms (compile: 90ms, render: 273ms)
+ GET /admin/categories 200 in 83ms (compile: 4ms, render: 79ms)
+ GET / 200 in 185ms (compile: 76ms, render: 110ms)
+ GET / 200 in 84ms (compile: 23ms, render: 61ms)
+ GET /admin/categories 200 in 33ms (compile: 3ms, render: 30ms)
+✓ Compiled in 55ms
+ GET /admin/categories 200 in 41ms (compile: 3ms, render: 38ms)
+Supabase конфигурация не найдена или содержит заглушки. Используем моковые данные.
+ GET /api/admin/categories 200 in 77ms (compile: 60ms, render: 17ms)
+⨯ TypeError: Cannot convert argument to a ByteString because the character at index 271 has a value of 1043 which is greater than 255.
+    at ignore-listed frames {
+  digest: '2188856018'
+}
+ GET / 200 in 310ms (compile: 2ms, render: 307ms)
+ DELETE /api/admin/categories?id=1 200 in 8ms (compile: 3ms, render: 5ms)
+⨯ TypeError: Cannot convert argument to a ByteString because the character at index 271 has a value of 1043 which is greater than 255.
+    at ignore-listed frames {
+  digest: '2188856018'
+}
+ GET / 200 in 218ms (compile: 3ms, render: 215ms)
+⨯ TypeError: Cannot convert argument to a ByteString because the character at index 271 has a value of 1043 which is greater than 255.
+    at ignore-listed frames {
+  digest: '2188856018'
+}
+ GET / 200 in 253ms (compile: 3ms, render: 251ms)
+ DELETE /api/admin/categories?id=13 200 in 9ms (compile: 3ms, render: 6ms)
+  Reload env: .env.local
+✓ Compiled in 70ms
+Error: Route "/" used `cookies().getAll`. `cookies()` returns a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+    at createClient (src/lib/supabase-server.ts:39:12)
+    at async HomePage (src/app/page.tsx:15:22)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+    at createClient (src/lib/supabase-server.ts:39:12)
+    at async HomePage (src/app/page.tsx:15:22)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+    at createClient (src/lib/supabase-server.ts:39:12)
+    at async ProductsGrid (src/components/ProductsGrid.tsx:26:22)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+Ошибка загрузки товаров: {
+  message: 'TypeError: cookieStore.getAll is not a function',
+  details: 'TypeError: cookieStore.getAll is not a function\n' +
+    '    at Object.getAll (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/[root-of-the-server]__98d53869._.js:124:40)\n' +
+    '    at getAll (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:15266:46)\n' +
+    '    at Object.getItem (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:15435:42)\n' +
+    '    at getItemAsync (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:8704:33)\n' +
+    '    at SupabaseAuthClient.__loadSession (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:12159:233)\n' +
+    '    at SupabaseAuthClient._useSession (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:12142:39)\n' +
+    '    at /var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:12076:25\n' +
+    '    at /var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:12091:34',
+  hint: '',
+  code: ''
+}
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection: TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection:  TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection: TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection:  TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection: TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection:  TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection: TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection:  TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+Error: Route "/" used `cookies().getAll`. `cookies()` returns a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+    at createClient (src/lib/supabase-server.ts:39:12)
+    at async HomePage (src/app/page.tsx:15:22)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+    at createClient (src/lib/supabase-server.ts:39:12)
+    at async HomePage (src/app/page.tsx:15:22)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+    at createClient (src/lib/supabase-server.ts:39:12)
+    at async ProductsGrid (src/components/ProductsGrid.tsx:26:22)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+Ошибка загрузки товаров: {
+  message: 'TypeError: cookieStore.getAll is not a function',
+  details: 'TypeError: cookieStore.getAll is not a function\n' +
+    '    at Object.getAll (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/[root-of-the-server]__98d53869._.js:124:40)\n' +
+    '    at getAll (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:15266:46)\n' +
+    '    at Object.getItem (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:15435:42)\n' +
+    '    at getItemAsync (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:8704:33)\n' +
+    '    at SupabaseAuthClient.__loadSession (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:12159:233)\n' +
+    '    at SupabaseAuthClient._useSession (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:12142:39)\n' +
+    '    at /var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:12076:25\n' +
+    '    at /var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:12091:34',
+  hint: '',
+  code: ''
+}
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection: TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection:  TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection: TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection:  TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection: TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection:  TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection: TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection:  TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+ GET /admin/categories 200 in 1108ms (compile: 70ms, render: 1039ms)
+ GET / 200 in 996ms (compile: 90ms, render: 905ms)
+ GET /admin/categories 200 in 1001ms (compile: 513ms, render: 488ms)
+Error: Route "/" used `cookies().getAll`. `cookies()` returns a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+    at createClient (src/lib/supabase-server.ts:39:12)
+    at async HomePage (src/app/page.tsx:15:22)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+    at createClient (src/lib/supabase-server.ts:39:12)
+    at async HomePage (src/app/page.tsx:15:22)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+    at createClient (src/lib/supabase-server.ts:39:12)
+    at async ProductsGrid (src/components/ProductsGrid.tsx:26:22)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+Ошибка загрузки товаров: {
+  message: 'TypeError: cookieStore.getAll is not a function',
+  details: 'TypeError: cookieStore.getAll is not a function\n' +
+    '    at Object.getAll (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/[root-of-the-server]__98d53869._.js:124:40)\n' +
+    '    at getAll (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:15266:46)\n' +
+    '    at Object.getItem (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:15435:42)\n' +
+    '    at getItemAsync (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:8704:33)\n' +
+    '    at SupabaseAuthClient.__loadSession (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:12159:233)\n' +
+    '    at SupabaseAuthClient._useSession (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:12142:39)\n' +
+    '    at /var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:12076:25\n' +
+    '    at /var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:12091:34',
+  hint: '',
+  code: ''
+}
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection: TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection:  TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection: TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection:  TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection: TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection:  TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection: TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection:  TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+ GET / 200 in 840ms (compile: 46ms, render: 794ms)
+ GET /admin/categories 200 in 842ms (compile: 13ms, render: 828ms)
+Error: Route "/" used `cookies().getAll`. `cookies()` returns a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+    at createClient (src/lib/supabase-server.ts:39:12)
+    at async HomePage (src/app/page.tsx:15:22)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+    at createClient (src/lib/supabase-server.ts:39:12)
+    at async HomePage (src/app/page.tsx:15:22)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+    at createClient (src/lib/supabase-server.ts:39:12)
+    at async ProductsGrid (src/components/ProductsGrid.tsx:26:22)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+Ошибка загрузки товаров: {
+  message: 'TypeError: cookieStore.getAll is not a function',
+  details: 'TypeError: cookieStore.getAll is not a function\n' +
+    '    at Object.getAll (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/[root-of-the-server]__98d53869._.js:124:40)\n' +
+    '    at getAll (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:15266:46)\n' +
+    '    at Object.getItem (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:15435:42)\n' +
+    '    at getItemAsync (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:8704:33)\n' +
+    '    at SupabaseAuthClient.__loadSession (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:12159:233)\n' +
+    '    at SupabaseAuthClient._useSession (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:12142:39)\n' +
+    '    at /var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:12076:25\n' +
+    '    at /var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:12091:34',
+  hint: '',
+  code: ''
+}
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection: TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection:  TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection: TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection:  TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection: TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection:  TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection: TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection:  TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+ GET / 200 in 691ms (compile: 30ms, render: 662ms)
+ GET /admin/categories 200 in 694ms (compile: 6ms, render: 687ms)
+ GET / 200 in 318ms (compile: 2ms, render: 316ms)
+Error: Route "/" used `cookies().getAll`. `cookies()` returns a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+    at createClient (src/lib/supabase-server.ts:39:12)
+    at async HomePage (src/app/page.tsx:15:22)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+    at createClient (src/lib/supabase-server.ts:39:12)
+    at async HomePage (src/app/page.tsx:15:22)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+    at createClient (src/lib/supabase-server.ts:39:12)
+    at async ProductsGrid (src/components/ProductsGrid.tsx:26:22)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+Ошибка загрузки товаров: {
+  message: 'TypeError: cookieStore.getAll is not a function',
+  details: 'TypeError: cookieStore.getAll is not a function\n' +
+    '    at Object.getAll (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/[root-of-the-server]__98d53869._.js:124:40)\n' +
+    '    at getAll (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:15266:46)\n' +
+    '    at Object.getItem (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:15435:42)\n' +
+    '    at getItemAsync (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:8704:33)\n' +
+    '    at SupabaseAuthClient.__loadSession (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:12159:233)\n' +
+    '    at SupabaseAuthClient._useSession (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:12142:39)\n' +
+    '    at /var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:12076:25\n' +
+    '    at /var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:12091:34',
+  hint: '',
+  code: ''
+}
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection: TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection:  TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection: TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection:  TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection: TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection:  TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection: TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection:  TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+ GET / 200 in 446ms (compile: 3ms, render: 443ms)
+ GET /admin/categories 200 in 48ms (compile: 3ms, render: 45ms)
+Error: Route "/api/admin/categories" used `cookies().getAll`. `cookies()` returns a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+    at createClient (src/lib/supabase-server.ts:39:12)
+    at async GET (src/app/api/admin/categories/route.ts:12:24)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+    at createClient (src/lib/supabase-server.ts:39:12)
+    at async GET (src/app/api/admin/categories/route.ts:12:24)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+Error: Route "/api/admin/categories" used `cookies().getAll`. `cookies()` returns a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+Error: Route "/api/admin/categories" used `cookies().getAll`. `cookies()` returns a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+Error: Route "/api/admin/categories" used `cookies().getAll`. `cookies()` returns a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+ GET /api/admin/categories 500 in 476ms (compile: 74ms, render: 402ms)
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection: TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection:  TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection: TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection:  TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+Error: Route "/api/admin/categories" used `cookies().getAll`. `cookies()` returns a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+    at createClient (src/lib/supabase-server.ts:39:12)
+    at async POST (src/app/api/admin/categories/route.ts:44:24)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+    at createClient (src/lib/supabase-server.ts:39:12)
+    at async POST (src/app/api/admin/categories/route.ts:44:24)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+Error: Route "/api/admin/categories" used `cookies().getAll`. `cookies()` returns a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+Error: Route "/api/admin/categories" used `cookies().getAll`. `cookies()` returns a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+Error: Route "/api/admin/categories" used `cookies().getAll`. `cookies()` returns a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+ POST /api/admin/categories 500 in 337ms (compile: 5ms, render: 332ms)
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection: TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection:  TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection: TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection:  TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+ GET /admin/categories 200 in 40ms (compile: 2ms, render: 37ms)
+Error: Route "/api/admin/categories" used `cookies().getAll`. `cookies()` returns a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+    at createClient (src/lib/supabase-server.ts:39:12)
+    at async GET (src/app/api/admin/categories/route.ts:12:24)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+    at createClient (src/lib/supabase-server.ts:39:12)
+    at async GET (src/app/api/admin/categories/route.ts:12:24)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+Error: Route "/api/admin/categories" used `cookies().getAll`. `cookies()` returns a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+Error: Route "/api/admin/categories" used `cookies().getAll`. `cookies()` returns a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+Error: Route "/api/admin/categories" used `cookies().getAll`. `cookies()` returns a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+ GET /api/admin/categories 500 in 334ms (compile: 3ms, render: 331ms)
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection: TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection:  TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection: TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection:  TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+Error: Route "/" used `cookies().getAll`. `cookies()` returns a Promise and must be unwrapped with `await` or `React.use()` before accessing its properties. Learn more: https://nextjs.org/docs/messages/sync-dynamic-apis
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+    at createClient (src/lib/supabase-server.ts:39:12)
+    at async HomePage (src/app/page.tsx:15:22)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+    at createClient (src/lib/supabase-server.ts:39:12)
+    at async HomePage (src/app/page.tsx:15:22)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+    at createClient (src/lib/supabase-server.ts:39:12)
+    at async ProductsGrid (src/components/ProductsGrid.tsx:26:22)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+Ошибка загрузки товаров: {
+  message: 'TypeError: cookieStore.getAll is not a function',
+  details: 'TypeError: cookieStore.getAll is not a function\n' +
+    '    at Object.getAll (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/[root-of-the-server]__98d53869._.js:124:40)\n' +
+    '    at getAll (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:15266:46)\n' +
+    '    at Object.getItem (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:15435:42)\n' +
+    '    at getItemAsync (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:8704:33)\n' +
+    '    at SupabaseAuthClient.__loadSession (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:12159:233)\n' +
+    '    at SupabaseAuthClient._useSession (/var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:12142:39)\n' +
+    '    at /var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:12076:25\n' +
+    '    at /var/home/evgen/pepperCat/catalog-site/.next/dev/server/chunks/ssr/node_modules_fe2ab886._.js:12091:34',
+  hint: '',
+  code: ''
+}
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection: TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection:  TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection: TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection:  TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection: TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection:  TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection: TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+⨯ unhandledRejection:  TypeError: cookieStore.getAll is not a function
+    at Object.getAll (src/lib/supabase-server.ts:45:32)
+  43 |         cookies: {
+  44 |           getAll() {
+> 45 |             return cookieStore.getAll();
+     |                                ^
+  46 |           },
+  47 |           setAll(cookiesToSet) {
+  48 |             try {
+ GET / 200 in 369ms (compile: 1990µs, render: 367ms)
+[?25h

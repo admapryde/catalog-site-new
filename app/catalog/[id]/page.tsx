@@ -1,0 +1,79 @@
+import ProductsGrid from '@/components/ProductsGrid';
+import { createClient } from '@/lib/supabase-server';
+
+// Функция для проверки формата UUID
+function isValidUUID(uuid: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(uuid);
+}
+
+export default async function CategoryPage({ params }: { params: { id: string } }) {
+  // Используем React.use() для разрешения промиса params
+  const categoryId = (await params).id;
+
+  // Проверяем, является ли ID корректным UUID
+  if (!isValidUUID(categoryId)) {
+    return (
+      <div className="py-8">
+        <div className="container mx-auto px-4">
+          <h1 className="text-3xl font-bold text-gray-800 mb-8">Некорректный идентификатор категории</h1>
+          <p className="text-gray-600">ID категории: {categoryId}</p>
+          <p className="text-red-600">Указанный идентификатор не является корректным UUID.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Подключаемся к Supabase
+  const supabase = await createClient();
+
+  // Получаем данные категории
+  const { data, error } = await supabase
+    .from('categories')
+    .select('*')
+    .eq('id', categoryId)
+    .limit(1);
+
+  console.log('Category lookup result:', {
+    categoryId,
+    data,
+    error
+  }); // Логирование для отладки
+
+  if (error) {
+    console.error('Supabase error:', error);
+    return (
+      <div className="py-8">
+        <div className="container mx-auto px-4">
+          <h1 className="text-3xl font-bold text-gray-800 mb-8">Ошибка при загрузке категории</h1>
+          <p className="text-gray-600">ID категории: {categoryId}</p>
+          <p className="text-red-600">Ошибка: {error.message}</p>
+          <p className="text-red-600">Код ошибки: {error.code}</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="py-8">
+        <div className="container mx-auto px-4">
+          <h1 className="text-3xl font-bold text-gray-800 mb-8">Категория не найдена</h1>
+          <p className="text-gray-600">ID категории: {categoryId}</p>
+          <p className="text-gray-600">Возможно, категория была удалена или не существует.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const category = data[0];
+
+  return (
+    <div className="py-8 bg-white">
+      <div className="container mx-auto px-4">
+        <h1 className="text-3xl font-bold text-gray-800 mb-8">Категория: {category.name}</h1>
+        <ProductsGrid categoryId={categoryId} />
+      </div>
+    </div>
+  );
+}

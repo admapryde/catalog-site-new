@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --font-pt-sans: 'PT Sans', sans-serif;
+  --font-jost: 'Jost', sans-serif;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-pt-sans);
+  --font-heading: var(--font-jost);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-pt-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Применяем красивый шрифт к заголовкам */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-jost), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 600;
+}
+
+/* Дополнительные стили для улучшения читаемости */
+p {
+  line-height: 1.7;
+}
+
+/* Стили для заголовков на главной странице и карточках товаров */
+.main-title,
+.product-name,
+.category-title {
+  font-family: var(--font-jost), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Стили для основного текста */
+.text-content {
+  font-family: var(--font-pt-sans), ui-sans-serif, system-ui, sans-serif;
+}

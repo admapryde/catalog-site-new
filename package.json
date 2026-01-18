@@ -1,0 +1,41 @@
+{
+  "name": "catalog-site",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "db:setup": "echo 'Please set up your Supabase project and update .env.local with your credentials'",
+    "db:migrate": "echo 'Run database migrations using Supabase CLI or Studio'",
+    "test:supabase": "node test-supabase.js",
+    "test:cloudinary": "node -r tsx test-cloudinary.ts",
+    "db:add-missing": "node add-missing-data.js",
+    "db:seed-admin": "node -r tsx src/scripts/seed-admin-users.ts",
+    "cache:clear": "node scripts/clear-cache.js"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.8.0",
+    "@supabase/supabase-js": "^2.90.1",
+    "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.9.0",
+    "dotenv": "^17.2.3",
+    "next": "16.1.1",
+    "next-auth": "^5.0.0-beta.30",
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20.19.28",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.1.1",
+    "tailwindcss": "^4",
+    "tsx": "^4.21.0",
+    "typescript": "^5"
+  }
+}

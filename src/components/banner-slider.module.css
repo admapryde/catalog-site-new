@@ -1,0 +1,165 @@
+.bannerSliderSection {
+  padding: 2rem 0; /* py-8 */
+  background-color: white; /* bg-white */
+}
+
+.bannerSliderContainer {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 1rem; /* px-4 */
+}
+
+.bannerSliderTitle {
+  font-size: 1.5rem; /* text-2xl */
+  font-weight: 700; /* font-bold */
+  margin-bottom: 1rem; /* mb-4 */
+  color: #1f2937; /* text-gray-800 */
+}
+
+.bannerSliderWrapper {
+  position: relative;
+}
+
+.bannerSliderGroup {
+  position: relative;
+  overflow: hidden;
+  border-radius: 0.5rem; /* rounded-lg */
+  width: 100%;
+  aspect-ratio: 16/9; /* aspect-video */
+}
+
+@media (min-width: 768px) {
+  .bannerSliderGroup {
+    aspect-ratio: 21/9; /* md:aspect-[21/9] */
+  }
+}
+
+@media (min-width: 1024px) {
+  .bannerSliderGroup {
+    aspect-ratio: 16/6; /* lg:aspect-[16/6] */
+  }
+}
+
+.bannerSliderMaxHeight {
+  max-height: 500px;
+}
+
+.bannerSliderSlide {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 500ms ease-in-out;
+}
+
+.bannerSliderSlideActive {
+  opacity: 1;
+  pointer-events: auto;
+  z-index: 10;
+}
+
+.bannerSliderImageWrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.bannerSliderImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bannerSliderPrevButton,
+.bannerSliderNextButton {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background-color: rgba(255, 255, 255, 0.5); /* bg-white bg-opacity-50 */
+  color: black;
+  padding: 1rem; /* p-4 */
+  border-radius: 50%; /* rounded-full */
+  opacity: 0;
+  transition: opacity 300ms ease;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  backdrop-filter: blur(4px); /* backdrop-blur-sm */
+}
+
+@media (min-width: 768px) {
+  .bannerSliderPrevButton,
+  .bannerSliderNextButton {
+    padding: 1.25rem; /* md:p-5 */
+    width: 3.5rem;
+    height: 3.5rem;
+  }
+}
+
+.bannerSliderWrapper:hover .bannerSliderPrevButton,
+.bannerSliderWrapper:hover .bannerSliderNextButton {
+  opacity: 1; /* group-hover:opacity-100 */
+}
+
+.bannerSliderPrevButton {
+  left: 0.5rem; /* left-2 */
+}
+
+@media (min-width: 768px) {
+  .bannerSliderPrevButton {
+    left: 1rem; /* md:left-4 */
+  }
+}
+
+.bannerSliderNextButton {
+  right: 0.5rem; /* right-2 */
+}
+
+@media (min-width: 768px) {
+  .bannerSliderNextButton {
+    right: 1rem; /* md:right-4 */
+  }
+}
+
+.bannerSliderIndicators {
+  position: absolute;
+  bottom: 0.5rem; /* bottom-2 */
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.5rem; /* space-x-1 */
+  z-index: 20;
+}
+
+@media (min-width: 768px) {
+  .bannerSliderIndicators {
+    bottom: 1rem; /* md:bottom-4 */
+    gap: 0.5rem; /* md:space-x-2 */
+  }
+}
+
+.bannerSliderIndicator {
+  width: 0.5rem; /* w-2 */
+  height: 0.5rem; /* h-2 */
+  border-radius: 50%; /* rounded-full */
+  background-color: #9ca3af; /* bg-gray-400 */
+  cursor: pointer;
+  transition: background-color 300ms ease;
+}
+
+@media (min-width: 768px) {
+  .bannerSliderIndicator {
+    width: 0.75rem; /* md:w-3 */
+    height: 0.75rem; /* md:h-3 */
+  }
+}
+
+.bannerSliderIndicatorActive {
+  background-color: white; /* bg-white */
+}
