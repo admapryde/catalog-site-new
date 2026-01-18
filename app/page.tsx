@@ -101,15 +101,15 @@ async function fetchHomepageSections() {
     }
 
     // Обработка данных для структурирования
-    const processedSections = sections.map(section => ({
+    const processedSections = sections.map((section: any) => ({
       ...section,
-      items: section.homepage_section_items?.map(item => ({
+      items: section.homepage_section_items?.map((item: any) => ({
         ...item,
         product: {
           ...item.products,
           images: item.products?.product_images || []
         }
-      })).filter(item => item.product) || []
+      })).filter((item: any) => item.product) || []
     }));
 
     return processedSections;
