@@ -9,7 +9,7 @@ export default async function ProductPage({ params }: { params: { id: string } }
 
   try {
     // Получаем продукт через API маршрут
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/products/${productId}`, {
+    const response = await fetch(`/api/products/${productId}`, {
       next: { tags: [`product_${productId}`] } // Используем теги кэширования
     });
 

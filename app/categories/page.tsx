@@ -32,7 +32,7 @@ export default async function AllCategoriesPage() {
 
   try {
     // Получаем категории через API маршрут
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/categories`, {
+    const response = await fetch(`/api/categories`, {
       next: { tags: ['homepage_categories'] } // Используем теги кэширования
     });
 
@@ -55,7 +55,7 @@ export default async function AllCategoriesPage() {
       try {
         // Получаем товары для категории через API маршрут
         const response = await fetch(
-          `${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/products?category_id=${category.id}`,
+          `/api/products?category_id=${category.id}`,
           {
             next: { tags: [`products_category_${category.id}`] } // Используем теги кэширования
           }

@@ -8,7 +8,8 @@ async function fetchCategories() {
   'use server';
 
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/categories`, {
+    // Используем относительный путь для API-маршрутов в Next.js
+    const response = await fetch('/api/categories', {
       next: {
         tags: ['homepage_categories'],
         revalidate: CACHE_TTL.CATEGORIES // Устанавливаем время кэширования
@@ -33,7 +34,8 @@ async function fetchBanners() {
   'use server';
 
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/banners`, {
+    // Используем относительный путь для API-маршрутов в Next.js
+    const response = await fetch('/api/banners', {
       next: {
         tags: ['homepage_banners'],
         revalidate: CACHE_TTL.BANNERS // Устанавливаем время кэширования
@@ -58,7 +60,8 @@ async function fetchHomepageSections() {
   'use server';
 
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/homepage-sections`, {
+    // Используем относительный путь для API-маршрутов в Next.js
+    const response = await fetch('/api/homepage-sections', {
       next: {
         tags: ['homepage_sections'],
         revalidate: CACHE_TTL.HOMEPAGE_SECTIONS // Устанавливаем время кэширования
