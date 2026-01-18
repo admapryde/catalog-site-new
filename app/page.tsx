@@ -89,7 +89,8 @@ async function fetchHomepageSections() {
         homepage_section_items (
           *,
           products (
-            *
+            *,
+            product_images (*)
           )
         )
       `)
@@ -104,7 +105,10 @@ async function fetchHomepageSections() {
       ...section,
       items: section.homepage_section_items?.map(item => ({
         ...item,
-        product: item.products
+        product: {
+          ...item.products,
+          images: item.products?.product_images || []
+        }
       })).filter(item => item.product) || []
     }));
 
