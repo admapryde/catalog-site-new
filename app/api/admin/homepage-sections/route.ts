@@ -44,6 +44,7 @@ export async function POST(request: NextRequest) {
       console.error('Ошибка записи в аудит при создании раздела главной страницы:', auditError);
     }
 
+    /*
     // Инвалидируем кэш для разделов ГС
     try {
       const { revalidateTag, revalidatePath } = await import('next/cache');
@@ -55,6 +56,7 @@ export async function POST(request: NextRequest) {
     } catch (cacheError) {
       console.error('Ошибка инвалидации кэша разделов ГС:', cacheError);
     }
+    */
 
     return Response.json(data);
   } catch (error: any) {
@@ -86,6 +88,7 @@ export async function PUT(request: NextRequest) {
       console.error('Ошибка записи в аудит при обновлении раздела главной страницы:', auditError);
     }
 
+    /*
     // Инвалидируем кэш для разделов ГС
     try {
       const { revalidateTag, revalidatePath } = await import('next/cache');
@@ -97,6 +100,7 @@ export async function PUT(request: NextRequest) {
     } catch (cacheError) {
       console.error('Ошибка инвалидации кэша разделов ГС:', cacheError);
     }
+    */
 
     return Response.json(data);
   } catch (error: any) {
@@ -131,6 +135,7 @@ export async function DELETE(request: NextRequest) {
       console.error('Ошибка записи в аудит при удалении раздела главной страницы:', auditError);
     }
 
+    /*
     // Инвалидируем кэш для разделов ГС
     try {
       const { revalidateTag, revalidatePath } = await import('next/cache');
@@ -142,6 +147,7 @@ export async function DELETE(request: NextRequest) {
     } catch (cacheError) {
       console.error('Ошибка инвалидации кэша разделов ГС:', cacheError);
     }
+    */
 
     return Response.json({ success: true });
   } catch (error: any) {

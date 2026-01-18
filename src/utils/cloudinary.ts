@@ -7,6 +7,16 @@ cloudinary.v2.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
+// Тип для опций загрузки
+type UploadApiOptions = {
+  folder?: string;
+  resource_type?: 'image' | 'video' | 'raw';
+  public_id?: string;
+  overwrite?: boolean;
+  invalidate?: boolean;
+  type?: string;
+};
+
 /**
  * Загружает изображение в Cloudinary
  * @param fileBuffer - буфер файла изображения
@@ -19,7 +29,7 @@ export const uploadImageToCloudinary = async (
   publicId?: string
 ) => {
   return new Promise((resolve, reject) => {
-    const uploadOptions: cloudinary.UploadApiOptions = {
+    const uploadOptions: UploadApiOptions = {
       folder,
       resource_type: 'image',
     };

@@ -24,7 +24,7 @@ async function fetchCategories() {
     return data;
   } catch (error) {
     console.error('Ошибка получения категорий:', error);
-    throw error; // Пробрасываем ошибку дальше
+    return []; // Возвращаем пустой массив вместо проброса ошибки
   }
 }
 
@@ -49,7 +49,7 @@ async function fetchBanners() {
     return data;
   } catch (error) {
     console.error('Ошибка получения баннеров:', error);
-    throw error; // Пробрасываем ошибку дальше
+    return []; // Возвращаем пустой массив вместо проброса ошибки
   }
 }
 
@@ -74,7 +74,7 @@ async function fetchHomepageSections() {
     return data;
   } catch (error) {
     console.error('Ошибка получения разделов ГС:', error);
-    throw error; // Пробрасываем ошибку дальше
+    return []; // Возвращаем пустой массив вместо проброса ошибки
   }
 }
 
@@ -92,7 +92,7 @@ export default async function HomePage() {
       <CategoriesGrid categories={categories || []} />
 
       {/* Блоки баннеров */}
-      {bannerGroups?.map(group => (
+      {bannerGroups?.map((group: any) => (
         <BannerSlider key={group.id} group={group} />
       ))}
 

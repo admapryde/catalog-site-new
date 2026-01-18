@@ -3,7 +3,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import AuditHistoryDashboard from './AuditHistoryDashboard';
+import AuditHistoryDashboard from '../../src/components/admin/AuditHistoryDashboard';
 
 export default function DashboardPage() {
   const [activeTab, setActiveTab] = useState('overview');

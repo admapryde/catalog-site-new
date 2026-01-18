@@ -142,6 +142,7 @@ export async function POST(request: NextRequest) {
       console.error('Ошибка записи в аудит при создании продукта:', auditError);
     }
 
+    /*
     // Инвалидируем кэш для разделов главной страницы, содержащих продукты
     try {
       const { revalidateTag, revalidatePath } = await import('next/cache');
@@ -154,6 +155,7 @@ export async function POST(request: NextRequest) {
     } catch (cacheError) {
       console.error('Ошибка инвалидации кэша разделов главной страницы:', cacheError);
     }
+    */
 
     return Response.json(transformedProduct);
   } catch (error: any) {
@@ -213,14 +215,14 @@ export async function PUT(request: NextRequest) {
     if (images !== undefined) {
       // Сравним переданные изображения с текущими
       const currentImages = currentProduct.product_images || [];
-      const imagesChanged = JSON.stringify(images.map(img => ({
+      const imagesChanged = JSON.stringify(images.map((img: any) => ({
         image_url: img.image_url,
         is_main: img.is_main
-      })).sort((a, b) => a.image_url.localeCompare(b.image_url))) !==
-      JSON.stringify(currentImages.map(img => ({
+      })).sort((a: any, b: any) => a.image_url.localeCompare(b.image_url))) !==
+      JSON.stringify(currentImages.map((img: any) => ({
         image_url: img.image_url,
         is_main: img.is_main
-      })).sort((a, b) => a.image_url.localeCompare(b.image_url)));
+      })).sort((a: any, b: any) => a.image_url.localeCompare(b.image_url)));
 
       if (imagesChanged) {
         // Удаляем старые изображения
@@ -257,14 +259,14 @@ export async function PUT(request: NextRequest) {
     if (specs !== undefined) {
       // Сравним переданные характеристики с текущими
       const currentSpecs = currentProduct.product_specs || [];
-      const specsChanged = JSON.stringify(specs.map(spec => ({
+      const specsChanged = JSON.stringify(specs.map((spec: any) => ({
         property_name: spec.property_name,
         value: spec.value
-      })).sort((a, b) => a.property_name.localeCompare(b.property_name))) !==
-      JSON.stringify(currentSpecs.map(spec => ({
+      })).sort((a: any, b: any) => a.property_name.localeCompare(b.property_name))) !==
+      JSON.stringify(currentSpecs.map((spec: any) => ({
         property_name: spec.property_name,
         value: spec.value
-      })).sort((a, b) => a.property_name.localeCompare(b.property_name)));
+      })).sort((a: any, b: any) => a.property_name.localeCompare(b.property_name)));
 
       if (specsChanged) {
         // Удаляем старые характеристики
@@ -322,6 +324,7 @@ export async function PUT(request: NextRequest) {
       console.error('Ошибка записи в аудит при обновлении продукта:', auditError);
     }
 
+    /*
     // Инвалидируем кэш для разделов главной страницы, содержащих продукты
     try {
       const { revalidateTag, revalidatePath } = await import('next/cache');
@@ -334,6 +337,7 @@ export async function PUT(request: NextRequest) {
     } catch (cacheError) {
       console.error('Ошибка инвалидации кэша разделов главной страницы:', cacheError);
     }
+    */
 
     return Response.json(transformedProduct);
   } catch (error: any) {
@@ -390,6 +394,7 @@ export async function DELETE(request: NextRequest) {
       console.error('Ошибка записи в аудит при удалении продукта:', auditError);
     }
 
+    /*
     // Инвалидируем кэш для разделов главной страницы, содержащих продукты
     try {
       const { revalidateTag, revalidatePath } = await import('next/cache');
@@ -402,6 +407,7 @@ export async function DELETE(request: NextRequest) {
     } catch (cacheError) {
       console.error('Ошибка инвалидации кэша разделов главной страницы:', cacheError);
     }
+    */
 
     return Response.json({ success: true });
   } catch (error: any) {

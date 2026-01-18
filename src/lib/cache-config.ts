@@ -91,8 +91,10 @@ export class LRUCache<T = any> {
       this.cache.delete(key);
     } else if (this.cache.size >= this.capacity) {
       // Удаляем первый элемент (наименее недавно использованный)
-      const firstKey = this.cache.keys().next().value;
-      this.cache.delete(firstKey);
+      const firstKeyIterator = this.cache.keys().next();
+      if (!firstKeyIterator.done) {
+        this.cache.delete(firstKeyIterator.value);
+      }
     }
     this.cache.set(key, value);
   }

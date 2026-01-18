@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
       console.error('Ошибка записи в аудит при создании баннера:', auditError);
     }
 
+    /*
     // Инвалидируем кэш для баннеров на главной странице
     try {
       const { revalidateTag, revalidatePath } = await import('next/cache');
@@ -62,6 +63,7 @@ export async function POST(request: NextRequest) {
     } catch (cacheError) {
       console.error('Ошибка инвалидации кэша баннеров:', cacheError);
     }
+    */
 
     return Response.json(data);
   } catch (error: any) {
@@ -95,6 +97,7 @@ export async function PUT(request: NextRequest) {
       console.error('Ошибка записи в аудит при обновлении баннера:', auditError);
     }
 
+    /*
     // Инвалидируем кэш для баннеров на главной странице
     try {
       const { revalidateTag, revalidatePath } = await import('next/cache');
@@ -106,6 +109,7 @@ export async function PUT(request: NextRequest) {
     } catch (cacheError) {
       console.error('Ошибка инвалидации кэша баннеров:', cacheError);
     }
+    */
 
     return Response.json(data);
   } catch (error: any) {
@@ -154,6 +158,7 @@ export async function DELETE(request: NextRequest) {
       console.error('Ошибка записи в аудит при удалении баннера:', auditError);
     }
 
+    /*
     // Инвалидируем кэш для баннеров на главной странице
     try {
       const { revalidateTag, revalidatePath } = await import('next/cache');
@@ -165,6 +170,7 @@ export async function DELETE(request: NextRequest) {
     } catch (cacheError) {
       console.error('Ошибка инвалидации кэша баннеров:', cacheError);
     }
+    */
 
     return Response.json({ success: true });
   } catch (error: any) {

@@ -5,6 +5,7 @@ import Link from 'next/link';
 import OptimizedImage from '@/components/OptimizedImage';
 import { Product } from '@/types';
 import styles from '@/components/homepage-sections.module.css';
+import ProductModal from '@/components/ProductModal';
 
 interface HomepageSection {
   id: string;
@@ -22,12 +23,33 @@ interface HomepageSection {
 export default function HomepageSections({ sections }: { sections: HomepageSection[] }) {
   const [loading, setLoading] = useState(true);
   const [localSections, setLocalSections] = useState<HomepageSection[]>([]);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null); // Using any temporarily since we need to fetch full product details
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     // Используем переданные разделы
     setLocalSections(sections);
     setLoading(false);
   }, [sections]);
+
+  const handleProductClick = async (productId: string) => {
+    try {
+      // Fetch full product details for the modal
+      const response = await fetch(`/api/products/${productId}`);
+
+      if (!response.ok) {
+        throw new Error(`Ошибка загрузки деталей товара: ${response.status} ${response.statusText}`);
+      }
+
+      const productDetail = await response.json();
+      setSelectedProduct(productDetail);
+      setIsModalOpen(true);
+    } catch (error) {
+      console.error('Ошибка загрузки деталей товара:', error);
+      // Fallback to navigation if API fails
+      window.location.href = `/product/${productId}`;
+    }
+  };
 
   if (loading || !sections || sections.length === 0) {
     return null;
@@ -55,10 +77,11 @@ export default function HomepageSections({ sections }: { sections: HomepageSecti
                     : null;
 
                   return (
-                    <Link
-                      href={`/product/${product.id}`}
+                    <div
                       key={item.id}
                       className={styles.homepageSectionCard}
+                      onClick={() => handleProductClick(product.id)}
+                      style={{ cursor: 'pointer' }}
                     >
                       <div className={styles.homepageSectionImageWrapper}>
                         {mainImage ? (
@@ -87,7 +110,7 @@ export default function HomepageSections({ sections }: { sections: HomepageSecti
                         <h3 className={styles.homepageSectionCardTitle}>{product.name}</h3>
                         <p className="text-lg font-bold text-gray-900">{product.price?.toLocaleString('ru-RU')} ₽</p>
                       </div>
-                    </Link>
+                    </div>
                   );
                 })}
               </div>
@@ -95,6 +118,13 @@ export default function HomepageSections({ sections }: { sections: HomepageSecti
           </section>
         );
       })}
+      {selectedProduct && (
+        <ProductModal
+          product={selectedProduct}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+        />
+      )}
     </>
   );
 }

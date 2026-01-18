@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import OptimizedImage from '@/components/OptimizedImage';
 import { Product } from '@/types';
-import { lruCache, CACHE_TTL } from '@/lib/cache-config';
+import { lruCache } from '@/lib/cache-config';
+import ProductModal from '@/components/ProductModal';
 
 interface ProductsGridContentProps {
   categoryId?: string;
@@ -14,6 +15,8 @@ export default function ProductsGridContent({ categoryId }: ProductsGridContentP
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null); // Using any temporarily since we need to fetch full product details
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -81,6 +84,25 @@ export default function ProductsGridContent({ categoryId }: ProductsGridContentP
     fetchProducts();
   }, [categoryId]);
 
+  const handleProductClick = async (productId: string) => {
+    try {
+      // Fetch full product details for the modal
+      const response = await fetch(`/api/products/${productId}`);
+
+      if (!response.ok) {
+        throw new Error(`Ошибка загрузки деталей товара: ${response.status} ${response.statusText}`);
+      }
+
+      const productDetail = await response.json();
+      setSelectedProduct(productDetail);
+      setIsModalOpen(true);
+    } catch (error) {
+      console.error('Ошибка загрузки деталей товара:', error);
+      // Fallback to navigation if API fails
+      window.location.href = `/product/${productId}`;
+    }
+  };
+
   if (loading) {
     return (
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
@@ -114,48 +136,58 @@ export default function ProductsGridContent({ categoryId }: ProductsGridContentP
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-      {products.map((product) => {
-        const mainImage = product.images && Array.isArray(product.images)
-          ? (product.images.find(img => img.is_main) || product.images[0])
-          : null;
+    <>
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        {products.map((product) => {
+          const mainImage = product.images && Array.isArray(product.images)
+            ? (product.images.find(img => img.is_main) || product.images[0])
+            : null;
 
-        return (
-          <Link
-            href={`/product/${product.id}`}
-            key={product.id}
-            className="block group bg-white rounded-lg shadow-md overflow-hidden transition-transform duration-300 hover:shadow-lg hover:-translate-y-1"
-          >
-            <div className="relative pb-[100%]"> {/* Квадратный аспект */}
-              {mainImage ? (
-                <OptimizedImage
-                  src={mainImage.image_url}
-                  alt={product.name}
-                  fill
-                  className="absolute h-full w-full object-cover"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    // Проверяем, не является ли уже изображением-заглушкой, чтобы избежать бесконечного цикла
-                    if (!target.src.includes('placeholder-product.jpg')) {
-                      target.src = '/placeholder-product.jpg';
-                    }
-                  }}
-                  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
-                  loading="lazy"
-                />
-              ) : (
-                <div className="absolute h-full w-full bg-gray-200 flex items-center justify-center">
-                  <span className="text-gray-500">Нет изображения</span>
-                </div>
-              )}
+          return (
+            <div
+              key={product.id}
+              onClick={() => handleProductClick(product.id)}
+              className="block group bg-white rounded-lg shadow-md overflow-hidden transition-transform duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer"
+            >
+              <div className="relative pb-[100%]"> {/* Квадратный аспект */}
+                {mainImage ? (
+                  <OptimizedImage
+                    src={mainImage.image_url}
+                    alt={product.name}
+                    fill
+                    className="absolute h-full w-full object-cover"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      // Проверяем, не является ли уже изображением-заглушкой, чтобы избежать бесконечного цикла
+                      if (!target.src.includes('placeholder-product.jpg')) {
+                        target.src = '/placeholder-product.jpg';
+                      }
+                    }}
+                    sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="absolute h-full w-full bg-gray-200 flex items-center justify-center">
+                    <span className="text-gray-500">Нет изображения</span>
+                  </div>
+                )}
+              </div>
+              <div className="p-4">
+                <h3 className="font-medium text-gray-800 group-hover:text-blue-600 mb-2 line-clamp-2 h-12">{product.name}</h3>
+                <p className="text-lg font-bold text-gray-900">{product.price?.toLocaleString('ru-RU')} ₽</p>
+              </div>
             </div>
-            <div className="p-4">
-              <h3 className="font-medium text-gray-800 group-hover:text-blue-600 mb-2 line-clamp-2 h-12">{product.name}</h3>
-              <p className="text-lg font-bold text-gray-900">{product.price?.toLocaleString('ru-RU')} ₽</p>
-            </div>
-          </Link>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
+
+      {selectedProduct && (
+        <ProductModal
+          product={selectedProduct}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+        />
+      )}
+    </>
   );
 }

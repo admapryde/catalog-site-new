@@ -58,29 +58,54 @@ export default function BannerSlider({ group }: { group: BannerGroup }) {
           {/* Адаптивная высота контейнера баннера в зависимости от соотношения сторон */}
           <div className={`${styles.bannerSliderGroup} ${styles.bannerSliderMaxHeight}`}>
             {group.banners.map((banner, index) => (
-              <Link
-                href={banner.link_url || '#'}
-                key={banner.id}
-                className={`${styles.bannerSliderSlide} ${index === currentIndex ? styles.bannerSliderSlideActive : ''}`}
-              >
-                <div className={styles.bannerSliderImageWrapper}>
-                  <OptimizedImage
-                    src={banner.image_url}
-                    alt={`Баннер ${index + 1} - ${group.title}`}
-                    fill
-                    className={styles.bannerSliderImage}
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      // Проверяем, не является ли уже изображением-заглушкой, чтобы избежать бесконечного цикла
-                      if (!target.src.includes('placeholder-banner.jpg')) {
-                        target.src = '/placeholder-banner.jpg';
-                      }
-                    }}
-                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
-                    loading="lazy"
-                  />
+              banner.link_url ? (
+                <Link
+                  href={{ pathname: banner.link_url }}
+                  key={banner.id}
+                  className={`${styles.bannerSliderSlide} ${index === currentIndex ? styles.bannerSliderSlideActive : ''}`}
+                >
+                  <div className={styles.bannerSliderImageWrapper}>
+                    <OptimizedImage
+                      src={banner.image_url}
+                      alt={`Баннер ${index + 1} - ${group.title}`}
+                      fill
+                      className={styles.bannerSliderImage}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        // Проверяем, не является ли уже изображением-заглушкой, чтобы избежать бесконечного цикла
+                        if (!target.src.includes('placeholder-banner.jpg')) {
+                          target.src = '/placeholder-banner.jpg';
+                        }
+                      }}
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
+                      loading="lazy"
+                    />
+                  </div>
+                </Link>
+              ) : (
+                <div
+                  key={banner.id}
+                  className={`${styles.bannerSliderSlide} ${index === currentIndex ? styles.bannerSliderSlideActive : ''}`}
+                >
+                  <div className={styles.bannerSliderImageWrapper}>
+                    <OptimizedImage
+                      src={banner.image_url}
+                      alt={`Баннер ${index + 1} - ${group.title}`}
+                      fill
+                      className={styles.bannerSliderImage}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        // Проверяем, не является ли уже изображением-заглушкой, чтобы избежать бесконечного цикла
+                        if (!target.src.includes('placeholder-banner.jpg')) {
+                          target.src = '/placeholder-banner.jpg';
+                        }
+                      }}
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
+                      loading="lazy"
+                    />
+                  </div>
                 </div>
-              </Link>
+              )
             ))}
           </div>
 

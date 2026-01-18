@@ -2,24 +2,15 @@
 
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
-
-interface Product {
-  id: string;
-  name: string;
-  price: number;
-  category_id: string;
-  description?: string;
-  images?: Array<{
-    id: string;
-    url: string;
-    alt: string;
-  }>;
-}
+import ProductModal from './ProductModal';
+import { Product, ProductDetail } from '../types';
 
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Product[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<any>(null); // Using any temporarily since we need to fetch full product details
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -81,6 +72,27 @@ export default function Header() {
     };
   }, []);
 
+  // Функция для открытия модального окна с деталями продукта
+  const handleProductClick = async (productId: string) => {
+    try {
+      // Fetch full product details for the modal
+      const response = await fetch(`/api/products/${productId}`);
+
+      if (!response.ok) {
+        throw new Error(`Ошибка загрузки деталей товара: ${response.status} ${response.statusText}`);
+      }
+
+      const productDetail = await response.json();
+      setSelectedProduct(productDetail);
+      setIsModalOpen(true);
+      setShowDropdown(false); // Закрываем выпадающий список
+    } catch (error) {
+      console.error('Ошибка загрузки деталей товара:', error);
+      // Fallback to navigation if API fails
+      window.location.href = `/product/${productId}`;
+    }
+  };
+
   return (
     <header className="bg-white shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -101,7 +113,7 @@ export default function Header() {
 
         <div className="flex items-center space-x-4 relative" ref={dropdownRef}>
           {/* Поисковая строка */}
-          <form onSubmit={handleSearch} className="max-w-lg">
+          <form onSubmit={handleSearch} className="w-full">
             <div className="relative">
               <input
                 type="text"
@@ -109,13 +121,15 @@ export default function Header() {
                 onChange={handleInputChange}
                 onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
                 placeholder="Поиск товаров..."
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full md:w-96 lg:w-[500px] xl:w-[600px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-gray-900 placeholder-gray-700"
               />
               <button
                 type="submit"
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-500"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-700 hover:text-black"
               >
-                🔍
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
               </button>
 
               {/* Выпадающий список результатов поиска */}
@@ -124,16 +138,15 @@ export default function Header() {
                   <ul>
                     {searchResults.map((product) => (
                       <li key={product.id}>
-                        <Link
-                          href={`/product/${product.id}`}
-                          className="block px-4 py-2 hover:bg-gray-100 text-gray-800 truncate"
+                        <div
+                          className="block px-4 py-2 hover:bg-gray-100 text-gray-800 truncate cursor-pointer"
                           onClick={() => {
                             setSearchQuery(product.name);
-                            setShowDropdown(false);
+                            handleProductClick(product.id);
                           }}
                         >
                           {product.name}
-                        </Link>
+                        </div>
                       </li>
                     ))}
                   </ul>
@@ -143,6 +156,15 @@ export default function Header() {
           </form>
         </div>
       </div>
+
+      {/* Модальное окно для просмотра товара */}
+      {selectedProduct && (
+        <ProductModal
+          product={selectedProduct}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+        />
+      )}
     </header>
   );
 }

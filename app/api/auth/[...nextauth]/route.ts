@@ -1,55 +1,60 @@
-import NextAuth from 'next-auth'
-import CredentialsProvider from 'next-auth/providers/credentials'
-import type { NextAuthConfig } from 'next-auth'
+import NextAuth from "next-auth"
+import Credentials from "next-auth/providers/credentials"
+import { authConfig } from "../../../../auth.config"
+import { authenticateAdmin } from "@/services/admin-auth-service"
 
-// Простая конфигурация для демонстрации
-const authConfig: NextAuthConfig = {
+export const {
+  handlers: { GET, POST },
+  auth,
+  signIn,
+  signOut,
+} = NextAuth({
+  ...authConfig,
   providers: [
-    CredentialsProvider({
-      name: 'Credentials',
+    Credentials({
       credentials: {
-        username: { label: 'Username', type: 'text' },
-        password: { label: 'Password', type: 'password' }
+        username: { label: "Username", type: "text" },
+        password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        // Здесь должна быть ваша логика аутентификации
-        // В демонстрационных целях просто возвращаем объект пользователя
-        return {
-          id: '1',
-          name: credentials?.username,
-          email: `${credentials?.username}@example.com`
+        const user = await authenticateAdmin(
+          credentials?.username as string,
+          credentials?.password as string
+        )
+
+        if (user) {
+          return {
+            id: user.id,
+            name: user.username,
+            email: user.email || "",
+            role: user.role
+          }
         }
+
+        return null
       }
     })
   ],
   secret: process.env.AUTH_SECRET,
   callbacks: {
-    authorized({ auth, request: { nextUrl } }) {
-      // Проверяем, авторизован ли пользователь при доступе к админке
-      const isLoggedIn = !!auth?.user
-      const isOnAdmin = nextUrl.pathname.startsWith('/admin')
-
-      if (isOnAdmin) {
-        if (isLoggedIn) return true
-        return false // Перенаправит на страницу входа
-      }
-
-      return true
-    },
-    jwt({ token, user }) {
+    ...authConfig.callbacks,
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id
+        if ('role' in user) {
+          token.role = user.role
+        }
       }
       return token
     },
-    session({ session, token }) {
+    async session({ session, token }) {
       if (token) {
         session.user.id = token.id as string
+        if ('role' in token) {
+          session.user.role = token.role as string
+        }
       }
       return session
     }
   }
-}
-
-export { authConfig }
-export default NextAuth(authConfig)
+})
