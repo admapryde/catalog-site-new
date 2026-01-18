@@ -31,16 +31,19 @@ export default async function AllCategoriesPage() {
   let categories: Category[] = [];
 
   try {
-    // Получаем категории через API маршрут
-    const response = await fetch(`/api/categories`, {
-      next: { tags: ['homepage_categories'] } // Используем теги кэширования
-    });
+    // Получаем категории напрямую через Supabase клиент
+    const supabase = await import('@/lib/supabase-server').then(mod => mod.createClient());
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .order('sort_order', { ascending: true });
+
+    if (error) {
+      throw error;
     }
 
-    categories = await response.json();
+    categories = data || [];
   } catch (error) {
     console.error('Ошибка загрузки категорий:', error);
     // В случае ошибки возвращаем пустой массив
@@ -53,19 +56,27 @@ export default async function AllCategoriesPage() {
       let products: Product[] = [];
 
       try {
-        // Получаем товары для категории через API маршрут
-        const response = await fetch(
-          `/api/products?category_id=${category.id}`,
-          {
-            next: { tags: [`products_category_${category.id}`] } // Используем теги кэширования
-          }
-        );
+        // Получаем товары для категории напрямую через Supabase клиент
+        const supabase = await import('@/lib/supabase-server').then(mod => mod.createClient());
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        const { data, error } = await supabase
+          .from('products')
+          .select(`
+            *,
+            product_images (*)
+          `)
+          .eq('category_id', category.id)
+          .limit(8); // Ограничиваем количество товаров для отображения
+
+        if (error) {
+          throw error;
         }
 
-        products = await response.json();
+        // Преобразуем данные для совместимости с интерфейсом Product
+        products = (data || []).map(product => ({
+          ...product,
+          images: product.product_images || []
+        }));
       } catch (error) {
         console.error(`Ошибка загрузки товаров для категории ${category.id}:`, error);
         products = []; // В случае ошибки возвращаем пустой массив

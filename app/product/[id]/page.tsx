@@ -8,17 +8,24 @@ export default async function ProductPage({ params }: { params: { id: string } }
   let product: any;
 
   try {
-    // Получаем продукт через API маршрут
-    const response = await fetch(`/api/products/${productId}`, {
-      next: { tags: [`product_${productId}`] } // Используем теги кэширования
-    });
+    // Получаем продукт напрямую через Supabase клиент
+    const supabase = await import('@/lib/supabase-server').then(mod => mod.createClient());
 
-    if (!response.ok) {
-      console.error('Product fetch error:', response.status);
-      notFound();
+    const { data, error } = await supabase
+      .from('products')
+      .select(`
+        *,
+        categories (name),
+        product_images (*)
+      `)
+      .eq('id', productId)
+      .single();
+
+    if (error) {
+      throw error;
     }
 
-    product = await response.json();
+    product = data;
   } catch (error) {
     console.error('Product fetch error:', error);
     notFound();

@@ -3,26 +3,26 @@ import BannerSlider from '@/components/BannerSlider';
 import HomepageSections from '@/components/HomepageSections';
 import { CACHE_TTL } from '@/lib/cache-config';
 
+import { cookies, headers } from 'next/headers';
+
 // Асинхронная функция для получения категорий
 async function fetchCategories() {
   'use server';
 
   try {
-    // Используем относительный путь для API-маршрутов в Next.js
-    const response = await fetch('/api/categories', {
-      next: {
-        tags: ['homepage_categories'],
-        revalidate: CACHE_TTL.CATEGORIES // Устанавливаем время кэширования
-      } // Используем теги кэширования
-    });
+    // Вместо использования fetch к API маршрутам, напрямую используем Supabase клиент
+    const supabase = await import('@/lib/supabase-server').then(mod => mod.createClient());
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const { data, error } = await supabase
+      .from('categories')
+      .select('*')
+      .order('sort_order', { ascending: true });
+
+    if (error) {
+      throw error;
     }
 
-    const data = await response.json();
-
-    return data;
+    return data || [];
   } catch (error) {
     console.error('Ошибка получения категорий:', error);
     return []; // Возвращаем пустой массив вместо проброса ошибки
@@ -34,21 +34,40 @@ async function fetchBanners() {
   'use server';
 
   try {
-    // Используем относительный путь для API-маршрутов в Next.js
-    const response = await fetch('/api/banners', {
-      next: {
-        tags: ['homepage_banners'],
-        revalidate: CACHE_TTL.BANNERS // Устанавливаем время кэширования
-      } // Используем теги кэширования
-    });
+    // Вместо использования fetch к API маршрутам, напрямую используем Supabase клиент
+    const supabase = await import('@/lib/supabase-server').then(mod => mod.createClient());
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const { data, error } = await supabase
+      .from('banners')
+      .select(`
+        *,
+        banner_groups (*)
+      `)
+      .order('sort_order', { ascending: true });
+
+    if (error) {
+      throw error;
     }
 
-    const data = await response.json();
+    // Группировка баннеров по группам
+    const bannerGroups = data.reduce((groups: any[], banner: any) => {
+      const existingGroup = groups.find(group => group.id === banner.group_id);
 
-    return data;
+      if (existingGroup) {
+        existingGroup.banners.push(banner);
+      } else {
+        groups.push({
+          id: banner.group_id,
+          title: banner.banner_groups?.title || `Группа ${banner.group_id}`,
+          position: banner.banner_groups?.position || 0,
+          banners: [banner]
+        });
+      }
+
+      return groups;
+    }, []);
+
+    return bannerGroups;
   } catch (error) {
     console.error('Ошибка получения баннеров:', error);
     return []; // Возвращаем пустой массив вместо проброса ошибки
@@ -60,21 +79,36 @@ async function fetchHomepageSections() {
   'use server';
 
   try {
-    // Используем относительный путь для API-маршрутов в Next.js
-    const response = await fetch('/api/homepage-sections', {
-      next: {
-        tags: ['homepage_sections'],
-        revalidate: CACHE_TTL.HOMEPAGE_SECTIONS // Устанавливаем время кэширования
-      } // Используем теги кэширования
-    });
+    // Вместо использования fetch к API маршрутам, напрямую используем Supabase клиент
+    const supabase = await import('@/lib/supabase-server').then(mod => mod.createClient());
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    const { data: sections, error: sectionsError } = await supabase
+      .from('homepage_sections')
+      .select(`
+        *,
+        homepage_section_items (
+          *,
+          products (
+            *
+          )
+        )
+      `)
+      .order('position', { ascending: true });
+
+    if (sectionsError) {
+      throw sectionsError;
     }
 
-    const data = await response.json();
+    // Обработка данных для структурирования
+    const processedSections = sections.map(section => ({
+      ...section,
+      items: section.homepage_section_items?.map(item => ({
+        ...item,
+        product: item.products
+      })).filter(item => item.product) || []
+    }));
 
-    return data;
+    return processedSections;
   } catch (error) {
     console.error('Ошибка получения разделов ГС:', error);
     return []; // Возвращаем пустой массив вместо проброса ошибки
