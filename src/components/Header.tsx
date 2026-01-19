@@ -5,9 +5,20 @@ import { useState, useEffect, useRef } from 'react';
 import ProductModal from './ProductModal';
 import { Product, ProductDetail } from '../types';
 
+// Define types for search results
+interface CategoryResult {
+  id: string;
+  name: string;
+}
+
+interface SearchResult {
+  products: Product[];
+  categories: CategoryResult[];
+}
+
 export default function Header() {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<Product[]>([]);
+  const [searchResults, setSearchResults] = useState<SearchResult>({ products: [], categories: [] });
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null); // Using any temporarily since we need to fetch full product details
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -24,20 +35,20 @@ export default function Header() {
   const performSearch = async (query: string) => {
     if (query.trim()) {
       try {
-        const response = await fetch(`/api/products?search=${encodeURIComponent(query)}`);
+        const response = await fetch(`/api/search?search=${encodeURIComponent(query)}`);
         if (response.ok) {
-          const data = await response.json();
-          setSearchResults(data.slice(0, 5)); // Ограничиваем до 5 результатов
+          const data: SearchResult = await response.json();
+          setSearchResults(data);
           setShowDropdown(true);
         } else {
-          setSearchResults([]);
+          setSearchResults({ products: [], categories: [] });
         }
       } catch (error) {
         console.error('Ошибка при поиске:', error);
-        setSearchResults([]);
+        setSearchResults({ products: [], categories: [] });
       }
     } else {
-      setSearchResults([]);
+      setSearchResults({ products: [], categories: [] });
       setShowDropdown(false);
     }
   };
@@ -53,7 +64,7 @@ export default function Header() {
         performSearch(value);
       }, 300); // Задержка 300мс перед выполнением поиска
     } else {
-      setSearchResults([]);
+      setSearchResults({ products: [], categories: [] });
       setShowDropdown(false);
     }
   };
@@ -119,8 +130,8 @@ export default function Header() {
                 type="text"
                 value={searchQuery}
                 onChange={handleInputChange}
-                onFocus={() => searchResults.length > 0 && setShowDropdown(true)}
-                placeholder="Поиск товаров..."
+                onFocus={() => (searchResults.products.length > 0 || searchResults.categories.length > 0) && setShowDropdown(true)}
+                placeholder="Поиск товаров и категорий..."
                 className="w-full md:w-96 lg:w-[500px] xl:w-[600px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-gray-900 placeholder-gray-700"
               />
               <button
@@ -133,23 +144,52 @@ export default function Header() {
               </button>
 
               {/* Выпадающий список результатов поиска */}
-              {showDropdown && searchResults.length > 0 && (
-                <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-60 overflow-y-auto">
-                  <ul>
-                    {searchResults.map((product) => (
-                      <li key={product.id}>
-                        <div
-                          className="block px-4 py-2 hover:bg-gray-100 text-gray-800 truncate cursor-pointer"
-                          onClick={() => {
-                            setSearchQuery(product.name);
-                            handleProductClick(product.id);
-                          }}
-                        >
-                          {product.name}
-                        </div>
-                      </li>
-                    ))}
-                  </ul>
+              {showDropdown && (searchResults.products.length > 0 || searchResults.categories.length > 0) && (
+                <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
+                  {/* Результаты по категориям */}
+                  {searchResults.categories.length > 0 && (
+                    <div>
+                      <div className="px-4 py-2 bg-gray-50 text-gray-500 text-sm font-medium">Категории</div>
+                      <ul>
+                        {searchResults.categories.map((category) => (
+                          <li key={`cat-${category.id}`}>
+                            <Link
+                              href={`/catalog?category_id=${category.id}`}
+                              className="block px-4 py-2 hover:bg-gray-100 text-gray-800 truncate"
+                              onClick={() => {
+                                setSearchQuery(category.name);
+                                setShowDropdown(false);
+                              }}
+                            >
+                              {category.name}
+                            </Link>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Результаты по товарам */}
+                  {searchResults.products.length > 0 && (
+                    <div>
+                      <div className="px-4 py-2 bg-gray-50 text-gray-500 text-sm font-medium">Товары</div>
+                      <ul>
+                        {searchResults.products.map((product) => (
+                          <li key={`prod-${product.id}`}>
+                            <div
+                              className="block px-4 py-2 hover:bg-gray-100 text-gray-800 truncate cursor-pointer"
+                              onClick={() => {
+                                setSearchQuery(product.name);
+                                handleProductClick(product.id);
+                              }}
+                            >
+                              {product.name}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
