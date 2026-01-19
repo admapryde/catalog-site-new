@@ -107,7 +107,7 @@ export default function HomepageSections({ sections }: { sections: HomepageSecti
                         )}
                       </div>
                       <div className={styles.homepageSectionContent}>
-                        <h3 className={`${styles.homepageSectionCardTitle} text-center`}>{product.name}</h3>
+                        <h3 className={`${styles.homepageSectionCardTitle} text-left`}>{product.name}</h3>
                         <p className="text-lg font-bold text-gray-900">{product.price?.toLocaleString('ru-RU')} ₽</p>
                       </div>
                     </div>

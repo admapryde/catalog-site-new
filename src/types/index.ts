@@ -102,6 +102,15 @@ export interface FilterState {
   spec_filters: Record<string, string[]>; // property_name -> values
 }
 
+// Тип для настроек шапки сайта
+export interface HeaderSettings {
+  header_title: string;
+  nav_home: string;
+  nav_catalog: string;
+  nav_about: string;
+  nav_contacts: string;
+}
+
 // Обновим интерфейс Product, чтобы включить изображения и характеристики
 export interface Product {
   id: string;

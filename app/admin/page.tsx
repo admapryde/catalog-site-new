@@ -140,6 +140,16 @@ export default async function AdminPage() {
                   </a>
                 </li>
                 <li>
+                  <a href="/admin/header-settings" className="block py-3 px-6 text-gray-700 hover:bg-blue-50 hover:text-blue-600 border-l-4 border-transparent">
+                    Шапка сайта
+                  </a>
+                </li>
+                <li>
+                  <a href="/admin/footer-settings" className="block py-3 px-6 text-gray-700 hover:bg-blue-50 hover:text-blue-600 border-l-4 border-transparent">
+                    Футтер
+                  </a>
+                </li>
+                <li>
                   <a href="/admin/settings" className="block py-3 px-6 text-gray-700 hover:bg-blue-50 hover:text-blue-600 border-l-4 border-transparent">
                     Настройки
                   </a>

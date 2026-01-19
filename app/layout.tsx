@@ -2,17 +2,22 @@ import type { Metadata } from "next";
 import "./globals.css";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { getFooterSettings } from "@/services/footer-service";
+import { getHeaderSettings } from "@/services/header-service";
 
 export const metadata: Metadata = {
   title: "Универсальный каталог",
   description: "Динамический сайт-каталог для различных отраслей",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const footerSettings = await getFooterSettings();
+  const headerSettings = await getHeaderSettings();
+
   return (
     <html lang="ru">
       <head>
@@ -22,9 +27,9 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <div className="flex flex-col min-h-screen">
-          <Header />
+          <Header settings={headerSettings} />
           <main className="flex-grow">{children}</main>
-          <Footer />
+          <Footer settings={footerSettings} />
         </div>
       </body>
     </html>

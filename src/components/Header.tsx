@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import ProductModal from './ProductModal';
-import { Product, ProductDetail } from '../types';
+import { Product, ProductDetail, HeaderSettings } from '../types';
 
 // Define types for search results
 interface CategoryResult {
@@ -16,7 +16,7 @@ interface SearchResult {
   categories: CategoryResult[];
 }
 
-export default function Header() {
+export default function Header({ settings }: { settings: HeaderSettings }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult>({ products: [], categories: [] });
   const [showDropdown, setShowDropdown] = useState(false);
@@ -70,13 +70,14 @@ export default function Header() {
   };
 
   // Обработчик клика вне компонента для закрытия выпадающего списка
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setShowDropdown(false);
-      }
+  const handleClickOutside = (event: MouseEvent) => {
+    if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+      setShowDropdown(false);
     }
+  };
 
+  // Добавляем обработчик события при монтировании
+  useEffect(() => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
@@ -110,15 +111,23 @@ export default function Header() {
         <div className="flex items-center space-x-10">
           {/* Логотип */}
           <Link href="/" className="text-xl font-bold text-gray-800">
-            Каталог
+            {settings.header_title}
           </Link>
 
           {/* Навигация */}
           <nav className="hidden md:flex space-x-6">
-            <Link href="/" className="text-gray-600 hover:text-gray-900">Главная</Link>
-            <Link href="/catalog" className="text-gray-600 hover:text-gray-900">Каталог</Link>
-            <Link href="/about" className="text-gray-600 hover:text-gray-900">О нас</Link>
-            <Link href="/contacts" className="text-gray-600 hover:text-gray-900">Контакты</Link>
+            <Link href="/" className="text-gray-600 hover:text-gray-900">
+              {settings.nav_home}
+            </Link>
+            <Link href="/catalog" className="text-gray-600 hover:text-gray-900">
+              {settings.nav_catalog}
+            </Link>
+            <Link href="/about" className="text-gray-600 hover:text-gray-900">
+              {settings.nav_about}
+            </Link>
+            <Link href="/contacts" className="text-gray-600 hover:text-gray-900">
+              {settings.nav_contacts}
+            </Link>
           </nav>
         </div>
 
