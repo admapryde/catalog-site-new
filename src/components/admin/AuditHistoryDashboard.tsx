@@ -69,7 +69,7 @@ const AuditHistoryDashboard = () => {
   };
 
   return (
-    <div className="p-4 h-full flex flex-col">
+    <div className="p-4 h-full flex flex-col min-h-0">
       <div className="mb-4 flex-shrink-0">
         <h2 className="text-lg font-semibold text-gray-800">Последние действия</h2>
         <p className="text-sm text-gray-600">История действий в админ-панели</p>

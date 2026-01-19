@@ -169,7 +169,7 @@ export default async function AdminPage() {
 
               <div className="bg-white p-6 rounded-lg shadow">
                 <h2 className="text-xl font-semibold text-gray-800 mb-4">Последние действия</h2>
-                <div className="h-96">
+                <div className="h-[560px]">
                   <AuditHistoryDashboard />
                 </div>
               </div>
