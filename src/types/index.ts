@@ -45,6 +45,27 @@ export interface ProductSpec {
   product_id: string;
   property_name: string;
   value: string;
+  spec_type_id?: string; // ID типа характеристики
+  spec_type?: 'SELECT' | 'CHECKBOXES' | 'RADIO' | 'RANGE'; // Тип фильтра
+}
+
+// Тип для типа характеристики
+export interface SpecType {
+  id: string;
+  name: string;
+  filter_type: 'SELECT' | 'CHECKBOXES' | 'RADIO' | 'RANGE';
+  data_type: 'TEXT' | 'NUMBER' | 'BOOLEAN';
+  category_id: string | null;
+  category_name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+// Интерфейс для типа характеристики с возможными значениями
+export interface SpecTypeWithValues {
+  property_name: string; // Название характеристики
+  spec_type: 'SELECT' | 'CHECKBOXES' | 'RADIO' | 'RANGE'; // Тип фильтра
+  available_values: string[]; // Возможные значения для фильтрации
 }
 
 // Типы для разделов ГС
@@ -71,6 +92,14 @@ export interface ProductDetail extends Product {
   category: Category;
   images: ProductImage[];
   specs: ProductSpec[];
+}
+
+// Тип для фильтров
+export interface FilterState {
+  category_id?: string;
+  price_from?: number;
+  price_to?: number;
+  spec_filters: Record<string, string[]>; // property_name -> values
 }
 
 // Обновим интерфейс Product, чтобы включить изображения и характеристики

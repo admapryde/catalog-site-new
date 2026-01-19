@@ -3,9 +3,11 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import OptimizedImage from '@/components/OptimizedImage';
-import { Product } from '@/types';
+import { Product, FilterState } from '@/types';
 import { lruCache } from '@/lib/cache-config';
 import ProductModal from '@/components/ProductModal';
+import FilterButton from '@/components/FilterButton';
+import { useFilterState } from '@/hooks/useFilterState';
 
 interface ProductsGridContentProps {
   categoryId?: string;
@@ -17,6 +19,8 @@ export default function ProductsGridContent({ categoryId }: ProductsGridContentP
   const [error, setError] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<any>(null); // Using any temporarily since we need to fetch full product details
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  const { filters, updateFilters } = useFilterState(categoryId);
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -24,11 +28,35 @@ export default function ProductsGridContent({ categoryId }: ProductsGridContentP
         setError(null);
         setLoading(true);
 
+        // Формируем URL с параметрами фильтрации
         let apiUrl = `/api/products`;
+        const params = new URLSearchParams();
 
-        // Добавляем параметр категории, если он указан
-        if (categoryId) {
-          apiUrl += `?category_id=${encodeURIComponent(categoryId)}`;
+        // Добавляем параметр категории из фильтров, если он указан
+        // Если в фильтрах нет категории, используем categoryId из URL
+        if (filters.category_id) {
+          params.append('category_id', encodeURIComponent(filters.category_id));
+        } else if (categoryId) {
+          params.append('category_id', encodeURIComponent(categoryId));
+        }
+
+        // Добавляем параметры фильтрации
+        if (filters.price_from) {
+          params.append('price_from', filters.price_from.toString());
+        }
+        if (filters.price_to) {
+          params.append('price_to', filters.price_to.toString());
+        }
+
+        // Добавляем фильтры по характеристикам
+        Object.entries(filters.spec_filters).forEach(([specTypeId, values]) => {
+          if (values.length > 0) {
+            params.append(`spec_${specTypeId}`, values.join(','));
+          }
+        });
+
+        if (params.toString()) {
+          apiUrl += `?${params.toString()}`;
         }
 
         // Проверяем кэш
@@ -82,7 +110,11 @@ export default function ProductsGridContent({ categoryId }: ProductsGridContentP
     };
 
     fetchProducts();
-  }, [categoryId]);
+  }, [categoryId,
+      filters.category_id,
+      filters.price_from,
+      filters.price_to,
+      JSON.stringify(filters.spec_filters)]);
 
   const handleProductClick = async (productId: string) => {
     try {
@@ -105,38 +137,64 @@ export default function ProductsGridContent({ categoryId }: ProductsGridContentP
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-        {[...Array(8)].map((_, index) => (
-          <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse">
-            <div className="relative pb-[100%] bg-gray-200"></div>
-            <div className="p-4">
-              <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-              <div className="h-6 bg-gray-200 rounded w-1/2"></div>
+      <div className="relative">
+        <FilterButton
+          initialFilters={filters}
+          onFilterChange={updateFilters}
+          categoryId={categoryId}
+        />
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+          {[...Array(8)].map((_, index) => (
+            <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse">
+              <div className="relative pb-[100%] bg-gray-200"></div>
+              <div className="p-4">
+                <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
+                <div className="h-6 bg-gray-200 rounded w-1/2"></div>
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center py-8">
-        <p className="text-red-600">Ошибка загрузки товаров: {error}</p>
+      <div className="relative">
+        <FilterButton
+          initialFilters={filters}
+          onFilterChange={updateFilters}
+          categoryId={categoryId}
+        />
+        <div className="text-center py-8">
+          <p className="text-red-600">Ошибка загрузки товаров: {error}</p>
+        </div>
       </div>
     );
   }
 
   if (products.length === 0) {
     return (
-      <div className="text-center py-8">
-        <p className="text-gray-500">В этой категории пока нет товаров</p>
+      <div className="relative">
+        <FilterButton
+          initialFilters={filters}
+          onFilterChange={updateFilters}
+          categoryId={categoryId}
+        />
+        <div className="text-center py-8">
+          <p className="text-gray-500">По заданным фильтрам товаров не найдено</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <>
+    <div className="relative">
+      <FilterButton
+        initialFilters={filters}
+        onFilterChange={updateFilters}
+        categoryId={categoryId}
+      />
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
         {products.map((product) => {
           const mainImage = product.images && Array.isArray(product.images)
@@ -188,6 +246,6 @@ export default function ProductsGridContent({ categoryId }: ProductsGridContentP
           onClose={() => setIsModalOpen(false)}
         />
       )}
-    </>
+    </div>
   );
 }

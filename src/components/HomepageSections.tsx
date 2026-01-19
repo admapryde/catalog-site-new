@@ -68,7 +68,7 @@ export default function HomepageSections({ sections }: { sections: HomepageSecti
         return (
           <section key={section.id} className={`${styles.homepageSectionsSection} ${backgroundColorClass}`}>
             <div className={styles.homepageSectionsContainer}>
-              <h2 className={styles.homepageSectionCardTitle}>{section.title}</h2>
+              <h2 className={`${styles.homepageSectionCardTitle} text-center`}>{section.title}</h2>
               <div className={styles.homepageSectionsGrid}>
                 {section.items.map((item) => {
                   const product = item.product;
@@ -107,7 +107,7 @@ export default function HomepageSections({ sections }: { sections: HomepageSecti
                         )}
                       </div>
                       <div className={styles.homepageSectionContent}>
-                        <h3 className={styles.homepageSectionCardTitle}>{product.name}</h3>
+                        <h3 className={`${styles.homepageSectionCardTitle} text-center`}>{product.name}</h3>
                         <p className="text-lg font-bold text-gray-900">{product.price?.toLocaleString('ru-RU')} ₽</p>
                       </div>
                     </div>

@@ -93,7 +93,21 @@ CREATE TABLE product_specs (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   product_id UUID REFERENCES products(id) ON DELETE CASCADE,
   property_name VARCHAR(255) NOT NULL,
-  value TEXT NOT NULL
+  value TEXT NOT NULL,
+  spec_type_id UUID REFERENCES spec_types(id) ON DELETE SET NULL
+);
+```
+
+#### Specification Types table
+```sql
+CREATE TABLE spec_types (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  filter_type VARCHAR(20) NOT NULL, -- SELECT, CHECKBOXES, RADIO, RANGE
+  data_type VARCHAR(20) NOT NULL,   -- TEXT, NUMBER, BOOLEAN
+  category_id UUID REFERENCES categories(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 ```
 
@@ -433,7 +447,21 @@ CREATE TABLE product_specs (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   product_id UUID REFERENCES products(id) ON DELETE CASCADE,
   property_name VARCHAR(255) NOT NULL,
-  value TEXT NOT NULL
+  value TEXT NOT NULL,
+  spec_type_id UUID REFERENCES spec_types(id) ON DELETE SET NULL
+);
+```
+
+#### Таблица типов характеристик
+```sql
+CREATE TABLE spec_types (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  filter_type VARCHAR(20) NOT NULL, -- SELECT, CHECKBOXES, RADIO, RANGE
+  data_type VARCHAR(20) NOT NULL,   -- TEXT, NUMBER, BOOLEAN
+  category_id UUID REFERENCES categories(id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 ```
 

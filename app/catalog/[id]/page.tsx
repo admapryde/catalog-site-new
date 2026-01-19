@@ -71,7 +71,7 @@ export default async function CategoryPage({ params }: { params: { id: string } 
   return (
     <div className="py-8 bg-white">
       <div className="container mx-auto px-4">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">Категория: {category.name}</h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">Категория: {category.name}</h1>
         <ProductsGrid categoryId={categoryId} />
       </div>
     </div>

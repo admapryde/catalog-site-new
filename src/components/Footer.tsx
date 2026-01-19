@@ -4,14 +4,14 @@ export default function Footer() {
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div>
-            <h3 className="text-lg font-semibold mb-4">Каталог</h3>
+            <h3 className="text-lg font-semibold mb-4 text-center">Каталог</h3>
             <p className="text-gray-300">
               Универсальная платформа для создания каталогов продукции различных отраслей.
             </p>
           </div>
           
           <div>
-            <h3 className="text-lg font-semibold mb-4">Контакты</h3>
+            <h3 className="text-lg font-semibold mb-4 text-center">Контакты</h3>
             <ul className="space-y-2 text-gray-300">
               <li>📧 info@catalog.example</li>
               <li>📞 +7 (XXX) XXX-XX-XX</li>
@@ -20,7 +20,7 @@ export default function Footer() {
           </div>
           
           <div>
-            <h3 className="text-lg font-semibold mb-4">Быстрые ссылки</h3>
+            <h3 className="text-lg font-semibold mb-4 text-center">Быстрые ссылки</h3>
             <ul className="space-y-2">
               <li><a href="/" className="text-gray-300 hover:text-white">Главная</a></li>
               <li><a href="/catalog" className="text-gray-300 hover:text-white">Каталог</a></li>

@@ -53,7 +53,7 @@ export default function BannerSlider({ group }: { group: BannerGroup }) {
   return (
     <section className={styles.bannerSliderSection}>
       <div className={styles.bannerSliderContainer}>
-        <h2 className={styles.bannerSliderTitle}>{group.title}</h2>
+        <h2 className={`${styles.bannerSliderTitle} text-center`}>{group.title}</h2>
         <div className={`${styles.bannerSliderWrapper} group`}>
           {/* Адаптивная высота контейнера баннера в зависимости от соотношения сторон */}
           <div className={`${styles.bannerSliderGroup} ${styles.bannerSliderMaxHeight}`}>

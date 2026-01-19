@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Product, ProductImage, ProductSpec } from '@/types';
+import { Product, ProductImage, ProductSpec, SpecType } from '@/types';
 import FileUpload from '@/components/admin/FileUpload';
 import HomepageSectionSelector from '@/components/admin/HomepageSectionSelector';
 import OptimizedImage from '@/components/OptimizedImage';
@@ -14,12 +14,30 @@ export default function ProductsManager() {
   const [price, setPrice] = useState(0);
   const [description, setDescription] = useState('');
   const [images, setImages] = useState<ProductImage[]>([]);
-  const [specs, setSpecs] = useState<{ property_name: string; value: string }[]>([]);
+  const [specs, setSpecs] = useState<{ property_name: string; value: string; spec_type_id?: string }[]>([]);
   const [originalImages, setOriginalImages] = useState<ProductImage[]>([]);
-  const [originalSpecs, setOriginalSpecs] = useState<{ property_name: string; value: string }[]>([]);
-  const [newSpec, setNewSpec] = useState({ property_name: '', value: '' });
+  const [originalSpecs, setOriginalSpecs] = useState<{ property_name: string; value: string; spec_type_id?: string }[]>([]);
+  const [newSpec, setNewSpec] = useState({ property_name: '', value: '', spec_type_id: '' });
+  const [specTypes, setSpecTypes] = useState<SpecType[]>([]);
+  const [filteredSpecTypes, setFilteredSpecTypes] = useState<SpecType[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Функция для получения русского названия типа характеристики
+  const getRussianSpecTypeName = (name: string, filterType: string) => {
+    switch(filterType) {
+      case 'RANGE':
+        return 'Диапазон';
+      case 'CHECKBOXES':
+        return 'Чек-бокс';
+      case 'RADIO':
+        return 'Радио';
+      case 'SELECT':
+        return 'Выпадающий список';
+      default:
+        return name;
+    }
+  };
 
   // Функция для обновления списка товаров
   const updateProductsList = async () => {
@@ -47,6 +65,14 @@ export default function ProductsManager() {
         }
         const productsData = await productsResponse.json();
         setProducts(productsData);
+
+        // Загрузка типов характеристик
+        const specTypesResponse = await fetch('/api/spec-types');
+        if (!specTypesResponse.ok) {
+          throw new Error('Ошибка загрузки типов характеристик');
+        }
+        const specTypesData = await specTypesResponse.json();
+        setSpecTypes(specTypesData);
 
         // Загрузка категорий
         const categoriesResponse = await fetch('/api/admin/categories');
@@ -133,6 +159,17 @@ export default function ProductsManager() {
     }
   };
 
+  // Обновление списка типов характеристик при изменении категории
+  useEffect(() => {
+    if (categoryId) {
+      // Фильтруем типы характеристик по выбранной категории
+      const filtered = specTypes.filter(st => st.category_id === categoryId || st.category_id === null);
+      setFilteredSpecTypes(filtered);
+    } else {
+      setFilteredSpecTypes(specTypes.filter(st => st.category_id === null));
+    }
+  }, [categoryId, specTypes]);
+
   const handleEdit = (product: Product) => {
     setName(product.name);
     setCategoryId(product.category_id);
@@ -168,7 +205,7 @@ export default function ProductsManager() {
   const addSpec = () => {
     if (newSpec.property_name && newSpec.value) {
       setSpecs([...specs, { ...newSpec }]);
-      setNewSpec({ property_name: '', value: '' });
+      setNewSpec({ property_name: '', value: '', spec_type_id: '' });
     }
   };
 
@@ -176,7 +213,7 @@ export default function ProductsManager() {
     setSpecs(specs.filter((_, i) => i !== index));
   };
 
-  const updateSpecProperty = (index: number, property: 'property_name' | 'value', value: string) => {
+  const updateSpecProperty = (index: number, property: 'property_name' | 'value' | 'spec_type_id', value: string) => {
     const newSpecs = [...specs];
     newSpecs[index] = { ...newSpecs[index], [property]: value };
     setSpecs(newSpecs);
@@ -358,6 +395,24 @@ export default function ProductsManager() {
               />
             </div>
           </div>
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="specTypeId">
+              Тип характеристики
+            </label>
+            <select
+              id="specTypeId"
+              value={newSpec.spec_type_id || ''}
+              onChange={(e) => setNewSpec({...newSpec, spec_type_id: e.target.value})}
+              className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            >
+              <option value="">Выберите тип характеристики</option>
+              {filteredSpecTypes.map((specType) => (
+                <option key={specType.id} value={specType.id}>
+                  {getRussianSpecTypeName(specType.name, specType.filter_type)} ({specType.filter_type})
+                </option>
+              ))}
+            </select>
+          </div>
           <button
             type="button"
             onClick={addSpec}
@@ -411,6 +466,18 @@ export default function ProductsManager() {
                         className="shadow appearance-none border rounded py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline flex-grow"
                         placeholder="Значение"
                       />
+                      <select
+                        value={spec.spec_type_id || ''}
+                        onChange={(e) => updateSpecProperty(index, 'spec_type_id', e.target.value)}
+                        className="shadow appearance-none border rounded py-1 px-2 text-gray-700 leading-tight focus:outline-none focus:shadow-outline ml-2"
+                      >
+                        <option value="">Тип...</option>
+                        {filteredSpecTypes.map((specType) => (
+                          <option key={specType.id} value={specType.id}>
+                            {getRussianSpecTypeName(specType.name, specType.filter_type)}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <button
                       type="button"

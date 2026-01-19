@@ -97,17 +97,52 @@ export async function POST(request: NextRequest) {
 
     // Добавляем характеристики
     if (specs && specs.length > 0) {
-      const specsWithProductId = specs.map((spec: any) => ({
-        ...spec,
-        product_id: productId
-      }));
+      // Проверяем, что переданные spec_type_id существуют в базе данных
+      const specTypeIds = specs.map((spec: any) => spec.spec_type_id).filter(Boolean);
 
-      const { error: specsError } = await supabase
-        .from('product_specs')
-        .insert(specsWithProductId);
+      if (specTypeIds.length > 0) {
+        const { data: validSpecTypes, error: specTypesCheckError } = await supabase
+          .from('spec_types')
+          .select('id')
+          .in('id', specTypeIds);
 
-      if (specsError) {
-        return Response.json({ error: specsError.message }, { status: 500 });
+        if (specTypesCheckError) {
+          return Response.json({ error: `Ошибка проверки типов характеристик: ${specTypesCheckError.message}` }, { status: 500 });
+        }
+
+        const validSpecTypeIds = validSpecTypes.map((st: any) => st.id);
+
+        // Обновляем спецификации, устанавливая в null некорректные spec_type_id
+        const validatedSpecs = specs.map((spec: any) => ({
+          product_id: productId,
+          property_name: spec.property_name,
+          value: spec.value,
+          spec_type_id: spec.spec_type_id && validSpecTypeIds.includes(spec.spec_type_id) ? spec.spec_type_id : null
+        }));
+
+        const { error: specsError } = await supabase
+          .from('product_specs')
+          .insert(validatedSpecs);
+
+        if (specsError) {
+          return Response.json({ error: specsError.message }, { status: 500 });
+        }
+      } else {
+        // Если нет типов характеристик, просто вставляем без проверки
+        const specsWithProductId = specs.map((spec: any) => ({
+          product_id: productId,
+          property_name: spec.property_name,
+          value: spec.value,
+          spec_type_id: null
+        }));
+
+        const { error: specsError } = await supabase
+          .from('product_specs')
+          .insert(specsWithProductId);
+
+        if (specsError) {
+          return Response.json({ error: specsError.message }, { status: 500 });
+        }
       }
     }
 
@@ -128,11 +163,39 @@ export async function POST(request: NextRequest) {
       return Response.json({ error: fullProductError.message }, { status: 500 });
     }
 
+    // Для POST запроса также получим информацию о типах характеристик
+    const specTypeIds = fullProductData.product_specs?.map((spec: any) => spec.spec_type_id).filter(Boolean) || [];
+    let specTypesMap: Record<string, any> = {};
+
+    if (specTypeIds.length > 0) {
+      const { data: specTypes, error: specTypesError } = await supabase
+        .from('spec_types')
+        .select('id, name, filter_type')
+        .in('id', specTypeIds);
+
+      if (specTypesError) {
+        return Response.json({ error: `Ошибка получения типов характеристик: ${specTypesError.message}` }, { status: 500 });
+      }
+
+      specTypesMap = specTypes.reduce((acc: Record<string, any>, type) => {
+        acc[type.id] = type;
+        return acc;
+      }, {});
+    }
+
     // Преобразуем данные, чтобы соответствовать ожидаемой структуре Product
     const transformedProduct = {
       ...fullProductData,
       images: fullProductData.product_images || [],
-      specs: fullProductData.product_specs || []
+      specs: fullProductData.product_specs?.map((spec: any) => {
+        // Добавляем информацию о типе характеристики, если она доступна
+        const specTypeInfo = spec.spec_type_id ? specTypesMap[spec.spec_type_id] : null;
+        return {
+          ...spec,
+          spec_type: specTypeInfo || spec.spec_type,
+          spec_type_id: spec.spec_type_id
+        };
+      }) || []
     };
 
     // Логируем создание продукта в аудите
@@ -211,6 +274,27 @@ export async function PUT(request: NextRequest) {
       }
     }
 
+    // Получим информацию о типах характеристик для текущих спецификаций
+    const currentSpecs = currentProduct.product_specs || [];
+    const specTypeIds = currentSpecs.map((spec: any) => spec.spec_type_id).filter(Boolean);
+    let specTypesMap: Record<string, any> = {};
+
+    if (specTypeIds.length > 0) {
+      const { data: specTypes, error: specTypesError } = await supabase
+        .from('spec_types')
+        .select('id, name, filter_type')
+        .in('id', specTypeIds);
+
+      if (specTypesError) {
+        return Response.json({ error: `Ошибка получения типов характеристик: ${specTypesError.message}` }, { status: 500 });
+      }
+
+      specTypesMap = specTypes.reduce((acc: Record<string, any>, type) => {
+        acc[type.id] = type;
+        return acc;
+      }, {});
+    }
+
     // Обновляем изображения только если они были переданы в запросе
     if (images !== undefined) {
       // Сравним переданные изображения с текущими
@@ -261,11 +345,13 @@ export async function PUT(request: NextRequest) {
       const currentSpecs = currentProduct.product_specs || [];
       const specsChanged = JSON.stringify(specs.map((spec: any) => ({
         property_name: spec.property_name,
-        value: spec.value
+        value: spec.value,
+        spec_type_id: spec.spec_type_id || null
       })).sort((a: any, b: any) => a.property_name.localeCompare(b.property_name))) !==
       JSON.stringify(currentSpecs.map((spec: any) => ({
         property_name: spec.property_name,
-        value: spec.value
+        value: spec.value,
+        spec_type_id: spec.spec_type_id || null
       })).sort((a: any, b: any) => a.property_name.localeCompare(b.property_name)));
 
       if (specsChanged) {
@@ -277,17 +363,52 @@ export async function PUT(request: NextRequest) {
 
         // Добавляем новые характеристики
         if (specs.length > 0) {
-          const specsWithProductId = specs.map((spec: any) => ({
-            ...spec,
-            product_id: id
-          }));
+          // Проверяем, что переданные spec_type_id существуют в базе данных
+          const specTypeIds = specs.map((spec: any) => spec.spec_type_id).filter(Boolean);
 
-          const { error: specsError } = await supabase
-            .from('product_specs')
-            .insert(specsWithProductId);
+          if (specTypeIds.length > 0) {
+            const { data: validSpecTypes, error: specTypesCheckError } = await supabase
+              .from('spec_types')
+              .select('id')
+              .in('id', specTypeIds);
 
-          if (specsError) {
-            return Response.json({ error: specsError.message }, { status: 500 });
+            if (specTypesCheckError) {
+              return Response.json({ error: `Ошибка проверки типов характеристик: ${specTypesCheckError.message}` }, { status: 500 });
+            }
+
+            const validSpecTypeIds = validSpecTypes.map((st: any) => st.id);
+
+            // Обновляем спецификации, устанавливая в null некорректные spec_type_id
+            const validatedSpecs = specs.map((spec: any) => ({
+              product_id: id,
+              property_name: spec.property_name,
+              value: spec.value,
+              spec_type_id: spec.spec_type_id && validSpecTypeIds.includes(spec.spec_type_id) ? spec.spec_type_id : null
+            }));
+
+            const { error: specsError } = await supabase
+              .from('product_specs')
+              .insert(validatedSpecs);
+
+            if (specsError) {
+              return Response.json({ error: specsError.message }, { status: 500 });
+            }
+          } else {
+            // Если нет типов характеристик, просто вставляем без проверки
+            const specsWithProductId = specs.map((spec: any) => ({
+              product_id: id,
+              property_name: spec.property_name,
+              value: spec.value,
+              spec_type_id: null
+            }));
+
+            const { error: specsError } = await supabase
+              .from('product_specs')
+              .insert(specsWithProductId);
+
+            if (specsError) {
+              return Response.json({ error: specsError.message }, { status: 500 });
+            }
           }
         }
       }
@@ -314,7 +435,15 @@ export async function PUT(request: NextRequest) {
     const transformedProduct = {
       ...fullProductData,
       images: fullProductData.product_images || [],
-      specs: fullProductData.product_specs || []
+      specs: fullProductData.product_specs?.map((spec: any) => {
+        // Добавляем информацию о типе характеристики, если она доступна
+        const specTypeInfo = spec.spec_type_id ? specTypesMap[spec.spec_type_id] : null;
+        return {
+          ...spec,
+          spec_type: specTypeInfo || spec.spec_type,
+          spec_type_id: spec.spec_type_id
+        };
+      }) || []
     };
 
     // Логируем обновление продукта в аудите

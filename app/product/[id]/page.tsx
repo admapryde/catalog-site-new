@@ -15,8 +15,9 @@ export default async function ProductPage({ params }: { params: { id: string } }
       .from('products')
       .select(`
         *,
-        categories (name),
-        product_images (*)
+        categories (id, name),
+        product_images (*),
+        product_specs (*)
       `)
       .eq('id', productId)
       .single();
@@ -31,11 +32,11 @@ export default async function ProductPage({ params }: { params: { id: string } }
     notFound();
   }
 
-  const mainImage = product.images && Array.isArray(product.images)
-    ? (product.images.find((img: any) => img.is_main) || product.images[0])
+  const mainImage = product.product_images && Array.isArray(product.product_images)
+    ? (product.product_images.find((img: any) => img.is_main) || product.product_images[0])
     : null;
-  const thumbnailImages = product.images && Array.isArray(product.images)
-    ? product.images.filter((img: any) => !img.is_main)
+  const thumbnailImages = product.product_images && Array.isArray(product.product_images)
+    ? product.product_images.filter((img: any) => !img.is_main)
     : [];
 
   return (
@@ -47,13 +48,13 @@ export default async function ProductPage({ params }: { params: { id: string } }
               <li><a href="/" className="text-blue-600 hover:underline">Главная</a></li>
               <li>/</li>
               <li>
-                {product.category.id ? (
-                  <a href={`/catalog/${product.category.id}`} className="text-blue-600 hover:underline">
-                    {product.category.name}
+                {product.categories?.id ? (
+                  <a href={`/catalog/${product.categories.id}`} className="text-blue-600 hover:underline">
+                    {product.categories.name}
                   </a>
                 ) : (
                   <span className="text-gray-400 cursor-not-allowed" title="Категория не найдена">
-                    {product.category.name}
+                    {product.categories?.name || 'Категория не найдена'}
                   </span>
                 )}
               </li>
@@ -114,12 +115,16 @@ export default async function ProductPage({ params }: { params: { id: string } }
               <div className="mb-8">
                 <h2 className="text-xl font-semibold text-gray-800 mb-4">Характеристики</h2>
                 <div className="grid grid-cols-1 gap-3">
-                  {product.specs.map((spec: any) => (
-                    <div key={spec.id} className="flex border-b border-gray-100 py-2">
-                      <span className="text-gray-600">{spec.property_name}:</span>
-                      <span className="font-medium text-gray-800 ml-2">{spec.value}</span>
-                    </div>
-                  ))}
+                  {product.product_specs && product.product_specs.length > 0 ? (
+                    product.product_specs.map((spec: any) => (
+                      <div key={spec.id} className="flex border-b border-gray-100 py-2">
+                        <span className="text-gray-600">{spec.property_name}:</span>
+                        <span className="font-medium text-gray-800 ml-2">{spec.value}</span>
+                      </div>
+                    ))
+                  ) : (
+                    <p>Характеристики отсутствуют</p>
+                  )}
                 </div>
               </div>
 

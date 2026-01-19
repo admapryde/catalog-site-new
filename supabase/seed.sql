@@ -79,3 +79,10 @@ INSERT INTO site_settings (setting_key, setting_value) VALUES
 ('footer_info', '© 2023 Универсальный каталог. Все права защищены.'),
 ('contact_email', 'info@catalog.example'),
 ('contact_phone', '+7 (XXX) XXX-XX-XX');
+
+-- Заполнение таблицы типов характеристик
+INSERT INTO spec_types (name, filter_type, data_type, category_id) VALUES
+('Диапазон', 'RANGE', 'NUMBER', NULL),
+('Чек-бокс', 'CHECKBOXES', 'BOOLEAN', NULL),
+('Радио', 'RADIO', 'TEXT', NULL),
+('Выпадающий список', 'SELECT', 'TEXT', NULL);

@@ -40,7 +40,7 @@ export default function CategoriesGrid({ categories }: { categories: Category[] 
   return (
     <section className={styles.categoriesGridSection}>
       <div className={styles.categoriesGridContainer}>
-        <h2 className={styles.categoriesGridTitle}>Категории</h2>
+        <h2 className={`${styles.categoriesGridTitle} text-center`}>Категории</h2>
         <div className={styles.categoriesGridGrid}>
           {sortedCategories.slice(0, 16).map((category) => (
             <Link
@@ -66,7 +66,7 @@ export default function CategoriesGrid({ categories }: { categories: Category[] 
                 />
               </div>
               <div className={styles.categoriesGridItemContent}>
-                <h3 className={styles.categoriesGridItemTitle}>{category.name}</h3>
+                <h3 className={`${styles.categoriesGridItemTitle} text-center`}>{category.name}</h3>
               </div>
             </Link>
           ))}

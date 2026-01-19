@@ -95,15 +95,15 @@ export default async function AllCategoriesPage() {
   return (
     <div className="py-8">
       <div className="container mx-auto px-4">
-        <h1 className="text-3xl font-bold text-gray-800 mb-8">Все категории</h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">Все категории</h1>
         
         {sortedCategoriesWithProducts.map((category) => (
           <div key={category.id} className="mb-12">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-800">{category.name}</h2>
-              <Link 
-                href={`/catalog/${category.id}`} 
-                className="text-blue-600 hover:text-blue-800 font-medium"
+            <div className="flex flex-col items-center justify-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-800 text-center">{category.name}</h2>
+              <Link
+                href={`/catalog/${category.id}`}
+                className="text-blue-600 hover:text-blue-800 font-medium mt-2"
               >
                 Смотреть все →
               </Link>
