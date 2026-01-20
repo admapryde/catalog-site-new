@@ -9,7 +9,6 @@ export default function BannerManager() {
   const [groups, setGroups] = useState<BannerGroup[]>([]);
   const [banners, setBanners] = useState<Banner[]>([]);
   const [title, setTitle] = useState('');
-  const [position, setPosition] = useState(1);
   const [groupId, setGroupId] = useState('');
   const [image, setImage] = useState('');
   const [link, setLink] = useState('');
@@ -29,7 +28,9 @@ export default function BannerManager() {
           throw new Error('Ошибка загрузки групп баннеров');
         }
         const groupsData: BannerGroup[] = await groupsResponse.json();
-        setGroups(groupsData);
+        // Сортируем группы по position
+        const sortedGroups = groupsData.sort((a, b) => a.position - b.position);
+        setGroups(sortedGroups);
 
         // Загрузка баннеров
         const bannersResponse = await fetch('/api/admin/banners');
@@ -48,16 +49,52 @@ export default function BannerManager() {
     fetchData();
   }, []);
 
+  // Сортировка баннеров при изменении баннеров или групп
+  useEffect(() => {
+    if (banners.length > 0 && groups.length > 0) {
+      // Сортируем баннеры по группам (в соответствии с порядком групп) и внутри групп по sort_order
+      const sortedBanners = [...banners].sort((a, b) => {
+        // Находим позиции групп в отсортированном списке групп
+        const groupA = groups.find(g => g.id === a.group_id);
+        const groupB = groups.find(g => g.id === b.group_id);
+
+        if (groupA && groupB) {
+          // Сортируем по позиции группы, затем внутри группы по sort_order
+          if (groupA.position !== groupB.position) {
+            return groupA.position - groupB.position;
+          }
+        }
+
+        // Если группы не найдены или имеют одинаковую позицию, сортируем по ID группы, затем по sort_order
+        if (a.group_id !== b.group_id) {
+          const groupAIndex = groups.findIndex(g => g.id === a.group_id);
+          const groupBIndex = groups.findIndex(g => g.id === b.group_id);
+          return groupAIndex - groupBIndex;
+        }
+
+        // Потом внутри группы по sort_order
+        return a.sort_order - b.sort_order;
+      });
+
+      // Проверяем, изменился ли порядок
+      const isDifferent = sortedBanners.some((banner, index) => banner.id !== banners[index]?.id);
+      if (isDifferent) {
+        setBanners(sortedBanners);
+      }
+    }
+  }, [banners, groups]);
+
   const handleGroupSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     try {
       if (editingGroupId) {
-        // Обновление существующей группы
+        // Обновление существующей группы (сохраняем текущую позицию)
+        const currentGroup = groups.find(g => g.id === editingGroupId);
         const response = await fetch('/api/admin/banner-groups', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: editingGroupId, title, position })
+          body: JSON.stringify({ id: editingGroupId, title, position: currentGroup?.position })
         });
 
         if (!response.ok) {
@@ -65,15 +102,16 @@ export default function BannerManager() {
         }
 
         const updatedGroup = await response.json();
-        setGroups(groups.map(g =>
+        const updatedGroups = groups.map(g =>
           g.id === editingGroupId ? updatedGroup[0] : g
-        ));
+        ).sort((a, b) => a.position - b.position);
+        setGroups(updatedGroups);
       } else {
         // Создание новой группы
         const response = await fetch('/api/admin/banner-groups', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title, position })
+          body: JSON.stringify({ title, position: groups.length + 1 })
         });
 
         if (!response.ok) {
@@ -81,12 +119,13 @@ export default function BannerManager() {
         }
 
         const newGroup = await response.json();
-        setGroups([...groups, newGroup[0]]);
+        // Добавляем новую группу в конец списка с правильным порядковым номером
+        const updatedGroups = [...groups, newGroup[0]].sort((a, b) => a.position - b.position);
+        setGroups(updatedGroups);
       }
 
       // Сброс формы
       setTitle('');
-      setPosition(1);
       setEditingGroupId(null);
     } catch (error) {
       console.error('Ошибка сохранения группы:', error);
@@ -98,11 +137,12 @@ export default function BannerManager() {
 
     try {
       if (editingBannerId) {
-        // Обновление существующего баннера
+        // Обновление существующего баннера (сохраняем текущий порядок сортировки)
+        const currentBanner = banners.find(b => b.id === editingBannerId);
         const response = await fetch('/api/admin/banners', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: editingBannerId, group_id: groupId, image_url: image, link_url: link, sort_order: sortOrder })
+          body: JSON.stringify({ id: editingBannerId, group_id: groupId, image_url: image, link_url: link, sort_order: currentBanner?.sort_order })
         });
 
         if (!response.ok) {
@@ -110,15 +150,20 @@ export default function BannerManager() {
         }
 
         const updatedBanner = await response.json();
-        setBanners(banners.map(b =>
+        const updatedBanners = banners.map(b =>
           b.id === editingBannerId ? updatedBanner[0] : b
-        ));
+        );
+        setBanners(updatedBanners);
       } else {
         // Создание нового баннера
+        // Определяем порядок сортировки как количество баннеров в группе + 1
+        const bannersInGroup = banners.filter(b => b.group_id === groupId);
+        const newSortOrder = bannersInGroup.length;
+
         const response = await fetch('/api/admin/banners', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ group_id: groupId, image_url: image, link_url: link, sort_order: sortOrder })
+          body: JSON.stringify({ group_id: groupId, image_url: image, link_url: link, sort_order: newSortOrder })
         });
 
         if (!response.ok) {
@@ -126,14 +171,15 @@ export default function BannerManager() {
         }
 
         const newBanner = await response.json();
-        setBanners([...banners, newBanner[0]]);
+        // После добавления баннера обновляем список
+        const updatedBanners = [...banners, newBanner[0]];
+        setBanners(updatedBanners);
       }
 
       // Сброс формы
       setGroupId('');
       setImage('');
       setLink('');
-      setSortOrder(0);
       setEditingBannerId(null);
     } catch (error) {
       console.error('Ошибка сохранения баннера:', error);
@@ -142,7 +188,6 @@ export default function BannerManager() {
 
   const handleEditGroup = (group: BannerGroup) => {
     setTitle(group.title);
-    setPosition(group.position);
     setEditingGroupId(group.id);
     setActiveTab('groups');
   };
@@ -151,7 +196,6 @@ export default function BannerManager() {
     setGroupId(banner.group_id);
     setImage(banner.image_url);
     setLink(banner.link_url);
-    setSortOrder(banner.sort_order);
     setEditingBannerId(banner.id);
     setActiveTab('banners');
   };
@@ -167,7 +211,14 @@ export default function BannerManager() {
           throw new Error('Ошибка удаления группы');
         }
 
-        setGroups(groups.filter(g => g.id !== id));
+        // Обновляем список групп без удаленной и пересчитываем порядок
+        const filteredGroups = groups.filter(g => g.id !== id);
+        const reorderedGroups = filteredGroups.map((group, index) => ({
+          ...group,
+          position: index + 1  // Позиции начинаются с 1
+        }));
+
+        setGroups(reorderedGroups);
         // Также удалим связанные баннеры
         setBanners(banners.filter(b => b.group_id !== id));
       } catch (error) {
@@ -187,10 +238,194 @@ export default function BannerManager() {
           throw new Error('Ошибка удаления баннера');
         }
 
-        setBanners(banners.filter(b => b.id !== id));
+        // Обновляем список баннеров без удаленного
+        const filteredBanners = banners.filter(b => b.id !== id);
+        setBanners(filteredBanners);
       } catch (error) {
         console.error('Ошибка удаления баннера:', error);
       }
+    }
+  };
+
+  const moveBannerUp = async (bannerId: string) => {
+    const bannerToMove = banners.find(b => b.id === bannerId);
+    if (!bannerToMove) return;
+
+    // Получаем все баннеры в той же группе
+    const bannersInGroup = banners.filter(b => b.group_id === bannerToMove.group_id);
+    const currentIndex = bannersInGroup.findIndex(b => b.id === bannerId);
+
+    if (currentIndex === 0) return; // Уже первый в группе
+
+    // Создаем новый массив с обновленным порядком
+    const newBannersInGroup = [...bannersInGroup];
+    const movedBanner = newBannersInGroup.splice(currentIndex, 1)[0];
+    newBannersInGroup.splice(currentIndex - 1, 0, movedBanner);
+
+    // Обновляем sort_order для баннеров в группе
+    const reorderedBannersInGroup = newBannersInGroup.map((banner, idx) => ({
+      ...banner,
+      sort_order: idx
+    }));
+
+    // Обновляем весь список баннеров
+    const updatedBanners = banners.map(banner => {
+      const updatedBanner = reorderedBannersInGroup.find(updated => updated.id === banner.id);
+      return updatedBanner || banner;
+    });
+
+    // Обновляем порядок в базе данных
+    try {
+      await Promise.all(
+        reorderedBannersInGroup.map(banner =>
+          fetch('/api/admin/banners', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: banner.id,
+              group_id: banner.group_id,
+              image_url: banner.image_url,
+              link_url: banner.link_url,
+              sort_order: banner.sort_order
+            })
+          })
+        )
+      );
+
+      // Обновляем состояние только после успешного сохранения
+      setBanners(updatedBanners);
+    } catch (error) {
+      console.error('Ошибка обновления порядка баннеров:', error);
+      // В случае ошибки не обновляем состояние
+    }
+  };
+
+  const moveBannerDown = async (bannerId: string) => {
+    const bannerToMove = banners.find(b => b.id === bannerId);
+    if (!bannerToMove) return;
+
+    // Получаем все баннеры в той же группе
+    const bannersInGroup = banners.filter(b => b.group_id === bannerToMove.group_id);
+    const currentIndex = bannersInGroup.findIndex(b => b.id === bannerId);
+
+    if (currentIndex === bannersInGroup.length - 1) return; // Уже последний в группе
+
+    // Создаем новый массив с обновленным порядком
+    const newBannersInGroup = [...bannersInGroup];
+    const movedBanner = newBannersInGroup.splice(currentIndex, 1)[0];
+    newBannersInGroup.splice(currentIndex + 1, 0, movedBanner);
+
+    // Обновляем sort_order для баннеров в группе
+    const reorderedBannersInGroup = newBannersInGroup.map((banner, idx) => ({
+      ...banner,
+      sort_order: idx
+    }));
+
+    // Обновляем весь список баннеров
+    const updatedBanners = banners.map(banner => {
+      const updatedBanner = reorderedBannersInGroup.find(updated => updated.id === banner.id);
+      return updatedBanner || banner;
+    });
+
+    // Обновляем порядок в базе данных
+    try {
+      await Promise.all(
+        reorderedBannersInGroup.map(banner =>
+          fetch('/api/admin/banners', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: banner.id,
+              group_id: banner.group_id,
+              image_url: banner.image_url,
+              link_url: banner.link_url,
+              sort_order: banner.sort_order
+            })
+          })
+        )
+      );
+
+      // Обновляем состояние только после успешного сохранения
+      setBanners(updatedBanners);
+    } catch (error) {
+      console.error('Ошибка обновления порядка баннеров:', error);
+      // В случае ошибки не обновляем состояние
+    }
+  };
+
+  const moveGroupUp = async (index: number) => {
+    if (index === 0) return; // Первая группа, нельзя двигать выше
+
+    // Создаем новый массив с обновленным порядком
+    const newGroups = [...groups];
+    const movedGroup = newGroups.splice(index, 1)[0];
+    newGroups.splice(index - 1, 0, movedGroup);
+
+    // Обновляем position для всех групп
+    const reorderedGroups = newGroups.map((group, idx) => ({
+      ...group,
+      position: idx + 1  // Позиции начинаются с 1
+    }));
+
+    // Обновляем порядок в базе данных
+    try {
+      await Promise.all(
+        reorderedGroups.map(group =>
+          fetch('/api/admin/banner-groups', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: group.id,
+              title: group.title,
+              position: group.position
+            })
+          })
+        )
+      );
+
+      // Обновляем состояние только после успешного сохранения
+      setGroups(reorderedGroups);
+    } catch (error) {
+      console.error('Ошибка обновления порядка групп баннеров:', error);
+      // В случае ошибки не обновляем состояние
+    }
+  };
+
+  const moveGroupDown = async (index: number) => {
+    if (index === groups.length - 1) return; // Последняя группа, нельзя двигать ниже
+
+    // Создаем новый массив с обновленным порядком
+    const newGroups = [...groups];
+    const movedGroup = newGroups.splice(index, 1)[0];
+    newGroups.splice(index + 1, 0, movedGroup);
+
+    // Обновляем position для всех групп
+    const reorderedGroups = newGroups.map((group, idx) => ({
+      ...group,
+      position: idx + 1  // Позиции начинаются с 1
+    }));
+
+    // Обновляем порядок в базе данных
+    try {
+      await Promise.all(
+        reorderedGroups.map(group =>
+          fetch('/api/admin/banner-groups', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              id: group.id,
+              title: group.title,
+              position: group.position
+            })
+          })
+        )
+      );
+
+      // Обновляем состояние только после успешного сохранения
+      setGroups(reorderedGroups);
+    } catch (error) {
+      console.error('Ошибка обновления порядка групп баннеров:', error);
+      // В случае ошибки не обновляем состояние
     }
   };
 
@@ -232,33 +467,18 @@ export default function BannerManager() {
           </h2>
 
           <form onSubmit={handleGroupSubmit} className="mb-8 p-4 bg-white rounded-lg shadow-md">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="title">
-                  Название группы
-                </label>
-                <input
-                  id="title"
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="position">
-                  Позиция на странице
-                </label>
-                <input
-                  id="position"
-                  type="number"
-                  value={position}
-                  onChange={(e) => setPosition(Number(e.target.value))}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  required
-                />
-              </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="title">
+                Название группы
+              </label>
+              <input
+                id="title"
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                required
+              />
             </div>
             <div className="flex items-center justify-between">
               <button
@@ -273,7 +493,6 @@ export default function BannerManager() {
                   onClick={() => {
                     setEditingGroupId(null);
                     setTitle('');
-                    setPosition(1);
                   }}
                   className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
                 >
@@ -291,7 +510,7 @@ export default function BannerManager() {
                     Название
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Позиция
+                    Перемещение
                   </th>
                   <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Действия
@@ -299,13 +518,34 @@ export default function BannerManager() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {groups.map((group) => (
+                {groups.map((group, index) => (
                   <tr key={group.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-gray-900">{group.title}</div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {group.position}
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => moveGroupUp(index)}
+                          disabled={index === 0}
+                          className={`p-1 rounded ${index === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:text-blue-600'}`}
+                          title="Переместить вверх"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => moveGroupDown(index)}
+                          disabled={index === groups.length - 1}
+                          className={`p-1 rounded ${index === groups.length - 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:text-blue-600'}`}
+                          title="Переместить вниз"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <button
@@ -334,60 +574,64 @@ export default function BannerManager() {
           </h2>
 
           <form onSubmit={handleBannerSubmit} className="mb-8 p-4 bg-white rounded-lg shadow-md">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="groupId">
-                  Группа баннеров
-                </label>
-                <select
-                  id="groupId"
-                  value={groupId}
-                  onChange={(e) => setGroupId(e.target.value)}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  required
-                >
-                  <option value="">Выберите группу</option>
-                  {groups.map(group => (
-                    <option key={group.id} value={group.id}>
-                      {group.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <FileUpload
-                  onFileUpload={(url) => setImage(url)}
-                  folder="banners"
-                  label="Загрузить изображение баннера"
-                />
-              </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="groupId">
+                Группа баннеров
+              </label>
+              <select
+                id="groupId"
+                value={groupId}
+                onChange={(e) => setGroupId(e.target.value)}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                required
+              >
+                <option value="">Выберите группу</option>
+                {groups.map(group => (
+                  <option key={group.id} value={group.id}>
+                    {group.title}
+                  </option>
+                ))}
+              </select>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="link">
-                  Ссылка
-                </label>
-                <input
-                  id="link"
-                  type="text"
-                  value={link}
-                  onChange={(e) => setLink(e.target.value)}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="sortOrder">
-                  Порядок сортировки
-                </label>
-                <input
-                  id="sortOrder"
-                  type="number"
-                  value={sortOrder}
-                  onChange={(e) => setSortOrder(Number(e.target.value))}
-                  className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  required
-                />
-              </div>
+            <div className="mb-4">
+              {image && (
+                <div className="mb-4">
+                  <label className="block text-gray-700 text-sm font-bold mb-2">
+                    Текущее изображение
+                  </label>
+                  <div className="flex items-center">
+                    <img
+                      src={image}
+                      alt="Текущее изображение баннера"
+                      className="h-16 w-16 object-cover rounded border"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setImage('')}
+                      className="ml-4 text-red-600 hover:text-red-800 text-sm"
+                    >
+                      Удалить изображение
+                    </button>
+                  </div>
+                </div>
+              )}
+              <FileUpload
+                onFileUpload={(url) => setImage(url)}
+                folder="banners"
+                label="Загрузить изображение баннера"
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="link">
+                Ссылка
+              </label>
+              <input
+                id="link"
+                type="text"
+                value={link}
+                onChange={(e) => setLink(e.target.value)}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+              />
             </div>
             <div className="flex items-center justify-between">
               <button
@@ -404,7 +648,6 @@ export default function BannerManager() {
                     setGroupId('');
                     setImage('');
                     setLink('');
-                    setSortOrder(0);
                   }}
                   className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
                 >
@@ -414,72 +657,94 @@ export default function BannerManager() {
             </div>
           </form>
 
-          <div className="bg-white rounded-lg shadow-md overflow-hidden">
-            <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Изображение
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Группа
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Ссылка
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Порядок
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Действия
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {banners.map((banner) => {
-                  const group = groups.find(g => g.id === banner.group_id);
-                  return (
-                    <tr key={banner.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <OptimizedImage
-                          src={banner.image_url}
-                          alt="Баннер"
-                          width={96}
-                          height={48}
-                          className="h-12 w-24 object-cover rounded"
-                        />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{group?.title || 'Не указана'}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <a href={banner.link_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
-                          {banner.link_url}
-                        </a>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {banner.sort_order}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                          onClick={() => handleEditBanner(banner)}
-                          className="text-indigo-600 hover:text-indigo-900 mr-4"
-                        >
-                          Редактировать
-                        </button>
-                        <button
-                          onClick={() => handleDeleteBanner(banner.id)}
-                          className="text-red-600 hover:text-red-900"
-                        >
-                          Удалить
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          {/* Отображение отдельной таблицы для каждой группы баннеров */}
+          {groups.map((group) => {
+            const groupBanners = banners.filter(banner => banner.group_id === group.id);
+
+            return (
+              <div key={group.id} className="mb-8">
+                <h3 className="text-xl font-semibold text-gray-800 mb-4">{group.title}</h3>
+                <div className="bg-white rounded-lg shadow-md overflow-hidden">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Изображение
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Ссылка
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Перемещение
+                        </th>
+                        <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Действия
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {groupBanners.map((banner, index) => (
+                        <tr key={banner.id}>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <OptimizedImage
+                              src={banner.image_url}
+                              alt="Баннер"
+                              width={96}
+                              height={48}
+                              className="h-12 w-24 object-cover rounded"
+                            />
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <a href={banner.link_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                              {banner.link_url}
+                            </a>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={() => moveBannerUp(banner.id)}
+                                disabled={index === 0}
+                                className={`p-1 rounded ${index === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:text-blue-600'}`}
+                                title="Переместить вверх"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+                                </svg>
+                              </button>
+                              <button
+                                onClick={() => moveBannerDown(banner.id)}
+                                disabled={index === groupBanners.length - 1}
+                                className={`p-1 rounded ${index === groupBanners.length - 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:text-blue-600'}`}
+                                title="Переместить вниз"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                  <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                                </svg>
+                              </button>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button
+                              onClick={() => handleEditBanner(banner)}
+                              className="text-indigo-600 hover:text-indigo-900 mr-4"
+                            >
+                              Редактировать
+                            </button>
+                            <button
+                              onClick={() => handleDeleteBanner(banner.id)}
+                              className="text-red-600 hover:text-red-900"
+                            >
+                              Удалить
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>

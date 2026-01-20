@@ -11,9 +11,10 @@ import { useFilterState } from '@/hooks/useFilterState';
 
 interface ProductsGridContentProps {
   categoryId?: string;
+  search?: string;
 }
 
-export default function ProductsGridContent({ categoryId }: ProductsGridContentProps) {
+export default function ProductsGridContent({ categoryId, search }: ProductsGridContentProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -54,6 +55,11 @@ export default function ProductsGridContent({ categoryId }: ProductsGridContentP
             params.append(`spec_${specTypeId}`, values.join(','));
           }
         });
+
+        // Добавляем параметр поиска, если он передан
+        if (search) {
+          params.append('search', encodeURIComponent(search));
+        }
 
         if (params.toString()) {
           apiUrl += `?${params.toString()}`;
@@ -111,6 +117,7 @@ export default function ProductsGridContent({ categoryId }: ProductsGridContentP
 
     fetchProducts();
   }, [categoryId,
+      search,
       filters.category_id,
       filters.price_from,
       filters.price_to,

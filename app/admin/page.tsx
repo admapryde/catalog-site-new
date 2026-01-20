@@ -8,6 +8,7 @@ interface Stats {
   products: number;
   categories: number;
   bannerGroups: number;
+  homepageSections: number;
 }
 
 async function getStats(): Promise<Stats> {
@@ -41,10 +42,20 @@ async function getStats(): Promise<Stats> {
       throw bannerGroupsError;
     }
 
+    // Получаем количество разделов главной страницы
+    const { count: homepageSectionsCount, error: homepageSectionsError } = await supabase
+      .from('homepage_sections')
+      .select('*', { count: 'exact', head: true });
+
+    if (homepageSectionsError) {
+      throw homepageSectionsError;
+    }
+
     return {
       products: productsCount || 0,
       categories: categoriesCount || 0,
-      bannerGroups: bannerGroupsCount || 0
+      bannerGroups: bannerGroupsCount || 0,
+      homepageSections: homepageSectionsCount || 0
     };
   } catch (error) {
     console.error('Ошибка получения статистики из Supabase:', error);
@@ -52,7 +63,8 @@ async function getStats(): Promise<Stats> {
     return {
       products: 0,
       categories: 0,
-      bannerGroups: 0
+      bannerGroups: 0,
+      homepageSections: 0
     };
   }
 }
@@ -143,7 +155,7 @@ export default async function AdminPage() {
           <main className="flex-1 p-8">
             <div className="max-w-6xl mx-auto">
               <h1 className="text-3xl font-bold text-gray-800 mb-6">Дашборд</h1>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
                 <div className="bg-white p-6 rounded-lg shadow">
                   <h3 className="text-lg font-medium text-gray-700 mb-2">Всего товаров</h3>
                   <p className="text-3xl font-bold text-blue-600">{stats.products}</p>
@@ -156,11 +168,15 @@ export default async function AdminPage() {
                   <h3 className="text-lg font-medium text-gray-700 mb-2">Групп баннеров</h3>
                   <p className="text-3xl font-bold text-purple-600">{stats.bannerGroups}</p>
                 </div>
+                <div className="bg-white p-6 rounded-lg shadow">
+                  <h3 className="text-lg font-medium text-gray-700 mb-2">Разделов ГС</h3>
+                  <p className="text-3xl font-bold text-orange-600">{stats.homepageSections}</p>
+                </div>
               </div>
 
               <div className="bg-white p-6 rounded-lg shadow">
                 <h2 className="text-xl font-semibold text-gray-800 mb-4">Последние действия</h2>
-                <div className="h-[560px]">
+                <div className="h-96 overflow-y-auto">
                   <AuditHistoryDashboard />
                 </div>
               </div>

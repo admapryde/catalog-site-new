@@ -20,9 +20,11 @@ export default function Header({ settings }: { settings: HeaderSettings }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult>({ products: [], categories: [] });
   const [showDropdown, setShowDropdown] = useState(false);
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null); // Using any temporarily since we need to fetch full product details
   const [isModalOpen, setIsModalOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,10 +71,16 @@ export default function Header({ settings }: { settings: HeaderSettings }) {
     }
   };
 
-  // Обработчик клика вне компонента для закрытия выпадающего списка
+  // Обработчик клика вне компонента для закрытия выпадающего списка и мобильного меню
   const handleClickOutside = (event: MouseEvent) => {
     if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
       setShowDropdown(false);
+    }
+
+    // Закрываем мобильное меню, если клик был вне его области
+    if (mobileMenuButtonRef.current && !mobileMenuButtonRef.current.contains(event.target as Node) &&
+        !(event.target as HTMLElement).closest('.mobile-menu-container')) {
+      setShowMobileMenu(false);
     }
   };
 
@@ -114,7 +122,7 @@ export default function Header({ settings }: { settings: HeaderSettings }) {
             {settings.header_title}
           </Link>
 
-          {/* Навигация */}
+          {/* Навигация для десктопа */}
           <nav className="hidden md:flex space-x-6">
             <Link href="/" className="text-gray-600 hover:text-gray-900">
               {settings.nav_home}
@@ -129,6 +137,66 @@ export default function Header({ settings }: { settings: HeaderSettings }) {
               {settings.nav_contacts}
             </Link>
           </nav>
+
+          {/* Бургер-меню для мобильных устройств */}
+          <div className="md:hidden">
+            <button
+              ref={mobileMenuButtonRef}
+              onClick={() => setShowMobileMenu(!showMobileMenu)}
+              className="text-gray-600 hover:text-gray-900 focus:outline-none"
+              aria-label="Открыть меню"
+            >
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                {showMobileMenu ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
+
+            {/* Мобильное меню */}
+            {showMobileMenu && (
+              <div className="mobile-menu-container absolute top-full left-0 right-0 bg-white shadow-lg z-50 py-4">
+                <nav className="flex flex-col space-y-4 px-4">
+                  <Link
+                    href="/"
+                    className="text-gray-600 hover:text-gray-900 py-2"
+                    onClick={() => setShowMobileMenu(false)}
+                  >
+                    {settings.nav_home}
+                  </Link>
+                  <Link
+                    href="/catalog"
+                    className="text-gray-600 hover:text-gray-900 py-2"
+                    onClick={() => setShowMobileMenu(false)}
+                  >
+                    {settings.nav_catalog}
+                  </Link>
+                  <Link
+                    href="/about"
+                    className="text-gray-600 hover:text-gray-900 py-2"
+                    onClick={() => setShowMobileMenu(false)}
+                  >
+                    {settings.nav_about}
+                  </Link>
+                  <Link
+                    href="/contacts"
+                    className="text-gray-600 hover:text-gray-900 py-2"
+                    onClick={() => setShowMobileMenu(false)}
+                  >
+                    {settings.nav_contacts}
+                  </Link>
+                </nav>
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="flex items-center space-x-4 relative" ref={dropdownRef}>
@@ -163,7 +231,7 @@ export default function Header({ settings }: { settings: HeaderSettings }) {
                         {searchResults.categories.map((category) => (
                           <li key={`cat-${category.id}`}>
                             <Link
-                              href={`/catalog?category_id=${category.id}`}
+                              href={`/catalog/${category.id}`}
                               className="block px-4 py-2 hover:bg-gray-100 text-gray-800 truncate"
                               onClick={() => {
                                 setSearchQuery(category.name);

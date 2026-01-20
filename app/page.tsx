@@ -34,40 +34,23 @@ async function fetchBanners() {
   'use server';
 
   try {
-    // Вместо использования fetch к API маршрутам, напрямую используем Supabase клиент
     const supabase = await import('@/lib/supabase-server').then(mod => mod.createClient());
 
     const { data, error } = await supabase
-      .from('banners')
+      .from('banner_groups')
       .select(`
         *,
-        banner_groups (*)
+        banners(*)
       `)
-      .order('sort_order', { ascending: true });
+      .order('position', { ascending: true }) // сортировка групп
+      .order('sort_order', { foreignTable: 'banners', ascending: true }); // сортировка баннеров внутри групп
 
     if (error) {
       throw error;
     }
 
-    // Группировка баннеров по группам
-    const bannerGroups = data.reduce((groups: any[], banner: any) => {
-      const existingGroup = groups.find(group => group.id === banner.group_id);
-
-      if (existingGroup) {
-        existingGroup.banners.push(banner);
-      } else {
-        groups.push({
-          id: banner.group_id,
-          title: banner.banner_groups?.title || `Группа ${banner.group_id}`,
-          position: banner.banner_groups?.position || 0,
-          banners: [banner]
-        });
-      }
-
-      return groups;
-    }, []);
-
-    return bannerGroups;
+    // Возвращаем данные в том же формате, что и API маршрут
+    return data;
   } catch (error) {
     console.error('Ошибка получения баннеров:', error);
     return []; // Возвращаем пустой массив вместо проброса ошибки
@@ -134,7 +117,12 @@ export default async function HomePage() {
 
       {/* Блоки баннеров */}
       {bannerGroups?.map((group: any) => (
-        <BannerSlider key={group.id} group={group} />
+        <BannerSlider key={group.id} group={{
+          id: group.id,
+          title: group.title,
+          position: group.position,
+          banners: group.banners || []
+        }} />
       ))}
 
       {/* Разделы ГС */}

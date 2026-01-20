@@ -11,12 +11,10 @@ export const useFilterState = (categoryId?: string) => {
       if (saved) {
         const parsed = JSON.parse(saved);
 
-        // Если категория не указана (страница /catalog), используем сохраненную категорию
         // Если категория указана (страница /catalog/:id), используем её
-        if (!categoryId) {
-          return parsed;
-        } else {
-          // Если категория изменилась, сбросим фильтры характеристик
+        // и сбрасываем фильтры характеристик, если категория изменилась
+        if (categoryId) {
+          // Если категория изменилась, сбросим фильтры характеристик, но оставим ценовые фильтры
           if (parsed.category_id !== categoryId) {
             return {
               category_id: categoryId,
@@ -25,6 +23,10 @@ export const useFilterState = (categoryId?: string) => {
               spec_filters: {}
             };
           }
+          // Если категория совпадает, используем сохраненные фильтры
+          return parsed;
+        } else {
+          // Если категория не указана (страница /catalog), используем сохраненную категорию
           return parsed;
         }
       }

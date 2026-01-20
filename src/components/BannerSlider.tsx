@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import OptimizedImage from '@/components/OptimizedImage';
+import ProductModal from '@/components/ProductModal';
+import { ProductDetail } from '@/types';
 import styles from '@/components/banner-slider.module.css';
 
 interface Banner {
@@ -22,6 +24,8 @@ interface BannerGroup {
 
 export default function BannerSlider({ group }: { group: BannerGroup }) {
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [selectedProduct, setSelectedProduct] = useState<ProductDetail | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Автоматическая прокрутка каждые 5 секунд
   useEffect(() => {
@@ -46,6 +50,56 @@ export default function BannerSlider({ group }: { group: BannerGroup }) {
     setCurrentIndex(currentIndex === group.banners.length - 1 ? 0 : currentIndex + 1);
   };
 
+  // Функция для проверки, является ли URL ссылкой на товар
+  const isProductUrl = (url: string): boolean => {
+    // Проверяем, соответствует ли URL паттерну /product/{uuid}, /api/products/{uuid}, или полный URL с product или api/products
+    const productUrlPattern = /(\/product\/|\/api\/products\/)[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    return productUrlPattern.test(url);
+  };
+
+  // Функция для обработки клика по баннеру
+  const handleBannerClick = async (banner: Banner) => {
+    if (isProductUrl(banner.link_url)) {
+      // Это ссылка на товар, открываем модальное окно
+      try {
+        // Извлекаем UUID из URL, находя последнюю часть после последнего '/'
+        const urlParts = banner.link_url.split('/');
+        let productId = '';
+
+        // Ищем UUID среди частей URL (обычно это последняя часть)
+        for (let i = urlParts.length - 1; i >= 0; i--) {
+          const part = urlParts[i];
+          // Проверяем, соответствует ли часть формату UUID
+          if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(part)) {
+            productId = part;
+            break;
+          }
+        }
+
+        if (!productId) {
+          throw new Error('Не удалось извлечь ID продукта из URL');
+        }
+
+        // Загружаем данные продукта
+        const response = await fetch(`/api/products/${productId}`);
+        if (!response.ok) {
+          throw new Error(`Ошибка загрузки деталей товара: ${response.status} ${response.statusText}`);
+        }
+
+        const productDetail: ProductDetail = await response.json();
+        setSelectedProduct(productDetail);
+        setIsModalOpen(true);
+      } catch (error) {
+        console.error('Ошибка загрузки деталей товара:', error);
+        // Если не удалось загрузить данные, переходим по обычной ссылке
+        window.location.href = banner.link_url;
+      }
+    } else {
+      // Это обычная ссылка, переходим по ней
+      window.location.href = banner.link_url;
+    }
+  };
+
   if (group.banners.length === 0) {
     return null;
   }
@@ -59,10 +113,11 @@ export default function BannerSlider({ group }: { group: BannerGroup }) {
           <div className={`${styles.bannerSliderGroup} ${styles.bannerSliderMaxHeight}`}>
             {group.banners.map((banner, index) => (
               banner.link_url ? (
-                <Link
-                  href={{ pathname: banner.link_url }}
+                <div
                   key={banner.id}
                   className={`${styles.bannerSliderSlide} ${index === currentIndex ? styles.bannerSliderSlideActive : ''}`}
+                  onClick={() => handleBannerClick(banner)}
+                  style={{ cursor: 'pointer' }}
                 >
                   <div className={styles.bannerSliderImageWrapper}>
                     <OptimizedImage
@@ -81,7 +136,7 @@ export default function BannerSlider({ group }: { group: BannerGroup }) {
                       loading="lazy"
                     />
                   </div>
-                </Link>
+                </div>
               ) : (
                 <div
                   key={banner.id}
@@ -142,6 +197,15 @@ export default function BannerSlider({ group }: { group: BannerGroup }) {
           </div>
         </div>
       </div>
+
+      {/* Модальное окно для просмотра товара из баннера */}
+      {selectedProduct && (
+        <ProductModal
+          product={selectedProduct}
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+        />
+      )}
     </section>
   );
 }

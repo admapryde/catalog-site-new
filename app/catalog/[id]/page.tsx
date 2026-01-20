@@ -7,7 +7,12 @@ function isValidUUID(uuid: string): boolean {
   return uuidRegex.test(uuid);
 }
 
-export default async function CategoryPage({ params }: { params: { id: string } }) {
+interface CategoryPageProps {
+  params: { id: string };
+  searchParams: { [key: string]: string | string[] | undefined };
+}
+
+export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
   // Используем React.use() для разрешения промиса params
   const categoryId = (await params).id;
 
@@ -68,11 +73,14 @@ export default async function CategoryPage({ params }: { params: { id: string } 
 
   const category = data[0];
 
+  // Проверяем наличие параметра поиска
+  const search = typeof searchParams.search === 'string' ? searchParams.search : undefined;
+
   return (
-    <div className="py-8 bg-white">
+    <div className="py-8 bg-white pt-24 md:pt-8"> {/* Добавлен отступ сверху для компенсации фиксированной кнопки "Фильтры" на мобильных устройствах */}
       <div className="container mx-auto px-4">
         <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">Категория: {category.name}</h1>
-        <ProductsGrid categoryId={categoryId} />
+        <ProductsGrid categoryId={categoryId} search={search} />
       </div>
     </div>
   );

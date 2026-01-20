@@ -93,7 +93,7 @@ export default async function AllCategoriesPage() {
   const sortedCategoriesWithProducts = categoriesWithProducts.sort((a, b) => a.sort_order - b.sort_order);
 
   return (
-    <div className="py-8">
+    <div className="py-8 pt-24 md:pt-8"> {/* Добавлен отступ сверху для компенсации фиксированной кнопки "Фильтры" на мобильных устройствах */}
       <div className="container mx-auto px-4">
         <h1 className="text-3xl font-bold text-gray-800 mb-8 text-center">Все категории</h1>
         

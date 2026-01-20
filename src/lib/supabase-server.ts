@@ -36,19 +36,10 @@ export async function createClient() {
           return supabaseCookies;
         },
         setAll: async (cookiesToSet) => {
-          // Для установки куки используем асинхронный подход
-          try {
-            const cookieStore = await cookies();
-            for (const { name, value, options } of cookiesToSet) {
-              // В Next.js App Router метод set принимает name, value и опциональные параметры
-              cookieStore.set(name, value, {
-                ...options,
-                path: options?.path || '/',
-              });
-            }
-          } catch (error) {
-            console.error('Ошибка при установке куки:', error);
-          }
+          // В Next.js App Router куки можно устанавливать только в Server Actions или Route Handlers
+          // В серверных компонентах можно только читать куки
+          // Поэтому просто выводим предупреждение об этом
+          console.warn('Попытка установки куки в серверном компоненте. Используйте Server Action или Route Handler.');
         },
       },
     }
