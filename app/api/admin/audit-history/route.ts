@@ -1,42 +1,27 @@
 import { NextRequest } from 'next/server';
 import { auditService } from '@/utils/audit-service';
-import { cookies } from 'next/headers';
+import { createAPIClient } from '@/lib/supabase-server';
 
 export async function GET(request: NextRequest) {
   try {
-    // Проверяем сессию администратора через куки
-    const cookiesList = await cookies();
-    const adminSessionCookie = cookiesList.get('admin_session');
+    // Проверяем сессию администратора через Supabase Auth
+    const supabase = await createAPIClient(request);
 
-    if (!adminSessionCookie) {
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (error || !user) {
       // Нет сессии, возвращаем ошибку
       return Response.json({ error: 'Требуется авторизация' }, { status: 401 });
     }
 
-    let adminInfo = null;
-    try {
-      const sessionData = JSON.parse(decodeURIComponent(adminSessionCookie.value));
-
-      if (!sessionData.userId || !sessionData.username) {
-        // Некорректная сессия
-        return Response.json({ error: 'Некорректная сессия администратора' }, { status: 401 });
-      }
-
-      // Проверяем время жизни сессии (24 часа)
-      const sessionAge = Date.now() - sessionData.timestamp;
-      if (sessionAge > 24 * 60 * 60 * 1000) { // 24 часа в миллисекундах
-        // Сессия истекла
-        return Response.json({ error: 'Сессия администратора истекла' }, { status: 401 });
-      }
-
-      adminInfo = {
-        username: sessionData.username,
-        role: sessionData.role
-      };
-    } catch (e) {
-      console.error('Ошибка разбора сессии администратора:', e);
-      // Ошибка разбора сессии
-      return Response.json({ error: 'Ошибка разбора сессии администратора' }, { status: 401 });
+    // Проверяем, что пользователь является администратором
+    const userRole = user.user_metadata?.role || 'user';
+    if (userRole !== 'admin' && userRole !== 'super_admin') {
+      // Пользователь не является администратором, возвращаем ошибку
+      return Response.json({ error: 'Недостаточно прав для просмотра истории действий' }, { status: 403 });
     }
 
     // Получаем параметры запроса

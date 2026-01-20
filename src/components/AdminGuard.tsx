@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { createSupabaseBrowserClient } from '@/lib/supabase-browser-client';
 
 interface AdminGuardProps {
   children: React.ReactNode;
@@ -9,41 +10,50 @@ interface AdminGuardProps {
 
 export default function AdminGuard({ children }: AdminGuardProps) {
   const router = useRouter();
+  const [checked, setChecked] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Проверяем сессию администратора
-    const checkAdminSession = () => {
+    // Проверяем сессию администратора через Supabase Auth
+    const checkAdminSession = async () => {
       try {
-        const adminSessionCookie = document.cookie
-          .split('; ')
-          .find(row => row.startsWith('admin_session='));
-        
-        if (!adminSessionCookie) {
+        const supabase = createSupabaseBrowserClient();
+
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        console.log('AdminGuard: getSession result', { session, error });
+
+        if (error || !session) {
+          console.log('AdminGuard: No session or error, redirecting to login');
           // Нет сессии, перенаправляем на логин
           router.push('/login');
           return;
         }
 
-        const sessionData = JSON.parse(decodeURIComponent(adminSessionCookie.split('=')[1]));
-        
-        if (!sessionData.userId || !sessionData.username) {
-          // Некорректная сессия, перенаправляем на логин
+        // Проверяем, что пользователь является администратором
+        const userRole = session.user.user_metadata?.role || 'user';
+        console.log('AdminGuard: User role from metadata:', userRole);
+
+        if (userRole !== 'admin' && userRole !== 'super_admin') {
+          console.log('AdminGuard: User is not an admin, redirecting to login');
+          // Пользователь не является администратором, перенаправляем на логин
           router.push('/login');
           return;
         }
 
-        // Проверяем время жизни сессии (24 часа)
-        const sessionAge = Date.now() - sessionData.timestamp;
-        if (sessionAge > 24 * 60 * 60 * 1000) { // 24 часа в миллисекундах
-          // Сессия истекла, перенаправляем на логин
-          router.push('/login');
-          return;
-        }
+        // Пропускаем проверку времени жизни сессии в браузерном клиенте
+        // Время жизни сессии проверяется на сервере
+
+        console.log('AdminGuard: Session is valid, allowing access');
+        // Сессия валидна, проверка пройдена
+        setChecked(true);
       } catch (e) {
         console.error('Ошибка проверки сессии администратора:', e);
-        // Ошибка разбора сессии, перенаправляем на логин
+        // Ошибка проверки сессии, перенаправляем на логин
         router.push('/login');
         return;
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -51,6 +61,10 @@ export default function AdminGuard({ children }: AdminGuardProps) {
   }, [router]);
 
   // Показываем контент только после проверки сессии
-  // В реальном приложении здесь может быть загрузочный индикатор
+  // Пока проверка не завершена, можно показать загрузочный индикатор
+  if (loading || !checked) {
+    return <div>Проверка сессии...</div>; // Можно заменить на спиннер
+  }
+
   return <>{children}</>;
 }

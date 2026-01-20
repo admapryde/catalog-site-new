@@ -1,16 +1,52 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { useSearchParams } from 'next/navigation';
-import { loginAction } from '@/actions/login-action';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [error, setError] = useState(searchParams?.get('error') || '');
+  const [isLoading, setIsLoading] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
 
-  // Обработчик формы не нужен, так как действие выполняется напрямую
-  // через action в теге form
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    setIsLoading(true);
+    setError('');
+
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || 'Ошибка при входе');
+        setIsLoading(false);
+        return;
+      }
+
+      console.log('Успешная аутентификация:', data);
+
+      // При успешной аутентификации перенаправляем на админ панель
+      window.location.href = '/admin';
+    } catch (err) {
+      console.error('Ошибка при входе:', err);
+      setError('Произошла ошибка при попытке входа');
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -22,7 +58,7 @@ export default function LoginPage() {
         </div>
         <form className="mt-8 space-y-6"
               ref={formRef}
-              action={loginAction}>
+              onSubmit={handleSubmit}>
           {error && (
             <div className="rounded-md bg-red-50 p-4">
               <div className="text-sm text-red-700">{decodeURIComponent(error)}</div>
@@ -30,17 +66,20 @@ export default function LoginPage() {
           )}
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
-              <label htmlFor="username" className="sr-only">
-                Имя пользователя
+              <label htmlFor="email" className="sr-only">
+                Email
               </label>
               <input
-                id="username"
-                name="username"
-                type="text"
-                autoComplete="username"
+                id="email"
+                name="email"
+                type="email"
+                autoComplete="email"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Имя пользователя"
+                disabled={isLoading}
+                className={`appearance-none rounded-none relative block w-full px-3 py-2 border ${
+                  isLoading ? 'bg-gray-100' : 'border-gray-300'
+                } placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm`}
+                placeholder="Email"
               />
             </div>
             <div>
@@ -53,7 +92,10 @@ export default function LoginPage() {
                 type="password"
                 autoComplete="current-password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                disabled={isLoading}
+                className={`appearance-none rounded-none relative block w-full px-3 py-2 border ${
+                  isLoading ? 'bg-gray-100' : 'border-gray-300'
+                } placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm`}
                 placeholder="Пароль"
               />
             </div>
@@ -62,9 +104,12 @@ export default function LoginPage() {
           <div>
             <button
               type="submit"
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              disabled={isLoading}
+              className={`group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white ${
+                isLoading ? 'bg-blue-400' : 'bg-blue-600 hover:bg-blue-700'
+              } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
             >
-              Войти
+              {isLoading ? 'Вход...' : 'Войти'}
             </button>
           </div>
         </form>

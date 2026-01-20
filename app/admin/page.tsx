@@ -58,40 +58,21 @@ async function getStats(): Promise<Stats> {
 }
 
 export default async function AdminPage() {
-  // Проверяем сессию администратора на сервере
-  const cookiesList = await cookies();
-  const adminSessionCookie = cookiesList.get('admin_session');
+  // Получаем информацию о пользователе через Supabase Auth
+  const supabase = await createClient();
 
-  if (!adminSessionCookie) {
-    // Нет сессии, перенаправляем на логин
-    redirect('/login');
-  }
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
 
-  let adminInfo = null;
-  try {
-    const sessionData = JSON.parse(decodeURIComponent(adminSessionCookie.value));
+  // Оборачиваем контент в AdminGuard для проверки сессии на клиентской стороне
+  // Middleware уже обеспечивает базовую защиту маршрутов
 
-    if (!sessionData.userId || !sessionData.username) {
-      // Некорректная сессия, перенаправляем на логин
-      redirect('/login');
-    }
-
-    // Проверяем время жизни сессии (24 часа)
-    const sessionAge = Date.now() - sessionData.timestamp;
-    if (sessionAge > 24 * 60 * 60 * 1000) { // 24 часа в миллисекундах
-      // Сессия истекла, перенаправляем на логин
-      redirect('/login');
-    }
-
-    adminInfo = {
-      username: sessionData.username,
-      role: sessionData.role
-    };
-  } catch (e) {
-    console.error('Ошибка разбора сессии администратора:', e);
-    // Ошибка разбора сессии, перенаправляем на логин
-    redirect('/login');
-  }
+  const adminInfo = {
+    username: user?.email || user?.id || 'Unknown',
+    role: user?.user_metadata?.role || 'user'
+  };
 
   // Получаем статистику
   const stats = await getStats();
@@ -105,7 +86,7 @@ export default async function AdminPage() {
           <aside className="w-64 bg-white shadow-md min-h-screen">
             <div className="p-6">
               <h2 className="text-xl font-bold text-gray-800">Админ-панель</h2>
-              {adminInfo && (
+              {user && (
                 <div className="mt-4 text-sm text-gray-600">
                   <p>Пользователь: {adminInfo.username}</p>
                   <p>Роль: {adminInfo.role}</p>

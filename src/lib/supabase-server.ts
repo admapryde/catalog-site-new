@@ -26,29 +26,17 @@ export async function createClient() {
           // Используем cookies() напрямую для получения куки в RSC
           const cookieStore = await cookies();
 
-          // Получаем все куки по отдельности
-          const supabaseCookieNames = [
-            'sb-access-token',
-            'sb-refresh-token',
-            'sb-provider-token',
-            'sb-invite-token',
-            'sb-email-confirmation-token',
-            'sb-phone-confirmation-token'
-          ];
+          // Получаем все куки, фильтруя только те, что принадлежат Supabase
+          const allCookieEntries = cookieStore.getAll();
+          const supabaseCookies = allCookieEntries.filter(cookie =>
+            cookie.name.startsWith('sb-')
+          );
 
-          const allCookies = [];
-          for (const name of supabaseCookieNames) {
-            const cookie = cookieStore.get(name);
-            if (cookie) {
-              allCookies.push({
-                name: cookie.name,
-                value: cookie.value,
-                options: {}
-              });
-            }
-          }
-
-          return allCookies;
+          return supabaseCookies.map(cookie => ({
+            name: cookie.name,
+            value: cookie.value,
+            options: {}
+          }));
         },
         setAll: async (cookiesToSet) => {
           // Для установки куки используем асинхронный подход
@@ -89,21 +77,15 @@ export async function createAPIClient(request: NextRequest) {
           // В API маршрутах используем request.cookies вместо cookies() из next/headers
           const allCookies = [];
 
-          // Получаем все куки по отдельности
-          const supabaseCookieNames = [
-            'sb-access-token',
-            'sb-refresh-token',
-            'sb-provider-token',
-            'sb-invite-token',
-            'sb-email-confirmation-token',
-            'sb-phone-confirmation-token'
-          ];
-
-          for (const name of supabaseCookieNames) {
-            // Получаем куки из объекта request
-            const cookie = request.cookies.get(name);
-            if (cookie) {
-              allCookies.push({ name, value: cookie.value, options: {} });
+          // Получаем все куки из запроса, фильтруя только те, что принадлежат Supabase
+          const cookieHeader = request.headers.get('Cookie');
+          if (cookieHeader) {
+            const cookiesArray = cookieHeader.split('; ');
+            for (const cookieString of cookiesArray) {
+              const [name, value] = cookieString.split('=');
+              if (name && value && name.startsWith('sb-')) {
+                allCookies.push({ name, value, options: {} });
+              }
             }
           }
 

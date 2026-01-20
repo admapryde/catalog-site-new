@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
 import { createAPIClient } from '@/lib/supabase-server';
+import { getAdminSession } from '@/services/admin-auth-service';
 import { auditService } from '@/utils/audit-service';
 
 export async function GET(request: NextRequest) {
@@ -46,6 +47,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    // Проверяем, что пользователь аутентифицирован как администратор
+    const adminUser = await getAdminSession();
+    if (!adminUser) {
+      return Response.json({ error: 'Требуется аутентификация администратора' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { category_id, name, price, description, images, specs } = body;
 
@@ -228,6 +235,12 @@ export async function POST(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
+    // Проверяем, что пользователь аутентифицирован как администратор
+    const adminUser = await getAdminSession();
+    if (!adminUser) {
+      return Response.json({ error: 'Требуется аутентификация администратора' }, { status: 401 });
+    }
+
     const body = await request.json();
     const { id, category_id, name, price, description, images, specs } = body;
 
@@ -476,6 +489,12 @@ export async function PUT(request: NextRequest) {
 
 export async function DELETE(request: NextRequest) {
   try {
+    // Проверяем, что пользователь аутентифицирован как администратор
+    const adminUser = await getAdminSession();
+    if (!adminUser) {
+      return Response.json({ error: 'Требуется аутентификация администратора' }, { status: 401 });
+    }
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 

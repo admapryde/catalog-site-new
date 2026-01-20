@@ -13,19 +13,19 @@ export const {
   providers: [
     Credentials({
       credentials: {
-        username: { label: "Username", type: "text" },
+        email: { label: "Email", type: "text" },
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
         const user = await authenticateAdmin(
-          credentials?.username as string,
+          credentials?.email as string,
           credentials?.password as string
         )
 
         if (user) {
           return {
             id: user.id,
-            name: user.username,
+            name: user.email, // используем email как имя, так как username отсутствует
             email: user.email || "",
             role: user.role
           }

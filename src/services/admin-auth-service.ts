@@ -4,45 +4,45 @@ import { redirect } from 'next/navigation';
 
 export interface AdminUser {
   id: string;
-  username: string;
-  email?: string;
+  email: string;
   role: string;
 }
 
 /**
- * Проверяет, авторизован ли администратор
+ * Проверяет, авторизован ли администратор через Supabase Auth
  * @returns Объект пользователя если авторизован, null если нет
  */
 export async function getAdminSession(): Promise<AdminUser | null> {
-  const cookieStore = await cookies();
-  const adminSessionCookie = cookieStore.get('admin_session');
+  const supabase = await createClient();
 
-  if (!adminSessionCookie) {
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession();
+
+  if (error) {
+    console.error('Ошибка при получении сессии:', error);
     return null;
   }
 
-  try {
-    const sessionData = JSON.parse(decodeURIComponent(adminSessionCookie.value));
-    
-    if (!sessionData.userId || !sessionData.username) {
-      return null;
-    }
-
-    // Проверяем время жизни сессии (24 часа)
-    const sessionAge = Date.now() - sessionData.timestamp;
-    if (sessionAge > 24 * 60 * 60 * 1000) { // 24 часа в миллисекундах
-      return null;
-    }
-
-    return {
-      id: sessionData.userId,
-      username: sessionData.username,
-      role: sessionData.role
-    };
-  } catch (e) {
-    console.error('Ошибка разбора сессии администратора:', e);
+  if (!session) {
     return null;
   }
+
+  // Проверяем, что пользователь является администратором
+  const userRole = session.user.user_metadata?.role || 'user';
+  if (userRole !== 'admin' && userRole !== 'super_admin') {
+    return null;
+  }
+
+  // Пропускаем проверку времени жизни сессии в серверном компоненте
+  // Время жизни сессии проверяется в middleware/proxy
+
+  return {
+    id: session.user.id,
+    email: session.user.email || '',
+    role: userRole
+  };
 }
 
 /**
@@ -51,11 +51,11 @@ export async function getAdminSession(): Promise<AdminUser | null> {
  */
 export async function requireAdminSession(): Promise<AdminUser> {
   const user = await getAdminSession();
-  
+
   if (!user) {
     redirect('/login');
   }
-  
+
   return user;
 }
 
@@ -65,76 +65,65 @@ export async function requireAdminSession(): Promise<AdminUser> {
  * @returns ID сессии
  */
 export async function createAdminSession(userData: AdminUser): Promise<void> {
-  const cookieStore = await cookies();
-  
-  cookieStore.set('admin_session', JSON.stringify({
-    userId: userData.id,
-    username: userData.username,
-    role: userData.role,
-    timestamp: Date.now()
-  }), {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 24 * 60 * 60, // 24 часа
-    path: '/',
-    sameSite: 'strict',
-  });
+  // Сессия создается автоматически через Supabase Auth,
+  // нам не нужно ничего дополнительно сохранять в куки
 }
 
 /**
  * Уничтожает сессию администратора
  */
 export async function destroyAdminSession(): Promise<void> {
+  const supabase = await createClient();
+
+  const { error } = await supabase.auth.signOut();
+
+  if (error) {
+    console.error('Ошибка при выходе из системы:', error);
+  }
+
+  // Удаляем куки сессии администратора
   const cookieStore = await cookies();
   cookieStore.delete('admin_session');
 }
 
 /**
- * Аутентифицирует администратора по логину и паролю
- * @param username Логин
+ * Аутентифицирует администратора через Supabase Auth
+ * @param email Email
  * @param password Пароль
  * @returns Объект пользователя если аутентификация успешна, null если нет
  */
-export async function authenticateAdmin(username: string, password: string): Promise<AdminUser | null> {
-  console.log('Попытка аутентификации пользователя:', username);
+export async function authenticateAdmin(email: string, password: string): Promise<AdminUser | null> {
+  console.log('Попытка аутентификации пользователя:', email);
 
   const supabase = await createClient();
 
-  // Получаем пользователя из базы данных
-  const { data: user, error } = await supabase
-    .from('admin_users')
-    .select('id, username, email, password_hash, role')
-    .eq('username', username)
-    .single();
-
-  console.log('Результат запроса к admin_users:', { user, error });
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
   if (error) {
-    console.error('Ошибка при запросе к admin_users:', error);
+    console.error('Ошибка при аутентификации через Supabase:', error);
     return null;
   }
 
-  if (!user) {
+  if (!data.user) {
     console.log('Пользователь не найден');
     return null;
   }
 
-  // Импортируем bcrypt для проверки пароля
-  const bcrypt = await import('bcryptjs');
-  const isValidPassword = await bcrypt.default.compare(password, user.password_hash);
-
-  console.log('Результат проверки пароля:', isValidPassword);
-
-  if (!isValidPassword) {
+  // Проверяем, что пользователь является администратором
+  const userRole = data.user.user_metadata?.role || 'user';
+  if (userRole !== 'admin' && userRole !== 'super_admin') {
+    console.log('Пользователь не является администратором');
     return null;
   }
 
   console.log('Аутентификация успешна');
 
   return {
-    id: user.id,
-    username: user.username,
-    email: user.email,
-    role: user.role
+    id: data.user.id,
+    email: data.user.email || '',
+    role: userRole
   };
 }

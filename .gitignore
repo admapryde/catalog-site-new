@@ -39,3 +39,38 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Temporary and log files
+next_logs.txt
+
+# Cookie files
+cookies*.txt
+
+# Test files and directories
+__tests__/
+
+# Specific test files
+test-*.js
+test-*.ts
+test-*.tsx
+test-*.jsx
+
+# Debug and check scripts
+debug-*.js
+debug-*.ts
+check-*.js
+check-*.ts
+
+# SQL migration files (if not needed for runtime)
+*.sql
+
+# Version files
+catalog-site@
+
+# Development artifacts
+*.log
+*.tmp
+*.temp
+
+# Documentation files not needed for runtime
+Правки.txt
