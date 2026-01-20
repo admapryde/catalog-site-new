@@ -26,24 +26,25 @@ export async function createClient() {
           // Используем cookies() напрямую для получения куки в RSC
           const cookieStore = await cookies();
 
-          // Получаем все куки, фильтруя только те, что принадлежат Supabase
-          const allCookieEntries = cookieStore.getAll();
-          const supabaseCookies = allCookieEntries.filter(cookie =>
+          // В Next.js App Router объект cookies имеет метод getAll(),
+          // но он возвращает объекты с полями name и value
+          const allCookies = cookieStore.getAll();
+          const supabaseCookies = allCookies.filter(cookie =>
             cookie.name.startsWith('sb-')
           );
 
-          return supabaseCookies.map(cookie => ({
-            name: cookie.name,
-            value: cookie.value,
-            options: {}
-          }));
+          return supabaseCookies;
         },
         setAll: async (cookiesToSet) => {
           // Для установки куки используем асинхронный подход
           try {
             const cookieStore = await cookies();
             for (const { name, value, options } of cookiesToSet) {
-              await cookieStore.set(name, value, options);
+              // В Next.js App Router метод set принимает name, value и опциональные параметры
+              cookieStore.set(name, value, {
+                ...options,
+                path: options?.path || '/',
+              });
             }
           } catch (error) {
             console.error('Ошибка при установке куки:', error);
@@ -73,7 +74,7 @@ export async function createAPIClient(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        getAll: () => {
+        getAll() {
           // В API маршрутах используем request.cookies вместо cookies() из next/headers
           const allCookies = [];
 
@@ -91,7 +92,7 @@ export async function createAPIClient(request: NextRequest) {
 
           return allCookies;
         },
-        setAll: (cookiesToSet) => {
+        setAll(cookiesToSet) {
           // В API маршрутах мы не можем напрямую устанавливать куки через request
           // Куки будут установлены в ответе
           console.log('Установка куки в API маршруте:', cookiesToSet);
