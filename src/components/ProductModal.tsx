@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { ProductDetail } from '@/types';
 import OptimizedImage from '@/components/OptimizedImage';
 
@@ -12,12 +13,26 @@ interface ProductModalProps {
 
 export default function ProductModal({ product, isOpen, onClose }: ProductModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [enlargedImageOpen, setEnlargedImageOpen] = useState(false);
+
+  // Reset enlarged image state and current image index when modal opens
+  useEffect(() => {
+    if (isOpen) {
+      setEnlargedImageOpen(false);
+      // Reset to main image (index 0) when modal opens
+      setCurrentImageIndex(0);
+    }
+  }, [isOpen]);
 
   // Close modal when clicking outside of it
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (modalRef.current && !modalRef.current.contains(event.target as Node)) {
+      // Only close the modal if the enlarged image is not open
+      if (!enlargedImageOpen && modalRef.current && !modalRef.current.contains(event.target as Node)) {
         onClose();
+        // Also reset enlarged image state when closing modal
+        setEnlargedImageOpen(false);
       }
     };
 
@@ -31,13 +46,20 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
       document.removeEventListener('mousedown', handleClickOutside);
       document.body.classList.remove('modal-open');
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, enlargedImageOpen]);
 
   // Handle Escape key press
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        onClose();
+        // If enlarged image is open, close only the enlarged image
+        if (enlargedImageOpen) {
+          setEnlargedImageOpen(false);
+        } else {
+          onClose();
+          // Also reset enlarged image state when closing modal
+          setEnlargedImageOpen(false);
+        }
       }
     };
 
@@ -48,118 +70,288 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
     return () => {
       document.removeEventListener('keydown', handleEsc);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, enlargedImageOpen]);
 
   if (!isOpen || !product) return null;
 
-  const mainImage = product.images && Array.isArray(product.images)
-    ? (product.images.find((img) => img.is_main) || product.images[0])
-    : null;
-
-  const thumbnailImages = product.images && Array.isArray(product.images)
-    ? product.images.filter((img) => !img.is_main)
+  // Объединяем все изображения, сначала главное изображение
+  const allImages = product.images && Array.isArray(product.images)
+    ? [...product.images.filter(img => img.is_main), ...product.images.filter(img => !img.is_main)]
     : [];
 
+  // Если нет главного изображения, берем первое изображение как главное
+  if (allImages.length > 0 && !allImages.some(img => img.is_main)) {
+    allImages.unshift(allImages[0]);
+  }
+
+  const currentImage = allImages[currentImageIndex] || null;
+
+  // Все изображения, кроме текущего, используются как миниатюры
+  const thumbnailImages = allImages.filter((_, index) => index !== currentImageIndex);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Overlay - создает эффект затемнения фона */}
       <div
         className="fixed inset-0"
         style={{ backgroundColor: 'rgba(0, 0, 0, 0.25)' }}
-        onClick={onClose}
+        onClick={() => {
+          if (!enlargedImageOpen) {
+            onClose();
+          }
+        }}
       ></div>
 
       {/* Модальное окно */}
       <div
         ref={modalRef}
-        className="relative z-50 w-full max-w-6xl bg-white rounded-lg shadow-2xl flex flex-col max-h-screen mt-16"
+        className="relative z-50 w-full max-w-6xl bg-white rounded-lg shadow-2xl flex flex-col max-h-[calc(100vh-2rem)]"
       >
-        {/* Close button - similar to banner arrows */}
-        <button
-          onClick={onClose}
-          className="absolute top-4 left-4 z-20 flex items-center justify-center w-10 h-10 rounded-full bg-white border border-gray-300 hover:bg-gray-100 transition-all shadow-md"
-          aria-label="Закрыть"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-6 w-6 text-gray-600"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
+        <div className="overflow-hidden rounded-lg flex-grow">
+          <div className="overflow-y-auto p-8 max-h-[calc(100vh-8rem)] relative">
+            {/* Close button - similar to banner arrows */}
+            <button
+              onClick={() => {
+                // If enlarged image is open, close only the enlarged image
+                if (enlargedImageOpen) {
+                  setEnlargedImageOpen(false);
+                } else {
+                  onClose();
+                  setEnlargedImageOpen(false);
+                }
+              }}
+              className="absolute top-2 right-2 z-20 flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white border border-gray-300 hover:bg-gray-100 transition-all shadow-md"
+              aria-label="Закрыть"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-4 w-4 sm:h-6 sm:w-6 text-gray-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
 
-        <div className="overflow-y-auto flex-grow p-8">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-            {/* Left column (media) */}
-            <div>
-              <div className="mb-4">
-                <OptimizedImage
-                  src={mainImage ? mainImage.image_url : '/placeholder-product.jpg'}
-                  alt={product.name}
-                  width={600}
-                  height={600}
-                  className="w-full h-auto rounded-lg object-cover"
-                />
-              </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-10 pr-10">
+              {/* Left column (media) */}
+              <div className="relative">
+                <div className="mb-4 relative">
+                  <OptimizedImage
+                    src={currentImage ? currentImage.image_url : '/placeholder-product.jpg'}
+                    alt={product.name}
+                    width={600}
+                    height={600}
+                    className="w-full h-auto rounded-lg object-cover"
+                  />
 
-              {thumbnailImages.length > 0 && (
-                <div className="flex space-x-4 overflow-x-auto pb-2">
-                  {thumbnailImages.map((image) => (
-                    <div key={image.id} className="flex-shrink-0">
-                      <OptimizedImage
-                        src={image.image_url}
-                        alt={`Thumbnail ${image.id}`}
-                        width={80}
-                        height={80}
-                        className="w-20 h-20 object-cover rounded cursor-pointer border-2 border-transparent hover:border-blue-500"
-                      />
-                    </div>
-                  ))}
+                  {/* Кнопка "расширить" в правом нижнем углу */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); setEnlargedImageOpen(true); }}
+                    className="absolute bottom-2 right-2 z-20 flex items-center justify-center w-8 h-8 rounded-full bg-white/70 hover:bg-white/90 transition-all shadow-md"
+                    aria-label="Расширить изображение"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-4 w-4 text-gray-800"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 0h-4m4 0l-5-5" />
+                    </svg>
+                  </button>
+
+                  {/* Стрелка "назад" */}
+                  {allImages.length > 1 && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setCurrentImageIndex((prevIndex) =>
+                        prevIndex === 0 ? allImages.length - 1 : prevIndex - 1
+                      );}}
+                      className="absolute left-2 top-1/2 transform -translate-y-1/2 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-white/70 hover:bg-white/90 transition-all shadow-md"
+                      aria-label="Предыдущее изображение"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-6 w-6 text-gray-800"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+                  )}
+
+                  {/* Стрелка "вперед" */}
+                  {allImages.length > 1 && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setCurrentImageIndex((prevIndex) =>
+                        prevIndex === allImages.length - 1 ? 0 : prevIndex + 1
+                      );}}
+                      className="absolute right-2 top-1/2 transform -translate-y-1/2 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-white/70 hover:bg-white/90 transition-all shadow-md"
+                      aria-label="Следующее изображение"
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-6 w-6 text-gray-800"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  )}
                 </div>
-              )}
-            </div>
 
-            {/* Right column (information) */}
-            <div>
-              <h1 className="text-3xl font-bold text-gray-800 mb-4">{product.name}</h1>
-
-              <div className="mb-6">
-                <p className="text-3xl font-bold text-gray-900">{product.price.toLocaleString('ru-RU')} ₽</p>
+                {allImages.length > 1 && (
+                  <div className="flex space-x-4 overflow-x-auto pb-2">
+                    {allImages.map((image, index) => (
+                      <div
+                        key={image.id}
+                        className="flex-shrink-0 cursor-pointer"
+                        onClick={(e) => { e.stopPropagation(); setCurrentImageIndex(index); }}
+                      >
+                        <OptimizedImage
+                          src={image.image_url}
+                          alt={`Thumbnail ${image.id}`}
+                          width={80}
+                          height={80}
+                          className={`w-20 h-20 object-cover rounded ${
+                            index === currentImageIndex ? 'border-2 border-blue-500' : 'border-2 border-transparent hover:border-blue-500'
+                          }`}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
-              {product.description && (
+              {/* Right column (information) */}
+              <div>
+                <h1 className="text-3xl font-bold text-gray-800 mb-4">{product.name}</h1>
+
+                <div className="mb-6">
+                  <p className="text-3xl font-bold text-gray-900">{product.price.toLocaleString('ru-RU')} ₽</p>
+                </div>
+
+                {product.description && (
+                  <div className="mb-8">
+                    <h2 className="text-xl font-semibold text-gray-800 mb-4">Описание</h2>
+                    <div className="prose max-w-none text-gray-700">
+                      {product.description}
+                    </div>
+                  </div>
+                )}
+
                 <div className="mb-8">
-                  <h2 className="text-xl font-semibold text-gray-800 mb-4">Описание</h2>
-                  <div className="prose max-w-none text-gray-700">
-                    {product.description}
+                  <h2 className="text-xl font-semibold text-gray-800 mb-4">Характеристики</h2>
+                  <div className="grid grid-cols-1 gap-3">
+                    {product.specs.map((spec) => (
+                      <div key={spec.id} className="flex border-b border-gray-100 py-2">
+                        <span className="text-gray-600">{spec.property_name}:</span>
+                        <span className="font-medium text-gray-800 ml-2">{spec.value}</span>
+                      </div>
+                    ))}
                   </div>
                 </div>
-              )}
 
-              <div className="mb-8">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">Характеристики</h2>
-                <div className="grid grid-cols-1 gap-3">
-                  {product.specs.map((spec) => (
-                    <div key={spec.id} className="flex border-b border-gray-100 py-2">
-                      <span className="text-gray-600">{spec.property_name}:</span>
-                      <span className="font-medium text-gray-800 ml-2">{spec.value}</span>
-                    </div>
-                  ))}
+                <div className="flex space-x-4">
+                  <button className="border border-gray-300 hover:border-gray-400 text-gray-700 font-medium py-3 px-6 rounded-lg transition">
+                    В избранное
+                  </button>
                 </div>
-              </div>
-
-              <div className="flex space-x-4">
-                <button className="border border-gray-300 hover:border-gray-400 text-gray-700 font-medium py-3 px-6 rounded-lg transition">
-                  В избранное
-                </button>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Рендерим увеличенное изображение через портал, чтобы избежать проблем с всплытием событий */}
+      {typeof document !== 'undefined' && enlargedImageOpen && currentImage &&
+        createPortal(
+          <div
+            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90"
+            onClick={() => setEnlargedImageOpen(false)}
+          >
+            <div
+              className="relative max-w-6xl max-h-[90vh]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* Кнопка закрытия увеличенного изображения */}
+              <button
+                onClick={(e) => { e.stopPropagation(); setEnlargedImageOpen(false); }}
+                className="absolute top-2 right-2 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-white/70 hover:bg-white/90 transition-all shadow-md"
+                aria-label="Закрыть"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6 text-gray-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+
+              {/* Увеличенное изображение */}
+              <OptimizedImage
+                src={currentImage.image_url}
+                alt={product.name}
+                width={1200}
+                height={1200}
+                className="max-w-full max-h-[85vh] object-contain rounded-lg"
+              />
+
+              {/* Стрелка "назад" для увеличенного изображения */}
+              {allImages.length > 1 && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setCurrentImageIndex((prevIndex) =>
+                    prevIndex === 0 ? allImages.length - 1 : prevIndex - 1
+                  );}}
+                  className="absolute left-2 top-1/2 transform -translate-y-1/2 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-white/70 hover:bg-white/90 transition-all shadow-md"
+                  aria-label="Предыдущее изображение"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6 text-gray-800"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+              )}
+
+              {/* Стрелка "вперед" для увеличенного изображения */}
+              {allImages.length > 1 && (
+                <button
+                  onClick={(e) => { e.stopPropagation(); setCurrentImageIndex((prevIndex) =>
+                    prevIndex === allImages.length - 1 ? 0 : prevIndex + 1
+                  );}}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-white/70 hover:bg-white/90 transition-all shadow-md"
+                  aria-label="Следующее изображение"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-6 w-6 text-gray-800"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          </div>,
+          document.body
+        )
+      }
     </div>
   );
 }
