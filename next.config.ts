@@ -8,6 +8,14 @@ const nextConfig: NextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
+        hostname: 'res.cloudinary.com', // Основной домен Cloudinary
+      },
+      {
+        protocol: 'https',
+        hostname: '*.res.cloudinary.com', // Поддомены Cloudinary
+      },
+      {
+        protocol: 'https',
         hostname: 's1.radikal.cloud', // Домен для изображений товаров
       },
       {
