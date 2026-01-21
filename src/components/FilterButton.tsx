@@ -28,8 +28,7 @@ function countActiveFilters(filters: FilterState): number {
     });
   }
 
-  // Проверяем фильтр по категории (если он отличается от undefined)
-  if (filters.category_id) count++;
+  // Фильтр по категории НЕ учитывается в подсчете
 
   return count;
 }
