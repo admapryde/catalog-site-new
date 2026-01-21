@@ -117,6 +117,8 @@ export async function PUT(request: NextRequest) {
   }
 }
 
+import { deleteImageFromCloudinaryByUrl } from '@/utils/cloudinary-helpers';
+
 // Удаление баннера
 export async function DELETE(request: NextRequest) {
   try {
@@ -139,6 +141,9 @@ export async function DELETE(request: NextRequest) {
 
     if (fetchError) {
       console.error('Ошибка получения информации о баннере перед удалением:', fetchError);
+    } else if (bannerToDelete?.image_url) {
+      // Удаляем изображение баннера из Cloudinary
+      await deleteImageFromCloudinaryByUrl(bannerToDelete.image_url);
     }
 
     // Удаляем баннер

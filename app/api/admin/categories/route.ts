@@ -111,6 +111,8 @@ export async function PUT(request: NextRequest) {
   }
 }
 
+import { deleteImageFromCloudinaryByUrl } from '@/utils/cloudinary-helpers';
+
 export async function DELETE(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
@@ -123,15 +125,6 @@ export async function DELETE(request: NextRequest) {
     // Используем реальный Supabase клиент для API маршрутов
     const supabase = await createAPIClient(request);
 
-    const { error } = await supabase
-      .from('categories')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      return Response.json({ error: error.message }, { status: 500 });
-    }
-
     // Получаем информацию о категории перед удалением для возможной очистки изображения из Cloudinary
     const { data: categoryToDelete, error: fetchError } = await supabase
       .from('categories')
@@ -141,6 +134,9 @@ export async function DELETE(request: NextRequest) {
 
     if (fetchError) {
       console.error('Ошибка получения информации о категории перед удалением:', fetchError);
+    } else if (categoryToDelete?.image_url) {
+      // Удаляем изображение категории из Cloudinary
+      await deleteImageFromCloudinaryByUrl(categoryToDelete.image_url);
     }
 
     // Удаляем категорию (каскадно удалятся связанные продукты)

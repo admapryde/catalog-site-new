@@ -13,7 +13,6 @@ interface CategoryPageProps {
 }
 
 export default async function CategoryPage({ params, searchParams }: CategoryPageProps) {
-  // Используем React.use() для разрешения промиса params
   const categoryId = (await params).id;
 
   // Проверяем, является ли ID корректным UUID
@@ -74,7 +73,8 @@ export default async function CategoryPage({ params, searchParams }: CategoryPag
   const category = data[0];
 
   // Проверяем наличие параметра поиска
-  const search = typeof searchParams.search === 'string' ? searchParams.search : undefined;
+  const awaitedSearchParams = await searchParams;
+  const search = Array.isArray(awaitedSearchParams.search) ? awaitedSearchParams.search[0] : awaitedSearchParams.search;
 
   return (
     <div className="py-8 bg-white pt-24 md:pt-8"> {/* Добавлен отступ сверху для компенсации фиксированной кнопки "Фильтры" на мобильных устройствах */}

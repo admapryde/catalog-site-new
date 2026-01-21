@@ -49,3 +49,49 @@ p {
 .text-content {
   font-family: var(--font-pt-sans), ui-sans-serif, system-ui, sans-serif;
 }
+
+/* Анимация масштабирования для модального окна продукта */
+@keyframes modal-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-modal-scale {
+  animation: modal-scale 150ms cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes modal-scale-fast {
+  from {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-modal-scale-fast {
+  animation: modal-scale-fast 100ms ease-out forwards;
+}
+
+@keyframes modal-scale-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.7);
+  }
+}
+
+.animate-modal-scale-out {
+  animation: modal-scale-out 100ms ease-in forwards;
+}

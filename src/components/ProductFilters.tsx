@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { FilterState, SpecTypeWithValues } from '@/types';
 
 interface ProductFiltersProps {
   initialFilters: FilterState;
   onFilterChange: (filters: FilterState) => void;
   categoryId?: string;
+  pathname?: string;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -15,9 +17,12 @@ export default function ProductFilters({
   initialFilters,
   onFilterChange,
   categoryId,
+  pathname,
   isOpen,
   onClose
 }: ProductFiltersProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [priceFrom, setPriceFrom] = useState<string>(initialFilters.price_from?.toString() || '');
   const [priceTo, setPriceTo] = useState<string>(initialFilters.price_to?.toString() || '');
   const [availableSpecs, setAvailableSpecs] = useState<SpecTypeWithValues[]>([]);
@@ -46,6 +51,52 @@ export default function ProductFilters({
       fetchCategories();
     }
   }, [categoryId]);
+
+  // Восстанавливаем фильтры при изменении initialFilters
+  useEffect(() => {
+    // Обновляем состояние фильтров при изменении initialFilters
+    setPriceFrom(initialFilters.price_from?.toString() || '');
+    setPriceTo(initialFilters.price_to?.toString() || '');
+
+    // Для spec_filters нужно обновить как selectedSpecFilters, так и rangeFilters
+    const newSelectedSpecFilters: Record<string, string[]> = {};
+    const newRangeFilters: Record<string, { min: string; max: string }> = {};
+
+    if (initialFilters.spec_filters) {
+      Object.entries(initialFilters.spec_filters).forEach(([key, values]) => {
+        // Проверяем, является ли это диапазонным фильтром
+        const isRangeFilter = values.some(v => v.startsWith('min:') || v.startsWith('max:'));
+
+        if (isRangeFilter) {
+          let minVal = '';
+          let maxVal = '';
+
+          values.forEach(v => {
+            if (v.startsWith('min:')) {
+              minVal = v.substring(4);
+            } else if (v.startsWith('max:')) {
+              maxVal = v.substring(4);
+            }
+          });
+
+          newRangeFilters[key] = { min: minVal, max: maxVal };
+        } else {
+          newSelectedSpecFilters[key] = [...values];
+        }
+      });
+    }
+
+    setSelectedSpecFilters(newSelectedSpecFilters);
+    setRangeFilters(newRangeFilters);
+  }, [
+    initialFilters.price_from,
+    initialFilters.price_to,
+    // Используем JSON.stringify только как зависимость, чтобы избежать лишних перерисовок
+    JSON.stringify({
+      spec_filters: initialFilters.spec_filters,
+      category_id: initialFilters.category_id
+    })
+  ]);
 
   // Загружаем доступные характеристики при изменении категории
   useEffect(() => {
@@ -113,10 +164,36 @@ export default function ProductFilters({
       }
     });
 
+    // Преобразуем строки в числа с проверкой на корректность
+    let processedPriceFrom: number | undefined;
+    let processedPriceTo: number | undefined;
+
+    if (priceFrom) {
+      const numValue = Number(priceFrom);
+      if (!isNaN(numValue) && isFinite(numValue) && numValue >= 0) {
+        processedPriceFrom = numValue;
+      }
+    }
+
+    if (priceTo) {
+      const numValue = Number(priceTo);
+      if (!isNaN(numValue) && isFinite(numValue) && numValue >= 0) {
+        processedPriceTo = numValue;
+      }
+    }
+
+    // Проверяем, чтобы "цена от" не была больше "цены до"
+    if (processedPriceFrom !== undefined && processedPriceTo !== undefined && processedPriceFrom > processedPriceTo) {
+      // Меняем местами значения, если "цена от" больше "цены до"
+      const temp = processedPriceFrom;
+      processedPriceFrom = processedPriceTo;
+      processedPriceTo = temp;
+    }
+
     const filters: FilterState = {
       category_id: initialFilters.category_id,
-      price_from: priceFrom ? Number(priceFrom) : undefined,
-      price_to: priceTo ? Number(priceTo) : undefined,
+      price_from: processedPriceFrom,
+      price_to: processedPriceTo,
       spec_filters: combinedSpecFilters
     };
 
@@ -156,12 +233,18 @@ export default function ProductFilters({
     setPriceTo('');
     setSelectedSpecFilters({});
     setRangeFilters({});
-    onFilterChange({
-      category_id: categoryId,
+
+    // Если мы на странице /catalog (без конкретной категории), то при сбросе фильтров
+    // также сбрасываем выбранную категорию в "Все категории" (undefined)
+    // В противном случае (на странице конкретной категории) сохраняем текущую категорию
+    const newFilters = {
+      category_id: !categoryId ? undefined : initialFilters.category_id,
       price_from: undefined,
       price_to: undefined,
       spec_filters: {}
-    });
+    };
+
+    onFilterChange(newFilters);
   };
 
   // Определяем, есть ли активные фильтры
@@ -194,9 +277,36 @@ export default function ProductFilters({
               <select
                 value={initialFilters.category_id || ''}
                 onChange={(e) => {
+                  const selectedCategoryId = e.target.value || undefined;
+
+                  // При выборе категории из списка, восстанавливаем сохраненные фильтры для этой категории
+                  const savedFiltersStr = localStorage.getItem('productFilters');
+                  let restoredFilters = { spec_filters: {}, price_from: undefined, price_to: undefined };
+
+                  if (savedFiltersStr) {
+                    try {
+                      const savedFilters = JSON.parse(savedFiltersStr);
+
+                      // Если у нас есть сохраненные фильтры для выбранной категории
+                      if (selectedCategoryId && savedFilters[selectedCategoryId]) {
+                        restoredFilters = savedFilters[selectedCategoryId];
+                      } else if (selectedCategoryId) {
+                        // Если фильтров для этой категории нет, используем общие фильтры
+                        // (для совместимости с предыдущей версией хранения)
+                        restoredFilters = {
+                          spec_filters: savedFilters.general?.spec_filters || {},
+                          price_from: savedFilters.general?.price_from,
+                          price_to: savedFilters.general?.price_to
+                        };
+                      }
+                    } catch (error) {
+                      console.error('Ошибка при разборе сохраненных фильтров:', error);
+                    }
+                  }
+
                   onFilterChange({
-                    ...initialFilters,
-                    category_id: e.target.value || undefined
+                    category_id: selectedCategoryId,
+                    ...restoredFilters
                   });
                 }}
                 className="w-full p-2 border border-gray-400 rounded focus:ring-0 focus:border-gray-500 text-gray-900"

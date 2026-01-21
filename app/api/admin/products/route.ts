@@ -487,6 +487,8 @@ export async function PUT(request: NextRequest) {
   }
 }
 
+import { deleteImageFromCloudinaryByUrl } from '@/utils/cloudinary-helpers';
+
 export async function DELETE(request: NextRequest) {
   try {
     // Проверяем, что пользователь аутентифицирован как администратор
@@ -518,11 +520,13 @@ export async function DELETE(request: NextRequest) {
     if (fetchError) {
       console.error('Ошибка получения информации о продукте перед удалением:', fetchError);
     } else {
-      // Здесь в будущем можно добавить логику удаления изображений из Cloudinary
-      // const imagesToDelete = productToDelete?.product_images || [];
-      // for (const image of imagesToDelete) {
-      //   // Удалить изображение из Cloudinary по URL
-      // }
+      // Удаляем изображения продукта из Cloudinary
+      const imagesToDelete = productToDelete?.product_images || [];
+      for (const image of imagesToDelete) {
+        if (image.image_url) {
+          await deleteImageFromCloudinaryByUrl(image.image_url);
+        }
+      }
     }
 
     // Удаляем продукт (каскадно удалятся связанные изображения и характеристики)

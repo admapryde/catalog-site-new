@@ -15,6 +15,29 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
   const modalRef = useRef<HTMLDivElement>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [enlargedImageOpen, setEnlargedImageOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
+  const [isEnlargedImageClosing, setIsEnlargedImageClosing] = useState(false);
+
+  // Function to handle closing with animation
+  const handleClose = () => {
+    setIsClosing(true);
+    // Wait for animation to complete before actually closing
+    setTimeout(() => {
+      setIsClosing(false);
+      onClose();
+      setEnlargedImageOpen(false);
+    }, 100); // Match the animation duration
+  };
+
+  // Function to handle closing enlarged image with animation
+  const handleCloseEnlargedImage = () => {
+    setIsEnlargedImageClosing(true);
+    // Wait for animation to complete before actually closing
+    setTimeout(() => {
+      setIsEnlargedImageClosing(false);
+      setEnlargedImageOpen(false);
+    }, 100); // Match the animation duration
+  };
 
   // Reset enlarged image state and current image index when modal opens
   useEffect(() => {
@@ -30,7 +53,7 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
     const handleClickOutside = (event: MouseEvent) => {
       // Only close the modal if the enlarged image is not open
       if (!enlargedImageOpen && modalRef.current && !modalRef.current.contains(event.target as Node)) {
-        onClose();
+        handleClose();
         // Also reset enlarged image state when closing modal
         setEnlargedImageOpen(false);
       }
@@ -56,7 +79,7 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
         if (enlargedImageOpen) {
           setEnlargedImageOpen(false);
         } else {
-          onClose();
+          handleClose();
           // Also reset enlarged image state when closing modal
           setEnlargedImageOpen(false);
         }
@@ -97,7 +120,7 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
         style={{ backgroundColor: 'rgba(0, 0, 0, 0.25)' }}
         onClick={() => {
           if (!enlargedImageOpen) {
-            onClose();
+            handleClose();
           }
         }}
       ></div>
@@ -105,7 +128,9 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
       {/* Модальное окно */}
       <div
         ref={modalRef}
-        className="relative z-50 w-full max-w-6xl bg-white rounded-lg shadow-2xl flex flex-col max-h-[calc(100vh-2rem)]"
+        className={`relative z-50 w-full max-w-6xl bg-white rounded-lg shadow-2xl flex flex-col max-h-[calc(100vh-2rem)] transition-opacity duration-150 ${
+          isClosing ? 'animate-modal-scale-out' : (isOpen ? 'opacity-100 animate-modal-scale-fast' : 'opacity-0')
+        }`}
       >
         <div className="overflow-hidden rounded-lg flex-grow">
           <div className="overflow-y-auto p-8 max-h-[calc(100vh-8rem)] relative">
@@ -116,7 +141,7 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
                 if (enlargedImageOpen) {
                   setEnlargedImageOpen(false);
                 } else {
-                  onClose();
+                  handleClose();
                   setEnlargedImageOpen(false);
                 }
               }}
@@ -274,15 +299,17 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
         createPortal(
           <div
             className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90"
-            onClick={() => setEnlargedImageOpen(false)}
+            onClick={() => handleCloseEnlargedImage()}
           >
             <div
-              className="relative max-w-6xl max-h-[90vh]"
+              className={`relative max-w-6xl max-h-[90vh] ${
+                isEnlargedImageClosing ? 'animate-modal-scale-out' : (enlargedImageOpen ? 'animate-modal-scale-fast' : '')
+              }`}
               onClick={(e) => e.stopPropagation()}
             >
               {/* Кнопка закрытия увеличенного изображения */}
               <button
-                onClick={(e) => { e.stopPropagation(); setEnlargedImageOpen(false); }}
+                onClick={(e) => { e.stopPropagation(); handleCloseEnlargedImage(); }}
                 className="absolute top-2 right-2 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-white/70 hover:bg-white/90 transition-all shadow-md"
                 aria-label="Закрыть"
               >

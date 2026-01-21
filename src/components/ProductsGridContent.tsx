@@ -1,9 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import OptimizedImage from '@/components/OptimizedImage';
 import { Product, FilterState } from '@/types';
+import { SavedFilters } from '@/hooks/useFilterState';
 import { lruCache } from '@/lib/cache-config';
 import ProductModal from '@/components/ProductModal';
 import FilterButton from '@/components/FilterButton';
@@ -15,13 +17,15 @@ interface ProductsGridContentProps {
 }
 
 export default function ProductsGridContent({ categoryId, search }: ProductsGridContentProps) {
+  const pathname = usePathname();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedProduct, setSelectedProduct] = useState<any>(null); // Using any temporarily since we need to fetch full product details
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
+
   const { filters, updateFilters } = useFilterState(categoryId);
+
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -35,6 +39,7 @@ export default function ProductsGridContent({ categoryId, search }: ProductsGrid
 
         // Добавляем параметр категории из фильтров, если он указан
         // Если в фильтрах нет категории, используем categoryId из URL
+        // На странице /catalog теперь учитываем выбранную категорию в фильтрах
         if (filters.category_id) {
           params.append('category_id', encodeURIComponent(filters.category_id));
         } else if (categoryId) {
@@ -50,11 +55,13 @@ export default function ProductsGridContent({ categoryId, search }: ProductsGrid
         }
 
         // Добавляем фильтры по характеристикам
-        Object.entries(filters.spec_filters).forEach(([specTypeId, values]) => {
-          if (values.length > 0) {
-            params.append(`spec_${specTypeId}`, values.join(','));
-          }
-        });
+        if (filters.spec_filters) {
+          Object.entries(filters.spec_filters).forEach(([specTypeId, values]) => {
+            if (values.length > 0) {
+              params.append(`spec_${specTypeId}`, values.join(','));
+            }
+          });
+        }
 
         // Добавляем параметр поиска, если он передан
         if (search) {

@@ -145,15 +145,30 @@ export default function ProductsManager() {
 
         const newProduct = await response.json();
         setProducts([...products, newProduct]);
+
+        // Переключаем форму в режим редактирования созданного товара
+        // чтобы пользователь мог сразу добавить его в разделы ГС
+        setName(newProduct.name);
+        setCategoryId(newProduct.category_id);
+        setPrice(newProduct.price);
+        setDescription(newProduct.description || '');
+        const productImages = newProduct.images || [];
+        const productSpecs = newProduct.specs || [];
+        setImages(productImages);
+        setSpecs(productSpecs);
+        setOriginalImages([...productImages]);
+        setOriginalSpecs([...productSpecs]);
+        setEditingId(newProduct.id);
       }
 
-      // Сброс формы
-      setName('');
-      setCategoryId('');
-      setPrice(0);
-      setImages([]);
-      setSpecs([]);
-      setEditingId(null);
+      // Не сбрасываем форму при создании - вместо этого переходим в режим редактирования
+      // чтобы пользователь мог сразу добавить товар в разделы ГС
+      // setName('');
+      // setCategoryId('');
+      // setPrice(0);
+      // setImages([]);
+      // setSpecs([]);
+      // setEditingId(null);
     } catch (error) {
       console.error('Ошибка сохранения товара:', error);
     }
@@ -349,7 +364,7 @@ export default function ProductsManager() {
                       }}
                       className="mr-2"
                     />
-                    <span className="text-xs">Главное</span>
+                    <span className="text-xs text-gray-700">Главное</span>
                     <button
                       type="button"
                       onClick={() => setImages(images.filter(img => img.id !== image.id))}
@@ -495,14 +510,16 @@ export default function ProductsManager() {
 
         {/* Компонент для добавления в разделы ГС */}
         {editingId && (
-          <HomepageSectionSelector
-            productId={editingId}
-            initialSections={[]}
-            onUpdate={refreshProducts}
-          />
+          <div className="mb-6">
+            <HomepageSectionSelector
+              productId={editingId}
+              initialSections={[]}
+              onUpdate={refreshProducts}
+            />
+          </div>
         )}
 
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between pt-4">
           <button
             type="submit"
             className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"

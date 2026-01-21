@@ -7,8 +7,9 @@ interface CatalogPageProps {
 }
 
 export default async function CatalogPage({ searchParams }: CatalogPageProps) {
-  const search = typeof searchParams.search === 'string' ? searchParams.search : undefined;
-  const category_id = typeof searchParams.category_id === 'string' ? searchParams.category_id : undefined;
+  const awaitedSearchParams = await searchParams;
+  const search = Array.isArray(awaitedSearchParams.search) ? awaitedSearchParams.search[0] : awaitedSearchParams.search;
+  const category_id = Array.isArray(awaitedSearchParams.category_id) ? awaitedSearchParams.category_id[0] : awaitedSearchParams.category_id;
 
   // Если есть параметр поиска, покажем все товары с этим параметром поиска
   // Если есть category_id, покажем товары из этой категории

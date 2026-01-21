@@ -117,6 +117,8 @@ export async function PUT(request: NextRequest) {
   }
 }
 
+import { deleteImageFromCloudinaryByUrl } from '@/utils/cloudinary-helpers';
+
 // Удаление группы баннеров
 export async function DELETE(request: NextRequest) {
   try {
@@ -129,6 +131,23 @@ export async function DELETE(request: NextRequest) {
 
     // Используем реальный Supabase клиент для API маршрутов
     const supabase = await createAPIClient(request);
+
+    // Получаем все баннеры, связанные с этой группой, для удаления их изображений из Cloudinary
+    const { data: bannersToDelete, error: bannersFetchError } = await supabase
+      .from('banners')
+      .select('image_url')
+      .eq('group_id', id);
+
+    if (bannersFetchError) {
+      console.error('Ошибка получения баннеров перед удалением группы:', bannersFetchError);
+    } else {
+      // Удаляем изображения всех баннеров из Cloudinary
+      for (const banner of bannersToDelete || []) {
+        if (banner.image_url) {
+          await deleteImageFromCloudinaryByUrl(banner.image_url);
+        }
+      }
+    }
 
     // Удаляем группу баннеров (каскадно удалятся связанные баннеры)
     const { error } = await supabase
