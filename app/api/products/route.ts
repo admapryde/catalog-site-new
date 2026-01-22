@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { createAPIClient, supabaseWithRetry } from '@/lib/supabase-server';
+import { createAPIClient } from '@/lib/supabase-server';
 
 // Получение всех товаров с возможностью фильтрации по категории
 export async function GET(request: NextRequest) {
@@ -28,8 +28,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Сначала выполним основной запрос
-    let baseQuery = supabase
+    let query = supabase
       .from('products')
       .select(`
         *,
@@ -41,24 +40,22 @@ export async function GET(request: NextRequest) {
 
     // Применяем фильтры
     if (category_id) {
-      baseQuery = baseQuery.eq('category_id', category_id);
+      query = query.eq('category_id', category_id);
     }
 
     if (price_from) {
-      baseQuery = baseQuery.gte('price', parseFloat(price_from));
+      query = query.gte('price', parseFloat(price_from));
     }
 
     if (price_to) {
-      baseQuery = baseQuery.lte('price', parseFloat(price_to));
+      query = query.lte('price', parseFloat(price_to));
     }
 
     if (search) {
-      baseQuery = baseQuery.ilike('name', `%${search}%`); // Поиск по названию (регистронезависимый)
+      query = query.ilike('name', `%${search}%`); // Поиск по названию (регистронезависимый)
     }
 
     // Применяем фильтры по характеристикам
-    let finalProductIds: string[] | null = null;
-
     if (Object.keys(specFilters).length > 0) {
       // Сначала получаем все ID товаров, удовлетворяющих фильтрам характеристик
       let filteredProductIds: string[] | null = null;
@@ -66,15 +63,13 @@ export async function GET(request: NextRequest) {
       for (const [propertyName, values] of Object.entries(specFilters)) {
         if (values.length > 0) {
           // Получаем ID товаров, которые имеют хотя бы одно из указанных значений для данной характеристики
-          const idsResult = await supabaseWithRetry(supabase, (client) =>
-            client
-              .from('product_specs')
-              .select('product_id', { count: 'exact' })
-              .eq('property_name', propertyName)
-              .in('value', values)
-          ) as { data: any; error: any };
+          const result = await supabase
+            .from('product_specs')
+            .select('product_id', { count: 'exact' })
+            .eq('property_name', propertyName)
+            .in('value', values);
 
-          const { data: matchingProductIds, error: idsError } = idsResult;
+          const { data: matchingProductIds, error: idsError } = result as { data: any; error: any };
 
           if (idsError) {
             throw idsError;
@@ -105,130 +100,28 @@ export async function GET(request: NextRequest) {
         }
       }
 
-      finalProductIds = filteredProductIds;
-    }
-
-    // Собираем основной запрос с учетом всех фильтров
-    let query = supabaseWithRetry(supabase, (client) =>
-      client
-        .from('products')
-        .select(`
-          *,
-          category:categories!inner(id, name),
-          product_images(*),
-          product_specs(*)
-        `, { count: 'exact' })
-        .order('created_at', { ascending: false })
-    );
-
-    // Применяем фильтры
-    if (category_id) {
-      query = supabaseWithRetry(supabase, (client) =>
-        client
-          .from('products')
-          .select(`
-            *,
-            category:categories!inner(id, name),
-            product_images(*),
-            product_specs(*)
-          `, { count: 'exact' })
-          .eq('category_id', category_id)
-          .order('created_at', { ascending: false })
-      );
-    }
-
-    if (price_from) {
-      query = supabaseWithRetry(supabase, (client) =>
-        client
-          .from('products')
-          .select(`
-            *,
-            category:categories!inner(id, name),
-            product_images(*),
-            product_specs(*)
-          `, { count: 'exact' })
-          .eq('category_id', category_id || '*')
-          .gte('price', parseFloat(price_from))
-          .order('created_at', { ascending: false })
-      );
-    }
-
-    if (price_to) {
-      query = supabaseWithRetry(supabase, (client) =>
-        client
-          .from('products')
-          .select(`
-            *,
-            category:categories!inner(id, name),
-            product_images(*),
-            product_specs(*)
-          `, { count: 'exact' })
-          .eq('category_id', category_id || '*')
-          .gte('price', parseFloat(price_from || '0'))
-          .lte('price', parseFloat(price_to))
-          .order('created_at', { ascending: false })
-      );
-    }
-
-    if (search) {
-      query = supabaseWithRetry(supabase, (client) =>
-        client
-          .from('products')
-          .select(`
-            *,
-            category:categories!inner(id, name),
-            product_images(*),
-            product_specs(*)
-          `, { count: 'exact' })
-          .eq('category_id', category_id || '*')
-          .gte('price', parseFloat(price_from || '0'))
-          .lte('price', parseFloat(price_to || '999999'))
-          .ilike('name', `%${search}%`)
-          .order('created_at', { ascending: false })
-      );
-    }
-
-    // Применяем фильтр по ID товаров, если он есть
-    if (finalProductIds && finalProductIds.length > 0) {
-      query = supabaseWithRetry(supabase, (client) =>
-        client
-          .from('products')
-          .select(`
-            *,
-            category:categories!inner(id, name),
-            product_images(*),
-            product_specs(*)
-          `, { count: 'exact' })
-          .eq('category_id', category_id || '*')
-          .gte('price', parseFloat(price_from || '0'))
-          .lte('price', parseFloat(price_to || '999999'))
-          .ilike('name', `%${search || '%'}%`)
-          .in('id', finalProductIds)
-          .order('created_at', { ascending: false })
-      );
+      // Применяем финальный фильтр по ID товаров
+      if (filteredProductIds && filteredProductIds.length > 0) {
+        query = query.in('id', filteredProductIds);
+      } else if (filteredProductIds !== null && filteredProductIds.length === 0) {
+        // Если в результате пересечений нет товаров, возвращаем пустой результат
+        return Response.json([], {
+          headers: {
+            'X-Total-Count': '0',
+            'X-Limit': safeLimit.toString(),
+            'X-Offset': offset.toString(),
+            'X-Next-Cache-Tags': 'homepage_products',
+            'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=60'
+          }
+        });
+      }
     }
 
     // Применяем пагинацию
-    query = supabaseWithRetry(supabase, (client) =>
-      client
-        .from('products')
-        .select(`
-          *,
-          category:categories!inner(id, name),
-          product_images(*),
-          product_specs(*)
-        `, { count: 'exact' })
-        .eq('category_id', category_id || '*')
-        .gte('price', parseFloat(price_from || '0'))
-        .lte('price', parseFloat(price_to || '999999'))
-        .ilike('name', `%${search || '%'}%`)
-        .in('id', finalProductIds || '*')
-        .range(offset, offset + safeLimit - 1)
-        .order('created_at', { ascending: false })
-    );
+    query = query.range(offset, offset + safeLimit - 1);
 
-    const result = await query as { data: any; error: any; count: number };
-    const { data, error, count } = result;
+    const result = await query;
+    const { data, error, count } = result as { data: any; error: any; count: number };
 
     if (error) {
       throw error;
@@ -268,13 +161,11 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { category_id, name, price } = body;
 
-    const result = await supabaseWithRetry(supabase, (client) =>
-      client
-        .from('products')
-        .insert([{ category_id, name, price }])
-    ) as { data: any; error: any };
+    const result = await supabase
+      .from('products')
+      .insert([{ category_id, name, price }]);
 
-    const { data, error } = result;
+    const { data, error } = result as { data: any; error: any };
 
     if (error) {
       throw error;
