@@ -1,19 +1,23 @@
 import { NextRequest } from 'next/server';
-import { createAPIClient } from '@/lib/supabase-server';
+import { createAPIClient, supabaseWithRetry } from '@/lib/supabase-server';
 
 // Получение всех баннеров с группами
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createAPIClient(request);
 
-    const { data, error } = await supabase
-      .from('banner_groups')
-      .select(`
-        *,
-        banners(*)
-      `)
-      .order('position', { ascending: true }) // сортировка групп
-      .order('sort_order', { foreignTable: 'banners', ascending: true }); // сортировка баннеров внутри групп
+    const result = await supabaseWithRetry(supabase, (client) =>
+      client
+        .from('banner_groups')
+        .select(`
+          *,
+          banners(*)
+        `)
+        .order('position', { ascending: true }) // сортировка групп
+        .order('sort_order', { foreignTable: 'banners', ascending: true }) // сортировка баннеров внутри групп
+    ) as { data: any; error: any };
+
+    const { data, error } = result;
 
     if (error) {
       throw error;

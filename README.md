@@ -11,6 +11,9 @@ This is a furniture catalog website built with [Next.js](https://nextjs.org) and
 - **Performance Optimized**: Caching, lazy loading, and optimized rendering
 - **Audit System**: Comprehensive logging of all administrative actions
 - **Authentication**: Secure admin authentication system
+- **Dynamic Site Settings**: Server-side metadata handling for site title and favicon
+- **Efficient Caching**: Smart caching with invalidation for site settings
+- **Admin Configurable**: Title, favicon, and footer info editable via admin panel
 
 ## Tech Stack
 
@@ -365,6 +368,9 @@ This project is licensed under the MIT License.
 - **Оптимизированная производительность**: Кэширование, отложенная загрузка и оптимизированный рендеринг
 - **Система аудита**: Комплексное логирование всех административных действий
 - **Аутентификация**: Безопасная система аутентификации администратора
+- **Динамические настройки сайта**: Обработка метаданных на стороне сервера для заголовка сайта и favicon
+- **Эффективное кэширование**: Умное кэширование с инвалидацией для настроек сайта
+- **Настраиваемые параметры**: Заголовок, иконка и информация в футере редактируются через админ-панель
 
 ## Технологический стек
 

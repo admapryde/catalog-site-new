@@ -1,5 +1,7 @@
 import { requireAdminSession } from '@/components/ProtectedRoute';
 import { createClient } from '@/lib/supabase-server';
+import AdminSidebar from '@/components/admin/AdminSidebar';
+import FooterSettingsForm from '@/components/admin/FooterSettingsForm';
 
 interface FooterSettings {
   footer_catalog_title: string;
@@ -111,6 +113,9 @@ async function getFooterSettings(): Promise<FooterSettings> {
   }
 }
 
+import { revalidateTag } from 'next/cache';
+import { headers } from 'next/headers';
+
 async function updateFooterSettings(formData: FormData) {
   'use server';
 
@@ -221,6 +226,35 @@ async function updateFooterSettings(formData: FormData) {
       }
     }
 
+    // Инвалидируем кэш для настроек футера
+    revalidateTag('footer_settings', 'max');
+
+    // Вызываем POST-запрос к API для дополнительной инвалидации кэша
+    try {
+      // Получаем текущий URL из заголовков
+      const headersList = await headers();
+      const referer = headersList.get('referer');
+      let baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+
+      if (referer) {
+        try {
+          const refererUrl = new URL(referer);
+          baseUrl = `${refererUrl.protocol}//${refererUrl.host}`;
+        } catch (e) {
+          console.warn('Could not parse referer URL, using default base URL');
+        }
+      }
+
+      await fetch(`${baseUrl}/api/footer-settings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    } catch (apiError) {
+      console.error('Ошибка при инвалидации кэша через API:', apiError);
+    }
+
     console.log('Настройки футера успешно обновлены');
   } catch (error) {
     console.error('Ошибка обновления настроек футера:', error);
@@ -239,185 +273,18 @@ export default async function FooterSettingsPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="flex">
         {/* Сайдбар */}
-        <aside className="w-64 bg-white shadow-md min-h-screen">
-          <div className="p-6">
-            <h2 className="text-xl font-bold text-gray-800">Админ-панель</h2>
-          </div>
-          <nav className="mt-6">
-            <ul>
-              <li>
-                <a href="/admin" className="block py-3 px-6 text-gray-700 hover:bg-blue-50 hover:text-blue-600 border-l-4 border-transparent">
-                  Дашборд
-                </a>
-              </li>
-              <li>
-                <a href="/admin/categories" className="block py-3 px-6 text-gray-700 hover:bg-blue-50 hover:text-blue-600 border-l-4 border-transparent">
-                  Разделы
-                </a>
-              </li>
-              <li>
-                <a href="/admin/banner-groups" className="block py-3 px-6 text-gray-700 hover:bg-blue-50 hover:text-blue-600 border-l-4 border-transparent">
-                  Баннеры
-                </a>
-              </li>
-              <li>
-                <a href="/admin/homepage-sections" className="block py-3 px-6 text-gray-700 hover:bg-blue-50 hover:text-blue-600 border-l-4 border-transparent">
-                  Разделы ГС
-                </a>
-              </li>
-              <li>
-                <a href="/admin/products" className="block py-3 px-6 text-gray-700 hover:bg-blue-50 hover:text-blue-600 border-l-4 border-transparent">
-                  Товары
-                </a>
-              </li>
-              <li>
-                <a href="/admin/header-settings" className="block py-3 px-6 text-gray-700 hover:bg-blue-50 hover:text-blue-600 border-l-4 border-transparent">
-                  Шапка сайта
-                </a>
-              </li>
-              <li>
-                <a href="/admin/footer-settings" className="block py-3 px-6 text-gray-700 hover:bg-blue-50 hover:text-blue-600 border-l-4 border-blue-600 bg-blue-50">
-                  Футтер
-                </a>
-              </li>
-              <li>
-                <a href="/admin/settings" className="block py-3 px-6 text-gray-700 hover:bg-blue-50 hover:text-blue-600 border-l-4 border-transparent">
-                  Настройки
-                </a>
-              </li>
-            </ul>
-          </nav>
-        </aside>
+        <AdminSidebar />
 
         {/* Основной контент */}
         <main className="flex-1 p-8">
           <div className="max-w-6xl mx-auto">
             <h1 className="text-3xl font-bold text-gray-800 mb-8">Футтер</h1>
 
-            <form action={updateFooterSettings}>
-              {/* Настройки блока "Каталог" */}
-              <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-                <h2 className="text-xl font-semibold text-gray-800 mb-6">Блок "Каталог"</h2>
-                
-                <div className="mb-6">
-                  <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="footer_catalog_title">
-                    Название блока
-                  </label>
-                  <input
-                    id="footer_catalog_title"
-                    name="footer_catalog_title"
-                    type="text"
-                    defaultValue={settings.footer_catalog_title}
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  />
-                </div>
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-xl font-semibold text-gray-800 mb-6">Настройки футера</h2>
 
-                <div>
-                  <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="footer_catalog_desc">
-                    Описание блока
-                  </label>
-                  <textarea
-                    id="footer_catalog_desc"
-                    name="footer_catalog_desc"
-                    rows={3}
-                    defaultValue={settings.footer_catalog_desc}
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  />
-                </div>
-              </div>
-
-              {/* Настройки блока "Контакты" */}
-              <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-                <h2 className="text-xl font-semibold text-gray-800 mb-6">Блок "Контакты"</h2>
-                
-                <div className="mb-6">
-                  <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="footer_contacts_title">
-                    Название блока
-                  </label>
-                  <input
-                    id="footer_contacts_title"
-                    name="footer_contacts_title"
-                    type="text"
-                    defaultValue={settings.footer_contacts_title}
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 text-sm font-bold mb-2">
-                    Контактная информация (до 8 полей)
-                  </label>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {Array.from({ length: 8 }).map((_, index) => (
-                      <div key={index}>
-                        <input
-                          name={`contact_${index}`}
-                          type="text"
-                          defaultValue={settings.contacts[index]?.value || ''}
-                          placeholder={`Контакт ${index + 1}`}
-                          className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Настройки блока "Быстрые ссылки" */}
-              <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-                <h2 className="text-xl font-semibold text-gray-800 mb-6">Блок "Быстрые ссылки"</h2>
-                
-                <div className="mb-6">
-                  <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="footer_quick_links_title">
-                    Название блока
-                  </label>
-                  <input
-                    id="footer_quick_links_title"
-                    name="footer_quick_links_title"
-                    type="text"
-                    defaultValue={settings.footer_quick_links_title}
-                    className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 text-sm font-bold mb-2">
-                    Быстрые ссылки (до 8 ссылок)
-                  </label>
-                  <div className="space-y-4">
-                    {Array.from({ length: 8 }).map((_, index) => (
-                      <div key={index} className="flex space-x-4">
-                        <div className="flex-1">
-                          <input
-                            name={`quick_link_label_${index}`}
-                            type="text"
-                            defaultValue={settings.quick_links[index]?.label || ''}
-                            placeholder={`Текст ссылки ${index + 1}`}
-                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                          />
-                        </div>
-                        <div className="flex-1">
-                          <input
-                            name={`quick_link_url_${index}`}
-                            type="text"
-                            defaultValue={settings.quick_links[index]?.url || ''}
-                            placeholder={`URL ${index + 1}`}
-                            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-              >
-                Сохранить изменения
-              </button>
-            </form>
+              <FooterSettingsForm initialSettings={settings} updateAction={updateFooterSettings} />
+            </div>
           </div>
         </main>
       </div>

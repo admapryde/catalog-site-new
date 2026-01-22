@@ -1,15 +1,19 @@
 import { NextRequest } from 'next/server';
-import { createAPIClient } from '@/lib/supabase-server';
+import { createAPIClient, supabaseWithRetry } from '@/lib/supabase-server';
 
 // Получение всех категорий
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createAPIClient(request);
 
-    const { data, error } = await supabase
-      .from('categories')
-      .select('*')
-      .order('sort_order', { ascending: true });
+    const result = await supabaseWithRetry(supabase, (client) =>
+      client
+        .from('categories')
+        .select('*')
+        .order('sort_order', { ascending: true })
+    ) as { data: any; error: any };
+
+    const { data, error } = result;
 
     if (error) {
       throw error;
@@ -34,9 +38,13 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { name, image_url, sort_order } = body;
 
-    const { data, error } = await supabase
-      .from('categories')
-      .insert([{ name, image_url, sort_order: sort_order || 0 }]);
+    const result = await supabaseWithRetry(supabase, (client) =>
+      client
+        .from('categories')
+        .insert([{ name, image_url, sort_order: sort_order || 0 }])
+    ) as { data: any; error: any };
+
+    const { data, error } = result;
 
     if (error) {
       throw error;

@@ -3,31 +3,7 @@
 import { ReactNode, useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
 
-// Динамический импорт компонентов Header и Footer для избежания проблем с гидрацией
-const Header = dynamic(() => import('@/components/HeaderWrapper'), {
-  ssr: false,
-  loading: () => (
-    <header className="bg-white shadow-md sticky top-0 z-50">
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <div className="flex items-center space-x-10">
-          <div className="text-xl font-bold text-gray-800">Каталог</div>
-          <nav className="hidden md:flex space-x-6">
-            <span className="text-gray-600">Главная</span>
-            <span className="text-gray-600">Каталог</span>
-            <span className="text-gray-600">О нас</span>
-            <span className="text-gray-600">Контакты</span>
-          </nav>
-        </div>
-        <div className="flex items-center space-x-4">
-          <div className="w-full md:w-96 lg:w-[500px] xl:w-[600px] px-4 py-2 border border-gray-300 rounded-lg bg-gray-100 animate-pulse">
-            <div className="h-5 bg-gray-300 rounded"></div>
-          </div>
-        </div>
-      </div>
-    </header>
-  )
-});
-
+// Динамический импорт компонентов Footer для избежания проблем с гидрацией
 const Footer = dynamic(() => import('@/components/FooterWrapper'), {
   ssr: false,
   loading: () => (
@@ -63,6 +39,9 @@ const Footer = dynamic(() => import('@/components/FooterWrapper'), {
     </footer>
   )
 });
+
+// Импортируем HeaderWrapper как обычный компонент
+import HeaderWrapper from '@/components/HeaderWrapper';
 
 export default function LayoutWrapper({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false);
@@ -129,7 +108,7 @@ export default function LayoutWrapper({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <Header />
+      <HeaderWrapper />
       <main className="flex-grow">{children}</main>
       <Footer />
     </div>

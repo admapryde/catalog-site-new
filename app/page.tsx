@@ -1,8 +1,77 @@
+import { Metadata } from "next";
 import CategoriesGrid from '@/components/CategoriesGrid';
 import BannerSlider from '@/components/BannerSlider';
 import HomepageSections from '@/components/HomepageSections';
-import { CACHE_TTL } from '@/lib/cache-config';
+import { createClient } from '@/lib/supabase-server';
 
+// Асинхронная функция для получения общих настроек
+async function getGeneralSettings() {
+  try {
+    const supabase = await createClient();
+
+    const { data, error } = await supabase
+      .from('general_settings')
+      .select('*')
+      .limit(1);  // Берем только первую запись
+
+    if (error) {
+      // Проверяем, является ли ошибка связанной с отсутствием таблицы
+      if (error.code === '42P01' || error.message?.includes('does not exist')) {
+        console.warn('Таблица general_settings не существует, используем значения по умолчанию');
+        return {
+          site_title: 'Каталог',
+          site_icon: '/favicon.ico',
+          site_footer_info: '© 2026 Каталог. Все права защищены.',
+        };
+      }
+
+      console.error('Ошибка получения общих настроек:', error.message || error);
+      // Возвращаем значения по умолчанию
+      return {
+        site_title: 'Каталог',
+        site_icon: '/favicon.ico',
+        site_footer_info: '© 2026 Каталог. Все права защищены.',
+      };
+    }
+
+    if (!data || data.length === 0) {
+      // Если нет ни одной записи, возвращаем значения по умолчанию
+      return {
+        site_title: 'Каталог',
+        site_icon: '/favicon.ico',
+        site_footer_info: '© 2026 Каталог. Все права защищены.',
+      };
+    }
+
+    // Возвращаем полученные настройки, заполняя недостающие значения по умолчанию
+    const settings = data[0];
+    return {
+      site_title: settings.site_title || 'Каталог',
+      site_icon: settings.site_icon || '/favicon.ico',
+      site_footer_info: settings.site_footer_info || '© 2026 Каталог. Все права защищены.',
+    };
+  } catch (error: any) {
+    // Проверяем, является ли ошибка связанной с отсутствием таблицы
+    if (error?.code === '42P01' || error?.message?.includes('does not exist')) {
+      console.warn('Таблица general_settings не существует, используем значения по умолчанию');
+      return {
+        site_title: 'Каталог',
+        site_icon: '/favicon.ico',
+        site_footer_info: '© 2026 Каталог. Все права защищены.',
+      };
+    }
+
+    console.error('Ошибка получения общих настроек:', error);
+    // Возвращаем значения по умолчанию в случае любой ошибки
+    return {
+      site_title: 'Каталог',
+      site_icon: '/favicon.ico',
+      site_footer_info: '© 2026 Каталог. Все права защищены.',
+    };
+  }
+}
+
+import { CACHE_TTL } from '@/lib/cache-config';
 import { cookies, headers } from 'next/headers';
 
 // Асинхронная функция для получения категорий

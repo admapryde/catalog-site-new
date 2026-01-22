@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { createAPIClient } from '@/lib/supabase-server';
+import { createAPIClient, supabaseWithRetry } from '@/lib/supabase-server';
 import { auditService } from '@/utils/audit-service';
 
 // Получение всех групп баннеров с баннерами
@@ -8,13 +8,17 @@ export async function GET(request: NextRequest) {
     // Используем реальный Supabase клиент для API маршрутов
     const supabase = await createAPIClient(request);
 
-    const { data, error } = await supabase
-      .from('banner_groups')
-      .select(`
-        *,
-        banners(*)
-      `)
-      .order('position', { ascending: true });
+    const result = await supabaseWithRetry(supabase, (client) =>
+      client
+        .from('banner_groups')
+        .select(`
+          *,
+          banners(*)
+        `)
+        .order('position', { ascending: true })
+    ) as { data: any; error: any };
+
+    const { data, error } = result;
 
     if (error) {
       return Response.json({ error: error.message }, { status: 500 });
@@ -35,10 +39,14 @@ export async function POST(request: NextRequest) {
     // Используем реальный Supabase клиент для API маршрутов
     const supabase = await createAPIClient(request);
 
-    const { data, error } = await supabase
-      .from('banner_groups')
-      .insert([{ title, position }])
-      .select();
+    const result = await supabaseWithRetry(supabase, (client) =>
+      client
+        .from('banner_groups')
+        .insert([{ title, position }])
+        .select()
+    ) as { data: any; error: any };
+
+    const { data, error } = result;
 
     if (error) {
       return Response.json({ error: error.message }, { status: 500 });
@@ -80,11 +88,15 @@ export async function PUT(request: NextRequest) {
     // Используем реальный Supabase клиент для API маршрутов
     const supabase = await createAPIClient(request);
 
-    const { data, error } = await supabase
-      .from('banner_groups')
-      .update({ title, position })
-      .eq('id', id)
-      .select();
+    const result = await supabaseWithRetry(supabase, (client) =>
+      client
+        .from('banner_groups')
+        .update({ title, position })
+        .eq('id', id)
+        .select()
+    ) as { data: any; error: any };
+
+    const { data, error } = result;
 
     if (error) {
       return Response.json({ error: error.message }, { status: 500 });
@@ -133,10 +145,14 @@ export async function DELETE(request: NextRequest) {
     const supabase = await createAPIClient(request);
 
     // Получаем все баннеры, связанные с этой группой, для удаления их изображений из Cloudinary
-    const { data: bannersToDelete, error: bannersFetchError } = await supabase
-      .from('banners')
-      .select('image_url')
-      .eq('group_id', id);
+    const bannersResult = await supabaseWithRetry(supabase, (client) =>
+      client
+        .from('banners')
+        .select('image_url')
+        .eq('group_id', id)
+    ) as { data: any; error: any };
+
+    const { data: bannersToDelete, error: bannersFetchError } = bannersResult;
 
     if (bannersFetchError) {
       console.error('Ошибка получения баннеров перед удалением группы:', bannersFetchError);
@@ -150,10 +166,14 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Удаляем группу баннеров (каскадно удалятся связанные баннеры)
-    const { error } = await supabase
-      .from('banner_groups')
-      .delete()
-      .eq('id', id);
+    const deleteResult = await supabaseWithRetry(supabase, (client) =>
+      client
+        .from('banner_groups')
+        .delete()
+        .eq('id', id)
+    ) as { data: any; error: any };
+
+    const { error } = deleteResult;
 
     if (error) {
       return Response.json({ error: error.message }, { status: 500 });

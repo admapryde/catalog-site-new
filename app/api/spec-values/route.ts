@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { createAPIClient } from '@/lib/supabase-server';
+import { createAPIClient, supabaseWithRetry } from '@/lib/supabase-server';
 
 // Получение доступных значений характеристик для фильтрации по категории
 export async function GET(request: NextRequest) {
@@ -19,39 +19,72 @@ export async function GET(request: NextRequest) {
     let productIds: string[] = [];
 
     if (category_id) {
-      const { data: productsData, error: productsError } = await supabase
-        .from('products')
-        .select('id')
-        .eq('category_id', category_id);
+      const productsResult = await supabaseWithRetry(supabase, (client) =>
+        client
+          .from('products')
+          .select('id')
+          .eq('category_id', category_id)
+      );
+
+      const { data: productsData, error: productsError } = productsResult as { data: any; error: any };
 
       if (productsError) {
         throw productsError;
       }
 
-      productIds = productsData?.map(p => p.id) || [];
+      productIds = productsData?.map((p: any) => p.id) || [];
     }
 
     // Запрос для получения уникальных комбинаций названий характеристик, их типов и значений
-    let specsQuery = supabase
-      .from('product_specs')
-      .select(`
-        property_name,
-        value,
-        spec_type_id
-      `);
+    let specsData: any[] = [];
+    let specsError: any = null;
 
     if (category_id) {
       // Если указана категория, получаем значения только для товаров из этой категории
-      specsQuery = specsQuery.in('product_id', productIds);
-    }
+      const specsResult = await supabaseWithRetry(supabase, (client) =>
+        client
+          .from('product_specs')
+          .select(`
+            property_name,
+            value,
+            spec_type_id
+          `)
+          .in('product_id', productIds)
+      ) as { data: any; error: any };
 
-    if (product_ids) {
+      specsData = specsResult.data || [];
+      specsError = specsResult.error;
+    } else if (product_ids) {
       // Если указаны конкретные ID товаров, фильтруем по ним
       const ids = product_ids.split(',').map(id => id.trim());
-      specsQuery = specsQuery.in('product_id', ids);
-    }
+      const specsResult = await supabaseWithRetry(supabase, (client) =>
+        client
+          .from('product_specs')
+          .select(`
+            property_name,
+            value,
+            spec_type_id
+          `)
+          .in('product_id', ids)
+      ) as { data: any; error: any };
 
-    const { data: specsData, error: specsError } = await specsQuery;
+      specsData = specsResult.data || [];
+      specsError = specsResult.error;
+    } else {
+      // Без фильтрации
+      const specsResult = await supabaseWithRetry(supabase, (client) =>
+        client
+          .from('product_specs')
+          .select(`
+            property_name,
+            value,
+            spec_type_id
+          `)
+      ) as { data: any; error: any };
+
+      specsData = specsResult.data || [];
+      specsError = specsResult.error;
+    }
 
     if (specsError) {
       throw specsError;
@@ -62,16 +95,20 @@ export async function GET(request: NextRequest) {
     let specTypesMap: Record<string, any> = {};
 
     if (specTypeIds.length > 0) {
-      const { data: specTypes, error: specTypesError } = await supabase
-        .from('spec_types')
-        .select('id, filter_type')
-        .in('id', specTypeIds);
+      const specTypesResult = await supabaseWithRetry(supabase, (client) =>
+        client
+          .from('spec_types')
+          .select('id, filter_type')
+          .in('id', specTypeIds)
+      );
+
+      const { data: specTypes, error: specTypesError } = specTypesResult as { data: any; error: any };
 
       if (specTypesError) {
         console.error('Ошибка получения типов характеристик:', specTypesError);
         // Продолжаем работу, даже если не удалось получить типы
       } else {
-        specTypesMap = specTypes.reduce((acc: Record<string, any>, type) => {
+        specTypesMap = specTypes.reduce((acc: Record<string, any>, type: any) => {
           acc[type.id] = type;
           return acc;
         }, {});

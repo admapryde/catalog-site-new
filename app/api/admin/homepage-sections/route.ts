@@ -1,15 +1,19 @@
 import { NextRequest } from 'next/server';
-import { createAPIClient } from '@/lib/supabase-server';
+import { createAPIClient, supabaseWithRetry } from '@/lib/supabase-server';
 import { auditService } from '@/utils/audit-service';
 
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createAPIClient(request);
 
-    const { data, error } = await supabase
-      .from('homepage_sections')
-      .select('*')
-      .order('position', { ascending: true });
+    const result = await supabaseWithRetry(supabase, (client) =>
+      client
+        .from('homepage_sections')
+        .select('*')
+        .order('position', { ascending: true })
+    ) as { data: any; error: any };
+
+    const { data, error } = result;
 
     if (error) {
       return Response.json({ error: error.message }, { status: 500 });
@@ -28,10 +32,14 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createAPIClient(request);
 
-    const { data, error } = await supabase
-      .from('homepage_sections')
-      .insert([{ title, position: position || 1 }])
-      .select();
+    const result = await supabaseWithRetry(supabase, (client) =>
+      client
+        .from('homepage_sections')
+        .insert([{ title, position: position || 1 }])
+        .select()
+    ) as { data: any; error: any };
+
+    const { data, error } = result;
 
     if (error) {
       return Response.json({ error: error.message }, { status: 500 });
@@ -71,11 +79,15 @@ export async function PUT(request: NextRequest) {
 
     const supabase = await createAPIClient(request);
 
-    const { data, error } = await supabase
-      .from('homepage_sections')
-      .update({ title, position })
-      .eq('id', id)
-      .select();
+    const result = await supabaseWithRetry(supabase, (client) =>
+      client
+        .from('homepage_sections')
+        .update({ title, position })
+        .eq('id', id)
+        .select()
+    ) as { data: any; error: any };
+
+    const { data, error } = result;
 
     if (error) {
       return Response.json({ error: error.message }, { status: 500 });
@@ -119,10 +131,14 @@ export async function DELETE(request: NextRequest) {
 
     const supabase = await createAPIClient(request);
 
-    const { error } = await supabase
-      .from('homepage_sections')
-      .delete()
-      .eq('id', id);
+    const result = await supabaseWithRetry(supabase, (client) =>
+      client
+        .from('homepage_sections')
+        .delete()
+        .eq('id', id)
+    ) as { data: any; error: any };
+
+    const { error } = result;
 
     if (error) {
       return Response.json({ error: error.message }, { status: 500 });

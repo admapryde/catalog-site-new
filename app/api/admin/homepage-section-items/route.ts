@@ -1,19 +1,23 @@
 import { NextRequest } from 'next/server';
-import { createAPIClient } from '@/lib/supabase-server';
+import { createAPIClient, supabaseWithRetry } from '@/lib/supabase-server';
 import { auditService } from '@/utils/audit-service';
 
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createAPIClient(request);
 
-    const { data, error } = await supabase
-      .from('homepage_section_items')
-      .select(`
-        *,
-        product:products(name, price, category_id),
-        section:homepage_sections(title)
-      `)
-      .order('sort_order', { ascending: true });
+    const result = await supabaseWithRetry(supabase, (client) =>
+      client
+        .from('homepage_section_items')
+        .select(`
+          *,
+          product:products(name, price, category_id),
+          section:homepage_sections(title)
+        `)
+        .order('sort_order', { ascending: true })
+    ) as { data: any; error: any };
+
+    const { data, error } = result;
 
     if (error) {
       return Response.json({ error: error.message }, { status: 500 });
@@ -32,10 +36,14 @@ export async function POST(request: NextRequest) {
 
     const supabase = await createAPIClient(request);
 
-    const { data, error } = await supabase
-      .from('homepage_section_items')
-      .insert([{ section_id, product_id, sort_order: sort_order || 0 }])
-      .select();
+    const result = await supabaseWithRetry(supabase, (client) =>
+      client
+        .from('homepage_section_items')
+        .insert([{ section_id, product_id, sort_order: sort_order || 0 }])
+        .select()
+    ) as { data: any; error: any };
+
+    const { data, error } = result;
 
     if (error) {
       return Response.json({ error: error.message }, { status: 500 });
@@ -75,11 +83,15 @@ export async function PUT(request: NextRequest) {
 
     const supabase = await createAPIClient(request);
 
-    const { data, error } = await supabase
-      .from('homepage_section_items')
-      .update({ section_id, product_id, sort_order })
-      .eq('id', id)
-      .select();
+    const result = await supabaseWithRetry(supabase, (client) =>
+      client
+        .from('homepage_section_items')
+        .update({ section_id, product_id, sort_order })
+        .eq('id', id)
+        .select()
+    ) as { data: any; error: any };
+
+    const { data, error } = result;
 
     if (error) {
       return Response.json({ error: error.message }, { status: 500 });
@@ -123,10 +135,14 @@ export async function DELETE(request: NextRequest) {
 
     const supabase = await createAPIClient(request);
 
-    const { error } = await supabase
-      .from('homepage_section_items')
-      .delete()
-      .eq('id', id);
+    const result = await supabaseWithRetry(supabase, (client) =>
+      client
+        .from('homepage_section_items')
+        .delete()
+        .eq('id', id)
+    ) as { data: any; error: any };
+
+    const { error } = result;
 
     if (error) {
       return Response.json({ error: error.message }, { status: 500 });

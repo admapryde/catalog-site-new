@@ -1,32 +1,44 @@
 import { NextRequest } from 'next/server';
-import { createAPIClient } from '@/lib/supabase-server';
+import { createAPIClient, supabaseWithRetry } from '@/lib/supabase-server';
 
 export async function GET(request: NextRequest) {
   try {
     const supabase = await createAPIClient(request);
 
     // Получаем количество товаров
-    const { count: productsCount, error: productsError } = await supabase
-      .from('products')
-      .select('*', { count: 'exact', head: true });
+    const productsResult = await supabaseWithRetry(supabase, (client) =>
+      client
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+    ) as { count: number; error: any };
+
+    const { count: productsCount, error: productsError } = productsResult;
 
     if (productsError) {
       throw productsError;
     }
 
     // Получаем количество категорий
-    const { count: categoriesCount, error: categoriesError } = await supabase
-      .from('categories')
-      .select('*', { count: 'exact', head: true });
+    const categoriesResult = await supabaseWithRetry(supabase, (client) =>
+      client
+        .from('categories')
+        .select('*', { count: 'exact', head: true })
+    ) as { count: number; error: any };
+
+    const { count: categoriesCount, error: categoriesError } = categoriesResult;
 
     if (categoriesError) {
       throw categoriesError;
     }
 
     // Получаем количество групп баннеров
-    const { count: bannerGroupsCount, error: bannerGroupsError } = await supabase
-      .from('banner_groups')
-      .select('*', { count: 'exact', head: true });
+    const bannerGroupsResult = await supabaseWithRetry(supabase, (client) =>
+      client
+        .from('banner_groups')
+        .select('*', { count: 'exact', head: true })
+    ) as { count: number; error: any };
+
+    const { count: bannerGroupsCount, error: bannerGroupsError } = bannerGroupsResult;
 
     if (bannerGroupsError) {
       throw bannerGroupsError;

@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
-import { createAPIClient } from '@/lib/supabase-server';
+import { createClient } from '@supabase/supabase-js';
+import { revalidateTag } from 'next/cache';
 
 export interface FooterSettings {
   footer_catalog_title: string;
@@ -12,7 +13,11 @@ export interface FooterSettings {
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createAPIClient(request);
+    // Используем прямой клиент Supabase без сессии, так как эти данные публичные
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
     // Получаем общие настройки футера
     const { data: generalData, error: generalError } = await supabase
@@ -23,14 +28,18 @@ export async function GET(request: NextRequest) {
     if (generalError) {
       console.error('Ошибка получения общих настроек футера:', generalError.message || generalError);
       // Возвращаем значения по умолчанию
-      return Response.json({
+      const defaultData = {
         footer_catalog_title: 'Каталог',
         footer_catalog_desc: 'Универсальная платформа для создания каталогов продукции различных отраслей.',
         footer_contacts_title: 'Контакты',
         footer_quick_links_title: 'Быстрые ссылки',
         contacts: [],
         quick_links: []
-      });
+      };
+
+      const response = Response.json(defaultData);
+      response.headers.set('Cache-Control', 'public, s-maxage=60'); // Кэшируем на 1 минуту в случае ошибки
+      return response;
     }
 
     // Получаем контактные данные
@@ -89,18 +98,41 @@ export async function GET(request: NextRequest) {
     }) || [];
 
     // Возвращаем настройки, заполняя недостающие значения по умолчанию
-    return Response.json({
+    const finalResult = {
       footer_catalog_title: settings.footer_catalog_title || 'Каталог',
       footer_catalog_desc: settings.footer_catalog_desc || 'Универсальная платформа для создания каталогов продукции различных отраслей.',
       footer_contacts_title: settings.footer_contacts_title || 'Контакты',
       footer_quick_links_title: settings.footer_quick_links_title || 'Быстрые ссылки',
       contacts,
       quick_links
-    });
+    };
+
+    const response = Response.json(finalResult);
+    // Устанавливаем HTTP кэширование на 5 минут, но с возможностью немедленной инвалидации через теги
+    response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+    return response;
   } catch (error) {
     console.error('Ошибка получения настроек футера:', error);
-    return Response.json({ 
-      error: 'Внутренняя ошибка сервера' 
-    }, { status: 500 });
+    // Возвращаем значения по умолчанию в случае ошибки
+    const defaultData = {
+      footer_catalog_title: 'Каталог',
+      footer_catalog_desc: 'Универсальная платформа для создания каталогов продукции различных отраслей.',
+      footer_contacts_title: 'Контакты',
+      footer_quick_links_title: 'Быстрые ссылки',
+      contacts: [],
+      quick_links: []
+    };
+
+    const response = Response.json(defaultData);
+    response.headers.set('Cache-Control', 'public, s-maxage=60'); // Кэшируем на 1 минуту в случае ошибки
+    return response;
   }
+}
+
+// Для возможности инвалидировать кэш при обновлении настроек
+export async function POST(request: NextRequest) {
+  // Инвалидируем кэш при получении POST запроса
+  revalidateTag('footer_settings', 'max');
+
+  return Response.json({ success: true });
 }

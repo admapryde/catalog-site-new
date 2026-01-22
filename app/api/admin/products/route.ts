@@ -1,46 +1,90 @@
 import { NextRequest } from 'next/server';
-import { createAPIClient } from '@/lib/supabase-server';
+import { createAPIClient, supabaseWithRetry } from '@/lib/supabase-server';
 import { getAdminSession } from '@/services/admin-auth-service';
 import { auditService } from '@/utils/audit-service';
+import { cacheManager } from '@/utils/cache-manager';
+
+// Кэшируем результаты запросов на 2 минуты
+const CACHE_DURATION = 2 * 60 * 1000; // 2 минуты в миллисекундах
 
 export async function GET(request: NextRequest) {
-  try {
-    // Используем реальный Supabase клиент для API маршрутов
-    const supabase = await createAPIClient(request);
+  // Проверяем, что пользователь аутентифицирован как администратор
+  const adminUser = await getAdminSession();
+  if (!adminUser) {
+    return Response.json({ error: 'Требуется аутентификация администратора' }, { status: 401 });
+  }
 
+  try {
     const { searchParams } = new URL(request.url);
     const categoryId = searchParams.get('category_id');
 
-    let query = supabase
-      .from('products')
-      .select(`
-        *,
-        category:categories!inner(id, name),
-        product_images(*),
-        product_specs(*)
-      `);
+    // Формируем ключ кэша на основе параметров запроса
+    const cacheKey = `admin_products_${categoryId || 'all'}`;
+    const cached = cacheManager.get<any[]>(cacheKey, CACHE_DURATION);
 
-    if (categoryId) {
-      query = query.eq('category_id', categoryId);
+    // Проверяем, есть ли свежие данные в кэше
+    if (cached) {
+      const response = Response.json(cached);
+      response.headers.set('Cache-Control', 'public, max-age=120'); // 2 минуты кэширования
+      return response;
     }
 
-    const { data, error } = await query
-      .order('created_at', { ascending: false });
+    // Используем реальный Supabase клиент для API маршрутов
+    const supabase = await createAPIClient(request);
+
+    const result = await supabaseWithRetry(supabase, (client) =>
+      client
+        .from('products')
+        .select(`
+          *,
+          category:categories!inner(id, name),
+          product_images(*),
+          product_specs(*)
+        `)
+        .order('created_at', { ascending: false })
+    ) as { data: any; error: any };
+
+    let { data, error } = result;
+
+    if (categoryId) {
+      const categoryResult = await supabaseWithRetry(supabase, (client) =>
+        client
+          .from('products')
+          .select(`
+            *,
+            category:categories!inner(id, name),
+            product_images(*),
+            product_specs(*)
+          `)
+          .eq('category_id', categoryId)
+          .order('created_at', { ascending: false })
+      ) as { data: any; error: any };
+
+      data = categoryResult.data;
+      error = categoryResult.error;
+    }
 
     if (error) {
+      console.error('Ошибка получения товаров:', error);
       return Response.json({ error: error.message }, { status: 500 });
     }
 
     // Преобразуем данные, чтобы соответствовать ожидаемой структуре Product
-    const transformedData = data.map(item => ({
+    const transformedData = data.map((item: any) => ({
       ...item,
       images: item.product_images || [],
       specs: item.product_specs || [],
       homepage_section_items: item.homepage_section_items || []
     }));
 
-    return Response.json(transformedData);
+    // Сохраняем результат в кэш
+    cacheManager.set(cacheKey, transformedData);
+
+    const response = Response.json(transformedData);
+    response.headers.set('Cache-Control', 'public, max-age=120'); // 2 минуты кэширования
+    return response;
   } catch (error: any) {
+    console.error('Ошибка получения товаров:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 }

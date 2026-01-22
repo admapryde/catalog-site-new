@@ -1,16 +1,20 @@
 import { NextRequest } from 'next/server';
 import { auditService } from '@/utils/audit-service';
-import { createAPIClient } from '@/lib/supabase-server';
+import { createAPIClient, supabaseWithRetry } from '@/lib/supabase-server';
 
 export async function GET(request: NextRequest) {
   try {
     // Проверяем сессию администратора через Supabase Auth
     const supabase = await createAPIClient(request);
 
+    const result = await supabaseWithRetry(supabase, async (client) => {
+      return await client.auth.getUser();
+    });
+
     const {
       data: { user },
       error,
-    } = await supabase.auth.getUser();
+    } = result;
 
     if (error || !user) {
       // Нет сессии, возвращаем ошибку
@@ -36,7 +40,7 @@ export async function GET(request: NextRequest) {
     const userName = searchParams.get('userName') || undefined;
 
     // Получаем историю аудита
-    const result = await auditService.getAuditLogs({
+    const auditResult = await auditService.getAuditLogs({
       limit,
       offset,
       startDate,
@@ -47,15 +51,15 @@ export async function GET(request: NextRequest) {
       userName
     });
 
-    if (result.success) {
+    if (auditResult.success) {
       return Response.json({
         success: true,
-        data: result.data
+        data: auditResult.data
       });
     } else {
       return Response.json({
         success: false,
-        error: result.error
+        error: auditResult.error
       }, { status: 500 });
     }
   } catch (error) {

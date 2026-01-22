@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useNotification } from '@/hooks/useNotification';
 
 interface SpecType {
   id: string;
@@ -22,6 +23,8 @@ export default function SpecTypesManager() {
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const { showNotification, renderNotification } = useNotification();
 
   // Функция для получения русского названия типа фильтра
   const getRussianFilterTypeName = (filterType: string) => {
@@ -60,7 +63,7 @@ export default function SpecTypesManager() {
         // Загрузка типов характеристик
         const specTypesResponse = await fetch('/api/spec-types');
         if (!specTypesResponse.ok) {
-          throw new Error('Ошибка загрузки типов характеристик');
+          throw new Error(`Ошибка загрузки типов характеристик: ${specTypesResponse.status} ${specTypesResponse.statusText}`);
         }
         const specTypesData = await specTypesResponse.json();
         setSpecTypes(specTypesData);
@@ -68,12 +71,13 @@ export default function SpecTypesManager() {
         // Загрузка категорий
         const categoriesResponse = await fetch('/api/admin/categories');
         if (!categoriesResponse.ok) {
-          throw new Error('Ошибка загрузки категорий');
+          throw new Error(`Ошибка загрузки категорий: ${categoriesResponse.status} ${categoriesResponse.statusText}`);
         }
         const categoriesData = await categoriesResponse.json();
         setCategories(categoriesData.map((cat: any) => ({ id: cat.id, name: cat.name })));
-      } catch (error) {
+      } catch (error: any) {
         console.error('Ошибка загрузки данных:', error);
+        showNotification(error.message || 'Ошибка загрузки данных', 'error');
       } finally {
         setLoading(false);
       }

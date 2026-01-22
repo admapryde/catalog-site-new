@@ -1,6 +1,7 @@
 import { FooterSettings } from '@/services/footer-service';
+import { GeneralSettings } from '@/services/general-settings-service';
 
-export default function Footer({ settings }: { settings: FooterSettings }) {
+export default function Footer({ settings, generalSettings }: { settings: FooterSettings, generalSettings?: GeneralSettings }) {
   return (
     <footer className="bg-gray-800 text-white py-8">
       <div className="container mx-auto px-4">
@@ -62,7 +63,7 @@ export default function Footer({ settings }: { settings: FooterSettings }) {
         </div>
 
         <div className="border-t border-gray-700 mt-8 pt-6 text-center text-gray-400">
-          <p>&copy; {new Date().getFullYear()} Каталог. Все права защищены.</p>
+          <p>{generalSettings?.site_footer_info || `© ${new Date().getFullYear()} Каталог. Все права защищены.`}</p>
         </div>
       </div>
     </footer>

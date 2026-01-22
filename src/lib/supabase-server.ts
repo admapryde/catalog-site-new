@@ -60,7 +60,7 @@ export async function createAPIClient(request: NextRequest) {
     throw new Error('Неверный формат Supabase URL');
   }
 
-  return createServerClient(
+  const supabase = createServerClient(
     supabaseUrl,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
@@ -86,11 +86,63 @@ export async function createAPIClient(request: NextRequest) {
         setAll(cookiesToSet) {
           // В API маршрутах мы не можем напрямую устанавливать куки через request
           // Куки будут установлены в ответе
-          console.log('Установка куки в API маршруте:', cookiesToSet);
         },
       },
     }
   );
+
+  return supabase;
+}
+
+// Функция для выполнения запроса к Supabase с обработкой ошибок ограничения частоты
+export async function supabaseWithRetry<T>(
+  supabaseInstance: any,
+  operation: (client: any) => Promise<T>
+): Promise<T> {
+  return await retryOnRateLimit(async () => {
+    return await operation(supabaseInstance);
+  });
+}
+
+// Функция для повторных попыток при ошибках с ограничением частоты
+async function retryOnRateLimit<T>(fn: () => Promise<T>, maxRetries: number = 3): Promise<T> {
+  let lastError;
+
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      lastError = error;
+
+      // Проверяем, является ли ошибка ошибкой ограничения частоты запросов
+      if (error?.status === 429 || error?.code === 'over_request_rate_limit') {
+        if (i < maxRetries - 1) {
+          // Вычисляем задержку с экспоненциальным увеличением (100ms, 200ms, 400ms...)
+          const delay = Math.pow(2, i) * 100 + Math.random() * 100; // Добавляем немного рандома
+          console.warn(`Ограничение частоты запросов, ждем ${delay}мс перед повторной попыткой ${i + 1}/${maxRetries}`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+      }
+
+      // Если это другая ошибка или исчерпаны попытки, выбрасываем ошибку
+      throw error;
+    }
+  }
+
+  throw lastError;
+}
+
+// Функция для безопасного логирования куки без раскрытия чувствительных данных
+function logSecureCookies(cookiesToSet: any[]) {
+  if (process.env.NODE_ENV !== 'production') {
+    const maskedCookies = cookiesToSet.map(cookie => ({
+      name: cookie.name,
+      value: cookie.value ? `${cookie.value.substring(0, 10)}...${cookie.value.substring(cookie.value.length - 4)}` : '',
+      options: cookie.options
+    }));
+    console.log('Установка куки в API маршруте (значения замаскированы):', maskedCookies);
+  }
 }
 
 // Функция для получения клиента Storage

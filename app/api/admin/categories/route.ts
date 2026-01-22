@@ -1,23 +1,56 @@
 import { NextRequest } from 'next/server';
-import { createAPIClient } from '@/lib/supabase-server';
+import { createAPIClient, supabaseWithRetry } from '@/lib/supabase-server';
+import { getAdminSession } from '@/services/admin-auth-service';
 import { auditService } from '@/utils/audit-service';
+import { cacheManager } from '@/utils/cache-manager';
+
+// Кэшируем результаты запросов на 5 минут
+const CACHE_DURATION = 5 * 60 * 1000; // 5 минут в миллисекундах
 
 export async function GET(request: NextRequest) {
+  // Проверяем, что пользователь аутентифицирован как администратор
+  const adminUser = await getAdminSession();
+  if (!adminUser) {
+    return Response.json({ error: 'Требуется аутентификация администратора' }, { status: 401 });
+  }
+
   try {
+    // Формируем ключ кэша
+    const cacheKey = 'admin_categories';
+    const cached = cacheManager.get<any[]>(cacheKey, CACHE_DURATION);
+
+    // Проверяем, есть ли свежие данные в кэше
+    if (cached) {
+      const response = Response.json(cached);
+      response.headers.set('Cache-Control', 'public, max-age=300'); // 5 минут кэширования
+      return response;
+    }
+
     // Используем реальный Supabase клиент для API маршрутов
     const supabase = await createAPIClient(request);
 
-    const { data, error } = await supabase
-      .from('categories')
-      .select('*')
-      .order('sort_order', { ascending: true });
+    const result = await supabaseWithRetry(supabase, (client) =>
+      client
+        .from('categories')
+        .select('*')
+        .order('sort_order', { ascending: true })
+    ) as { data: any; error: any };
+
+    const { data, error } = result;
 
     if (error) {
+      console.error('Ошибка получения категорий:', error);
       return Response.json({ error: error.message }, { status: 500 });
     }
 
-    return Response.json(data);
+    // Сохраняем результат в кэш
+    cacheManager.set(cacheKey, data);
+
+    const response = Response.json(data);
+    response.headers.set('Cache-Control', 'public, max-age=300'); // 5 минут кэширования
+    return response;
   } catch (error: any) {
+    console.error('Ошибка получения категорий:', error);
     return Response.json({ error: error.message }, { status: 500 });
   }
 }
@@ -30,10 +63,12 @@ export async function POST(request: NextRequest) {
     // Используем реальный Supabase клиент для API маршрутов
     const supabase = await createAPIClient(request);
 
-    const { data, error } = await supabase
+    const result = await supabase
       .from('categories')
       .insert([{ name, image_url, sort_order: sort_order || 0 }])
-      .select();
+      .select() as { data: any; error: any };
+
+    const { data, error } = result;
 
     if (error) {
       return Response.json({ error: error.message }, { status: 500 });
@@ -74,11 +109,13 @@ export async function PUT(request: NextRequest) {
     // Используем реальный Supabase клиент для API маршрутов
     const supabase = await createAPIClient(request);
 
-    const { data, error } = await supabase
+    const result = await supabase
       .from('categories')
       .update({ name, image_url, sort_order })
       .eq('id', id)
-      .select();
+      .select() as { data: any; error: any };
+
+    const { data, error } = result;
 
     if (error) {
       return Response.json({ error: error.message }, { status: 500 });
@@ -126,11 +163,13 @@ export async function DELETE(request: NextRequest) {
     const supabase = await createAPIClient(request);
 
     // Получаем информацию о категории перед удалением для возможной очистки изображения из Cloudinary
-    const { data: categoryToDelete, error: fetchError } = await supabase
+    const result = await supabase
       .from('categories')
       .select('image_url')
       .eq('id', id)
-      .single();
+      .single() as { data: any; error: any };
+
+    const { data: categoryToDelete, error: fetchError } = result;
 
     if (fetchError) {
       console.error('Ошибка получения информации о категории перед удалением:', fetchError);
@@ -140,10 +179,12 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Удаляем категорию (каскадно удалятся связанные продукты)
-    const { error: deleteError } = await supabase
+    const deleteResult = await supabase
       .from('categories')
       .delete()
-      .eq('id', id);
+      .eq('id', id) as { data: any; error: any };
+
+    const { error: deleteError } = deleteResult;
 
     if (deleteError) {
       return Response.json({ error: deleteError.message }, { status: 500 });

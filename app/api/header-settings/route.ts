@@ -1,5 +1,6 @@
 import { NextRequest } from 'next/server';
-import { createAPIClient } from '@/lib/supabase-server';
+import { createClient } from '@supabase/supabase-js';
+import { revalidateTag } from 'next/cache';
 
 export interface HeaderSettings {
   header_title: string;
@@ -9,9 +10,14 @@ export interface HeaderSettings {
   nav_contacts: string;
 }
 
-export async function GET(request: NextRequest) {
+// Получаем настройки шапки сайта (без кэширования в unstable_cache из-за ограничений на динамические данные)
+async function getHeaderSettings() {
   try {
-    const supabase = await createAPIClient(request);
+    // Используем прямой клиент Supabase без сессии, так как эти данные публичные
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+    const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
     // Получаем все настройки шапки сайта
     const { data, error } = await supabase
@@ -22,13 +28,13 @@ export async function GET(request: NextRequest) {
     if (error) {
       console.error('Ошибка получения настроек шапки:', error.message || error);
       // Возвращаем значения по умолчанию
-      return Response.json({
+      return {
         header_title: 'Каталог',
         nav_home: 'Главная',
         nav_catalog: 'Каталог',
         nav_about: 'О нас',
         nav_contacts: 'Контакты'
-      });
+      };
     }
 
     // Преобразуем полученные данные в нужный формат
@@ -40,15 +46,55 @@ export async function GET(request: NextRequest) {
     });
 
     // Возвращаем настройки, заполняя недостающие значения по умолчанию
-    return Response.json({
+    return {
       header_title: settings.header_title || 'Каталог',
       nav_home: settings.nav_home || 'Главная',
       nav_catalog: settings.nav_catalog || 'Каталог',
       nav_about: settings.nav_about || 'О нас',
       nav_contacts: settings.nav_contacts || 'Контакты'
-    });
+    };
   } catch (error) {
     console.error('Ошибка получения настроек шапки:', error);
-    return Response.json({ error: 'Внутренняя ошибка сервера' }, { status: 500 });
+    // Возвращаем значения по умолчанию в случае ошибки
+    return {
+      header_title: 'Каталог',
+      nav_home: 'Главная',
+      nav_catalog: 'Каталог',
+      nav_about: 'О нас',
+      nav_contacts: 'Контакты'
+    };
   }
+}
+
+export async function GET(request: NextRequest) {
+  try {
+    const settings = await getHeaderSettings();
+
+    const response = Response.json(settings);
+    // Устанавливаем HTTP кэширование на 5 минут, но с возможностью немедленной инвалидации через теги
+    response.headers.set('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=600');
+    return response;
+  } catch (error) {
+    console.error('Ошибка получения настроек шапки:', error);
+    // Возвращаем значения по умолчанию в случае ошибки
+    const defaultData = {
+      header_title: 'Каталог',
+      nav_home: 'Главная',
+      nav_catalog: 'Каталог',
+      nav_about: 'О нас',
+      nav_contacts: 'Контакты'
+    };
+
+    const response = Response.json(defaultData);
+    response.headers.set('Cache-Control', 'public, s-maxage=60'); // Кэшируем на 1 минуту в случае ошибки
+    return response;
+  }
+}
+
+// Для возможности инвалидировать кэш при обновлении настроек
+export async function POST(request: NextRequest) {
+  // Инвалидируем кэш при получении POST запроса
+  revalidateTag('header_settings', 'max');
+
+  return Response.json({ success: true });
 }

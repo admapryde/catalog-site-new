@@ -1,14 +1,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Product, ProductImage, ProductSpec, SpecType } from '@/types';
+import { Product, ProductImage, ProductSpec, SpecType, Template, TemplateWithSpecs } from '@/types';
 import FileUpload from '@/components/admin/FileUpload';
 import HomepageSectionSelector from '@/components/admin/HomepageSectionSelector';
 import OptimizedImage from '@/components/OptimizedImage';
+import { useNotification } from '@/hooks/useNotification';
 
 export default function ProductsManager() {
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [templates, setTemplates] = useState<TemplateWithSpecs[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState<string>('');
   const [name, setName] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [price, setPrice] = useState(0);
@@ -22,6 +25,8 @@ export default function ProductsManager() {
   const [filteredSpecTypes, setFilteredSpecTypes] = useState<SpecType[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+
+  const { showNotification, renderNotification } = useNotification();
 
   // Функция для получения русского названия типа характеристики
   const getRussianSpecTypeName = (name: string, filterType: string) => {
@@ -45,23 +50,24 @@ export default function ProductsManager() {
       // Загрузка товаров
       const productsResponse = await fetch('/api/admin/products');
       if (!productsResponse.ok) {
-        throw new Error('Ошибка загрузки товаров');
+        throw new Error(`Ошибка загрузки товаров: ${productsResponse.status} ${productsResponse.statusText}`);
       }
       const productsData = await productsResponse.json();
       setProducts(productsData);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Ошибка загрузки данных:', error);
+      showNotification(error.message || 'Ошибка загрузки товаров', 'error');
     }
   };
 
-  // Получение товаров и категорий из API
+  // Получение товаров, категорий и шаблонов из API
   useEffect(() => {
     const fetchData = async () => {
       try {
         // Загрузка товаров
         const productsResponse = await fetch('/api/admin/products');
         if (!productsResponse.ok) {
-          throw new Error('Ошибка загрузки товаров');
+          throw new Error(`Ошибка загрузки товаров: ${productsResponse.status} ${productsResponse.statusText}`);
         }
         const productsData = await productsResponse.json();
         setProducts(productsData);
@@ -69,7 +75,7 @@ export default function ProductsManager() {
         // Загрузка типов характеристик
         const specTypesResponse = await fetch('/api/spec-types');
         if (!specTypesResponse.ok) {
-          throw new Error('Ошибка загрузки типов характеристик');
+          throw new Error(`Ошибка загрузки типов характеристик: ${specTypesResponse.status} ${specTypesResponse.statusText}`);
         }
         const specTypesData = await specTypesResponse.json();
         setSpecTypes(specTypesData);
@@ -77,12 +83,21 @@ export default function ProductsManager() {
         // Загрузка категорий
         const categoriesResponse = await fetch('/api/admin/categories');
         if (!categoriesResponse.ok) {
-          throw new Error('Ошибка загрузки категорий');
+          throw new Error(`Ошибка загрузки категорий: ${categoriesResponse.status} ${categoriesResponse.statusText}`);
         }
         const categoriesData = await categoriesResponse.json();
         setCategories(categoriesData.map((cat: any) => ({ id: cat.id, name: cat.name })));
-      } catch (error) {
+
+        // Загрузка шаблонов
+        const templatesResponse = await fetch('/api/admin/templates');
+        if (!templatesResponse.ok) {
+          throw new Error(`Ошибка загрузки шаблонов: ${templatesResponse.status} ${templatesResponse.statusText}`);
+        }
+        const templatesData = await templatesResponse.json();
+        setTemplates(templatesData);
+      } catch (error: any) {
         console.error('Ошибка загрузки данных:', error);
+        showNotification(error.message || 'Ошибка загрузки данных', 'error');
       } finally {
         setLoading(false);
       }
@@ -117,13 +132,16 @@ export default function ProductsManager() {
         });
 
         if (!response.ok) {
-          throw new Error('Ошибка обновления товара');
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Ошибка обновления товара');
         }
 
         const updatedProduct = await response.json();
         setProducts(products.map(prod =>
           prod.id === editingId ? updatedProduct : prod
         ));
+
+        showNotification('Товар успешно обновлен!', 'success');
       } else {
         // Создание нового товара
         const response = await fetch('/api/admin/products', {
@@ -140,7 +158,8 @@ export default function ProductsManager() {
         });
 
         if (!response.ok) {
-          throw new Error('Ошибка создания товара');
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Ошибка создания товара');
         }
 
         const newProduct = await response.json();
@@ -159,6 +178,8 @@ export default function ProductsManager() {
         setOriginalImages([...productImages]);
         setOriginalSpecs([...productSpecs]);
         setEditingId(newProduct.id);
+
+        showNotification('Товар успешно создан!', 'success');
       }
 
       // Не сбрасываем форму при создании - вместо этого переходим в режим редактирования
@@ -169,8 +190,9 @@ export default function ProductsManager() {
       // setImages([]);
       // setSpecs([]);
       // setEditingId(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Ошибка сохранения товара:', error);
+      showNotification(error.message || 'Произошла ошибка при сохранении товара', 'error');
     }
   };
 
@@ -207,12 +229,15 @@ export default function ProductsManager() {
         });
 
         if (!response.ok) {
-          throw new Error('Ошибка удаления товара');
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Ошибка удаления товара');
         }
 
         setProducts(products.filter(prod => prod.id !== id));
-      } catch (error) {
+        showNotification('Товар успешно удален!', 'success');
+      } catch (error: any) {
         console.error('Ошибка удаления товара:', error);
+        showNotification(error.message || 'Произошла ошибка при удалении товара', 'error');
       }
     }
   };
@@ -250,12 +275,34 @@ export default function ProductsManager() {
     }
   };
 
+  const applyTemplate = (templateId: string) => {
+    const template = templates.find(t => t.id === templateId);
+    if (template) {
+      // Добавляем характеристики из шаблона к существующим
+      const newSpecs = [...specs];
+      template.specs.forEach(spec => {
+        // Проверяем, что такой характеристики еще нет
+        const exists = newSpecs.some(s => s.property_name === spec.property_name && s.value === spec.value);
+        if (!exists) {
+          newSpecs.push({
+            property_name: spec.property_name,
+            value: spec.value,
+            spec_type_id: spec.spec_type_id || undefined
+          });
+        }
+      });
+      setSpecs(newSpecs);
+      setSelectedTemplate(''); // Сбрасываем выбор шаблона
+    }
+  };
+
   if (loading) {
     return <div className="p-4">Загрузка...</div>;
   }
 
   return (
     <div className="p-6">
+      {renderNotification()}
       <h2 className="text-2xl font-bold text-gray-800 mb-6">
         {editingId ? 'Редактировать товар' : 'Добавить новый товар'}
       </h2>
@@ -382,6 +429,34 @@ export default function ProductsManager() {
         {/* Управление характеристиками */}
         <div className="mb-6">
           <h3 className="text-lg font-medium text-gray-800 mb-3">Характеристики товара</h3>
+
+          {/* Выбор шаблона */}
+          <div className="mb-4">
+            <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="templateSelect">
+              Применить шаблон
+            </label>
+            <div className="flex">
+              <select
+                id="templateSelect"
+                value={selectedTemplate}
+                onChange={(e) => {
+                  setSelectedTemplate(e.target.value);
+                  if (e.target.value) {
+                    applyTemplate(e.target.value);
+                  }
+                }}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mr-2"
+              >
+                <option value="">Выберите шаблон</option>
+                {templates.map(template => (
+                  <option key={template.id} value={template.id}>
+                    {template.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
             <div>
               <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="propertyName">

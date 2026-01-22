@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { BannerGroup, Banner } from '@/types';
 import FileUpload from '@/components/admin/FileUpload';
 import OptimizedImage from '@/components/OptimizedImage';
+import { useNotification } from '@/hooks/useNotification';
 
 export default function BannerManager() {
   const [groups, setGroups] = useState<BannerGroup[]>([]);
@@ -17,6 +18,8 @@ export default function BannerManager() {
   const [editingBannerId, setEditingBannerId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'groups' | 'banners'>('groups');
   const [loading, setLoading] = useState(true);
+
+  const { showNotification, renderNotification } = useNotification();
 
   // Получение данных из API
   useEffect(() => {
@@ -146,7 +149,8 @@ export default function BannerManager() {
         });
 
         if (!response.ok) {
-          throw new Error('Ошибка обновления баннера');
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Ошибка обновления баннера');
         }
 
         const updatedBanner = await response.json();
@@ -154,6 +158,8 @@ export default function BannerManager() {
           b.id === editingBannerId ? updatedBanner[0] : b
         );
         setBanners(updatedBanners);
+
+        showNotification('Баннер успешно обновлен!', 'success');
       } else {
         // Создание нового баннера
         // Определяем порядок сортировки как количество баннеров в группе + 1
@@ -167,13 +173,16 @@ export default function BannerManager() {
         });
 
         if (!response.ok) {
-          throw new Error('Ошибка создания баннера');
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Ошибка создания баннера');
         }
 
         const newBanner = await response.json();
         // После добавления баннера обновляем список
         const updatedBanners = [...banners, newBanner[0]];
         setBanners(updatedBanners);
+
+        showNotification('Баннер успешно создан!', 'success');
       }
 
       // Сброс формы
@@ -181,8 +190,9 @@ export default function BannerManager() {
       setImage('');
       setLink('');
       setEditingBannerId(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Ошибка сохранения баннера:', error);
+      showNotification(error.message || 'Произошла ошибка при сохранении баннера', 'error');
     }
   };
 
@@ -208,7 +218,8 @@ export default function BannerManager() {
         });
 
         if (!response.ok) {
-          throw new Error('Ошибка удаления группы');
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Ошибка удаления группы');
         }
 
         // Обновляем список групп без удаленной и пересчитываем порядок
@@ -221,8 +232,11 @@ export default function BannerManager() {
         setGroups(reorderedGroups);
         // Также удалим связанные баннеры
         setBanners(banners.filter(b => b.group_id !== id));
-      } catch (error) {
+
+        showNotification('Группа баннеров успешно удалена!', 'success');
+      } catch (error: any) {
         console.error('Ошибка удаления группы:', error);
+        showNotification(error.message || 'Произошла ошибка при удалении группы баннеров', 'error');
       }
     }
   };
@@ -235,14 +249,18 @@ export default function BannerManager() {
         });
 
         if (!response.ok) {
-          throw new Error('Ошибка удаления баннера');
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Ошибка удаления баннера');
         }
 
         // Обновляем список баннеров без удаленного
         const filteredBanners = banners.filter(b => b.id !== id);
         setBanners(filteredBanners);
-      } catch (error) {
+
+        showNotification('Баннер успешно удален!', 'success');
+      } catch (error: any) {
         console.error('Ошибка удаления баннера:', error);
+        showNotification(error.message || 'Произошла ошибка при удалении баннера', 'error');
       }
     }
   };
@@ -435,6 +453,7 @@ export default function BannerManager() {
 
   return (
     <div className="p-6">
+      {renderNotification()}
       <div className="border-b border-gray-200 mb-6">
         <nav className="-mb-px flex space-x-8">
           <button

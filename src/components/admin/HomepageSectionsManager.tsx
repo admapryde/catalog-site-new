@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { HomepageSection, HomepageSectionItem, Product } from '@/types';
+import { useNotification } from '@/hooks/useNotification';
 
 export default function HomepageSectionsManager() {
   const [sections, setSections] = useState<HomepageSection[]>([]);
@@ -11,7 +12,9 @@ export default function HomepageSectionsManager() {
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'sections' | 'items'>('sections');
   const [loading, setLoading] = useState(true);
-  
+
+  const { showNotification, renderNotification } = useNotification();
+
   // Для управления элементами разделов
   const [selectedSectionId, setSelectedSectionId] = useState('');
   const [selectedProductId, setSelectedProductId] = useState('');
@@ -106,13 +109,16 @@ export default function HomepageSectionsManager() {
         });
 
         if (!response.ok) {
-          throw new Error('Ошибка обновления раздела');
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Ошибка обновления раздела');
         }
 
         const updatedSection = await response.json();
         setSections(sections.map(s =>
           s.id === editingSectionId ? updatedSection[0] : s
         ));
+
+        showNotification('Раздел успешно обновлен!', 'success');
       } else {
         // Создание нового раздела
         const response = await fetch('/api/admin/homepage-sections', {
@@ -122,20 +128,24 @@ export default function HomepageSectionsManager() {
         });
 
         if (!response.ok) {
-          throw new Error('Ошибка создания раздела');
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Ошибка создания раздела');
         }
 
         const newSection = await response.json();
         // Добавляем новую секцию в конец списка с правильным порядковым номером
         const updatedSections = [...sections, newSection[0]].sort((a, b) => a.position - b.position);
         setSections(updatedSections);
+
+        showNotification('Раздел успешно создан!', 'success');
       }
 
       // Сброс формы
       setTitle('');
       setEditingSectionId(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Ошибка сохранения раздела:', error);
+      showNotification(error.message || 'Произошла ошибка при сохранении раздела', 'error');
     }
   };
 
@@ -262,7 +272,8 @@ export default function HomepageSectionsManager() {
         });
 
         if (!response.ok) {
-          throw new Error('Ошибка удаления раздела');
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Ошибка удаления раздела');
         }
 
         // Обновляем список разделов без удаленного и пересчитываем порядок
@@ -275,8 +286,11 @@ export default function HomepageSectionsManager() {
         setSections(reorderedSections);
         // Также удалим связанные элементы
         setSectionItems(sectionItems.filter(i => i.section_id !== id));
-      } catch (error) {
+
+        showNotification('Раздел успешно удален!', 'success');
+      } catch (error: any) {
         console.error('Ошибка удаления раздела:', error);
+        showNotification(error.message || 'Произошла ошибка при удалении раздела', 'error');
       }
     }
   };
@@ -506,6 +520,7 @@ export default function HomepageSectionsManager() {
 
   return (
     <div className="p-6">
+      {renderNotification()}
       <div className="border-b border-gray-200 mb-6">
         <nav className="-mb-px flex space-x-8">
           <button

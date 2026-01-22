@@ -87,6 +87,29 @@ export interface HomepageSectionItem {
   updated_at: string;
 }
 
+// Типы для шаблонов
+export interface Template {
+  id: string;
+  name: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TemplateWithSpecs extends Template {
+  specs: TemplateSpec[];
+}
+
+export interface TemplateSpec {
+  id: string;
+  template_id: string;
+  property_name: string;
+  value: string;
+  spec_type_id?: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 // Комплексный тип для детального представления продукта
 export interface ProductDetail extends Product {
   category: Category;

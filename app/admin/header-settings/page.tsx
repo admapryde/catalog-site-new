@@ -1,5 +1,8 @@
 import { requireAdminSession } from '@/components/ProtectedRoute';
 import { createClient } from '@/lib/supabase-server';
+import AdminSidebar from '@/components/admin/AdminSidebar';
+import HeaderSettingsForm from '@/components/admin/HeaderSettingsForm';
+import { headers } from 'next/headers';
 
 interface HeaderSettings {
   header_title: string;
@@ -60,6 +63,8 @@ async function getHeaderSettings(): Promise<HeaderSettings> {
   }
 }
 
+import { revalidateTag } from 'next/cache';
+
 async function updateHeaderSettings(formData: FormData) {
   'use server';
 
@@ -94,9 +99,34 @@ async function updateHeaderSettings(formData: FormData) {
       }
     }
 
-    // После успешного обновления перенаправляем на ту же страницу, чтобы показать обновленные данные
-    // Но поскольку это Server Action, мы не можем использовать redirect здесь
-    // Вместо этого просто завершаем функцию успешно
+    // Инвалидируем кэш для настроек шапки сайта
+    revalidateTag('header_settings', 'max');
+
+    // Вызываем POST-запрос к API для дополнительной инвалидации кэша
+    try {
+      // Получаем текущий URL из заголовков
+      const headersList = await headers();
+      const referer = headersList.get('referer');
+      let baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+
+      if (referer) {
+        try {
+          const refererUrl = new URL(referer);
+          baseUrl = `${refererUrl.protocol}//${refererUrl.host}`;
+        } catch (e) {
+          console.warn('Could not parse referer URL, using default base URL');
+        }
+      }
+
+      await fetch(`${baseUrl}/api/header-settings`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+    } catch (apiError) {
+      console.error('Ошибка при инвалидации кэша через API:', apiError);
+    }
   } catch (error) {
     console.error('Ошибка обновления настроек шапки:', error);
     // Не выбрасываем ошибку дальше, чтобы форма не ломалась
@@ -113,136 +143,14 @@ export default async function HeaderSettingsPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="flex">
-        {/* Сайдбар */}
-        <aside className="w-64 bg-white shadow-md min-h-screen">
-          <div className="p-6">
-            <h2 className="text-xl font-bold text-gray-800">Админ-панель</h2>
-          </div>
-          <nav className="mt-6">
-            <ul>
-              <li>
-                <a href="/admin" className="block py-3 px-6 text-gray-700 hover:bg-blue-50 hover:text-blue-600 border-l-4 border-transparent">
-                  Дашборд
-                </a>
-              </li>
-              <li>
-                <a href="/admin/categories" className="block py-3 px-6 text-gray-700 hover:bg-blue-50 hover:text-blue-600 border-l-4 border-transparent">
-                  Разделы
-                </a>
-              </li>
-              <li>
-                <a href="/admin/banner-groups" className="block py-3 px-6 text-gray-700 hover:bg-blue-50 hover:text-blue-600 border-l-4 border-transparent">
-                  Баннеры
-                </a>
-              </li>
-              <li>
-                <a href="/admin/homepage-sections" className="block py-3 px-6 text-gray-700 hover:bg-blue-50 hover:text-blue-600 border-l-4 border-transparent">
-                  Разделы ГС
-                </a>
-              </li>
-              <li>
-                <a href="/admin/products" className="block py-3 px-6 text-gray-700 hover:bg-blue-50 hover:text-blue-600 border-l-4 border-transparent">
-                  Товары
-                </a>
-              </li>
-              <li>
-                <a href="/admin/header-settings" className="block py-3 px-6 text-gray-700 hover:bg-blue-50 hover:text-blue-600 border-l-4 border-blue-600 bg-blue-50">
-                  Шапка сайта
-                </a>
-              </li>
-              <li>
-                <a href="/admin/settings" className="block py-3 px-6 text-gray-700 hover:bg-blue-50 hover:text-blue-600 border-l-4 border-transparent">
-                  Настройки
-                </a>
-              </li>
-            </ul>
-          </nav>
-        </aside>
+        <AdminSidebar />
 
         {/* Основной контент */}
         <main className="flex-1 p-8">
           <div className="max-w-4xl mx-auto">
             <h1 className="text-3xl font-bold text-gray-800 mb-8">Шапка сайта</h1>
 
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-6">Настройки шапки сайта</h2>
-              
-              <form action={updateHeaderSettings}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-                  <div>
-                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="header_title">
-                      Заголовок (логотип)
-                    </label>
-                    <input
-                      id="header_title"
-                      name="header_title"
-                      type="text"
-                      defaultValue={settings.header_title}
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="nav_home">
-                      Навигация: Главная
-                    </label>
-                    <input
-                      id="nav_home"
-                      name="nav_home"
-                      type="text"
-                      defaultValue={settings.nav_home}
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="nav_catalog">
-                      Навигация: Каталог
-                    </label>
-                    <input
-                      id="nav_catalog"
-                      name="nav_catalog"
-                      type="text"
-                      defaultValue={settings.nav_catalog}
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="nav_about">
-                      Навигация: О нас
-                    </label>
-                    <input
-                      id="nav_about"
-                      name="nav_about"
-                      type="text"
-                      defaultValue={settings.nav_about}
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="nav_contacts">
-                      Навигация: Контакты
-                    </label>
-                    <input
-                      id="nav_contacts"
-                      name="nav_contacts"
-                      type="text"
-                      defaultValue={settings.nav_contacts}
-                      className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                    />
-                  </div>
-                </div>
-
-                <button
-                  type="submit"
-                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                >
-                  Сохранить изменения
-                </button>
-              </form>
-            </div>
+            <HeaderSettingsForm initialSettings={settings} updateAction={updateHeaderSettings} />
           </div>
         </main>
       </div>

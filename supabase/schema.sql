@@ -64,6 +64,48 @@ CREATE TABLE IF NOT EXISTS site_settings (
     setting_value TEXT
 );
 
+-- Таблица для хранения общих настроек сайта
+CREATE TABLE IF NOT EXISTS general_settings (
+    id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+    site_title TEXT DEFAULT 'Каталог',
+    site_icon TEXT DEFAULT '/favicon.ico',
+    site_footer_info TEXT DEFAULT '© 2026 Каталог. Все права защищены.',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Создание триггера для автоматического обновления поля updated_at
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Применение триггера к таблице general_settings
+CREATE TRIGGER update_general_settings_updated_at
+    BEFORE UPDATE ON general_settings
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Включение RLS для таблицы general_settings
+ALTER TABLE general_settings ENABLE ROW LEVEL SECURITY;
+
+-- Создание политики: только аутентифицированные пользователи с ролью admin могут управлять настройками
+CREATE POLICY "Admin can manage general settings" ON general_settings
+FOR ALL TO authenticated
+USING (
+  auth.jwt() ->> 'role' = 'admin' OR
+  auth.jwt() -> 'user_metadata' ->> 'role' = 'admin' OR
+  auth.jwt() -> 'user_metadata' ->> 'role' = 'super_admin'
+);
+
+-- Вставка начальной записи, если таблица пуста
+INSERT INTO general_settings (id)
+SELECT gen_random_uuid()
+WHERE NOT EXISTS (SELECT 1 FROM general_settings);
+
 -- Индексы для оптимизации запросов
 CREATE INDEX IF NOT EXISTS idx_products_category_id ON products(category_id);
 CREATE INDEX IF NOT EXISTS idx_banners_group_id ON banners(group_id);

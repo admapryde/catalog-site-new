@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Category } from '@/types';
 import FileUpload from '@/components/admin/FileUpload';
 import OptimizedImage from '@/components/OptimizedImage';
+import { useNotification } from '@/hooks/useNotification';
 
 export default function CategoriesManager() {
   const [categories, setCategories] = useState<Category[]>([]);
@@ -12,20 +13,23 @@ export default function CategoriesManager() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const { showNotification, renderNotification } = useNotification();
+
   // Получение категорий из API
   useEffect(() => {
     const fetchCategories = async () => {
       try {
         const response = await fetch('/api/admin/categories');
         if (!response.ok) {
-          throw new Error('Ошибка загрузки категорий');
+          throw new Error(`Ошибка загрузки категорий: ${response.status} ${response.statusText}`);
         }
         const data: Category[] = await response.json();
         // Сортируем категории по sort_order
         const sortedCategories = data.sort((a, b) => a.sort_order - b.sort_order);
         setCategories(sortedCategories);
-      } catch (error) {
+      } catch (error: any) {
         console.error('Ошибка загрузки категорий:', error);
+        showNotification(error.message || 'Ошибка загрузки категорий', 'error');
       } finally {
         setLoading(false);
       }
@@ -48,7 +52,8 @@ export default function CategoriesManager() {
         });
 
         if (!response.ok) {
-          throw new Error('Ошибка обновления категории');
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Ошибка обновления категории');
         }
 
         const updatedCategory = await response.json();
@@ -56,6 +61,8 @@ export default function CategoriesManager() {
           cat.id === editingId ? updatedCategory[0] : cat
         ).sort((a, b) => a.sort_order - b.sort_order);
         setCategories(updatedCategories);
+
+        showNotification('Категория успешно обновлена!', 'success');
       } else {
         // Создание новой категории
         const response = await fetch('/api/admin/categories', {
@@ -65,21 +72,25 @@ export default function CategoriesManager() {
         });
 
         if (!response.ok) {
-          throw new Error('Ошибка создания категории');
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Ошибка создания категории');
         }
 
         const newCategory = await response.json();
         // Добавляем новую категорию в конец списка с правильным порядковым номером
         const updatedCategories = [...categories, newCategory[0]].sort((a, b) => a.sort_order - b.sort_order);
         setCategories(updatedCategories);
+
+        showNotification('Категория успешно создана!', 'success');
       }
 
       // Сброс формы
       setName('');
       setImageUrl('');
       setEditingId(null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Ошибка сохранения категории:', error);
+      showNotification(error.message || 'Произошла ошибка при сохранении категории', 'error');
     }
   };
 
@@ -175,7 +186,8 @@ export default function CategoriesManager() {
         });
 
         if (!response.ok) {
-          throw new Error('Ошибка удаления категории');
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Ошибка удаления категории');
         }
 
         // Обновляем список категорий без удаленной и пересчитываем порядок
@@ -186,8 +198,10 @@ export default function CategoriesManager() {
         }));
 
         setCategories(reorderedCategories);
-      } catch (error) {
+        showNotification('Категория успешно удалена!', 'success');
+      } catch (error: any) {
         console.error('Ошибка удаления категории:', error);
+        showNotification(error.message || 'Произошла ошибка при удалении категории', 'error');
       }
     }
   };
@@ -198,6 +212,7 @@ export default function CategoriesManager() {
 
   return (
     <div className="p-6">
+      {renderNotification()}
       <h2 className="text-2xl font-bold text-gray-800 mb-6">
         {editingId ? 'Редактировать категорию' : 'Добавить новую категорию'}
       </h2>

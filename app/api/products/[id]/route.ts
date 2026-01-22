@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { createAPIClient } from '@/lib/supabase-server';
+import { createAPIClient, supabaseWithRetry } from '@/lib/supabase-server';
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -9,16 +9,20 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const supabase = await createAPIClient(request);
 
     // Получаем продукт с изображениями и характеристиками
-    const { data, error } = await supabase
-      .from('products')
-      .select(`
-        *,
-        category:categories!inner(id, name),
-        product_images(*),
-        product_specs(*)
-      `)
-      .eq('id', productId)
-      .single();
+    const result = await supabaseWithRetry(supabase, (client) =>
+      client
+        .from('products')
+        .select(`
+          *,
+          category:categories!inner(id, name),
+          product_images(*),
+          product_specs(*)
+        `)
+        .eq('id', productId)
+        .single()
+    ) as { data: any; error: any };
+
+    const { data, error } = result;
 
     if (error) {
       return Response.json({ error: error.message }, { status: 500 });
