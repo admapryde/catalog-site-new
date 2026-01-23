@@ -7,9 +7,10 @@ interface FileUploadProps {
   folder: string;
   label?: string;
   multiple?: boolean;
+  isFavicon?: boolean; // Дополнительный параметр для указания, что это favicon
 }
 
-export default function FileUpload({ onFileUpload, folder, label = "Загрузить файл", multiple = false }: FileUploadProps) {
+export default function FileUpload({ onFileUpload, folder, label = "Загрузить файл", multiple = false, isFavicon = false }: FileUploadProps) {
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -52,6 +53,11 @@ export default function FileUpload({ onFileUpload, folder, label = "Загруз
         const formData = new FormData();
         formData.append('file', file);
         formData.append('folder', folder);
+
+        // Добавляем параметр isFavicon в formData
+        if (isFavicon) {
+          formData.append('isFavicon', 'true');
+        }
 
         // Отправляем файл на сервер для загрузки в Cloudinary
         const response = await fetch('/api/upload', {

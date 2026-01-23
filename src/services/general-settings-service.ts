@@ -48,7 +48,7 @@ export async function getGeneralSettings(): Promise<GeneralSettings> {
         const defaultData = {
           id: '',
           site_title: 'Каталог',
-          site_icon: '/favicon.ico',
+          site_icon: '/favicon.png',
           site_footer_info: '© 2026 Каталог. Все права защищены.',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -64,7 +64,7 @@ export async function getGeneralSettings(): Promise<GeneralSettings> {
       const defaultData = {
         id: '',
         site_title: 'Каталог',
-        site_icon: '/favicon.ico',
+        site_icon: '/favicon.png',
         site_footer_info: '© 2026 Каталог. Все права защищены.',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -80,7 +80,7 @@ export async function getGeneralSettings(): Promise<GeneralSettings> {
       const defaultData = {
         id: '',
         site_title: 'Каталог',
-        site_icon: '/favicon.ico',
+        site_icon: '/favicon.png',
         site_footer_info: '© 2026 Каталог. Все права защищены.',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -96,7 +96,7 @@ export async function getGeneralSettings(): Promise<GeneralSettings> {
     const finalResult = {
       id: settings.id || '',
       site_title: settings.site_title || 'Каталог',
-      site_icon: settings.site_icon || '/favicon.ico',
+      site_icon: settings.site_icon || '/favicon.png',
       site_footer_info: settings.site_footer_info || '© 2026 Каталог. Все права защищены.',
       created_at: settings.created_at || new Date().toISOString(),
       updated_at: settings.updated_at || new Date().toISOString()
@@ -113,7 +113,7 @@ export async function getGeneralSettings(): Promise<GeneralSettings> {
       const defaultData = {
         id: '',
         site_title: 'Каталог',
-        site_icon: '/favicon.ico',
+        site_icon: '/favicon.png',
         site_footer_info: '© 2026 Каталог. Все права защищены.',
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -163,7 +163,7 @@ export async function initializeGeneralSettingsIfNeeded(): Promise<boolean> {
         .from('general_settings')
         .insert([{
           site_title: 'Каталог',
-          site_icon: '/favicon.ico',
+          site_icon: '/favicon.png',
           site_footer_info: '© 2026 Каталог. Все права защищены.',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()

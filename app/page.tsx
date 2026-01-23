@@ -20,7 +20,7 @@ async function getGeneralSettings() {
         console.warn('Таблица general_settings не существует, используем значения по умолчанию');
         return {
           site_title: 'Каталог',
-          site_icon: '/favicon.ico',
+          site_icon: '/favicon.png',
           site_footer_info: '© 2026 Каталог. Все права защищены.',
         };
       }

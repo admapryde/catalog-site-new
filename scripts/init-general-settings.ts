@@ -21,7 +21,7 @@ async function initializeGeneralSettings() {
         .from('general_settings')
         .insert([{
           site_title: 'Каталог',
-          site_icon: '/favicon.ico',
+          site_icon: '/favicon.png',
           site_footer_info: '© 2026 Каталог. Все права защищены.'
         }]);
 

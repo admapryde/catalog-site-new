@@ -97,10 +97,11 @@ export default function GeneralSettingsForm({ initialSettings }: GeneralSettings
         <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="site_icon">
           Иконка сайта
         </label>
-        <FileUpload 
-          onFileUpload={handleSiteIconUpload} 
-          folder="site-icons" 
-          label="Загрузить иконку сайта" 
+        <FileUpload
+          onFileUpload={handleSiteIconUpload}
+          folder="site-icons"
+          label="Загрузить иконку сайта"
+          isFavicon={true}
         />
         {formData.site_icon && (
           <div className="mt-2">

@@ -1,11 +1,13 @@
 import { NextRequest } from 'next/server';
 import { uploadImageToCloudinary } from '../../../src/utils/cloudinary';
+import { updateFavicon, isPngFormat } from '../../../src/utils/favicon-handler';
 
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File | null;
     const folder = formData.get('folder') as string | null;
+    const isFavicon = formData.get('isFavicon') === 'true'; // Параметр для указания, что это favicon
 
     if (!file) {
       return Response.json({ error: 'Файл не предоставлен' }, { status: 400 });
@@ -30,6 +32,21 @@ export async function POST(request: NextRequest) {
 
     // Загрузка изображения в Cloudinary
     const result: any = await uploadImageToCloudinary(buffer, folder);
+
+    // Если это favicon, обновляем файл favicon.png в публичной директории
+    if (isFavicon) {
+      try {
+        // Обновляем favicon в публичной директории
+        const faviconUpdated = await updateFavicon(buffer);
+
+        if (!faviconUpdated) {
+          console.error('Не удалось обновить favicon в публичной директории');
+        }
+      } catch (faviconError: any) {
+        console.error('Ошибка при обновлении favicon:', faviconError);
+        // Не прерываем основной процесс загрузки, если возникла ошибка с favicon
+      }
+    }
 
     return Response.json({
       url: result.secure_url,

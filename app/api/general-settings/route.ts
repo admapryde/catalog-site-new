@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
         const defaultData = {
           id: '',
           site_title: 'Каталог',
-          site_icon: '/favicon.ico',
+          site_icon: '/favicon.png',
           site_footer_info: '© 2026 Каталог. Все права защищены.',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
