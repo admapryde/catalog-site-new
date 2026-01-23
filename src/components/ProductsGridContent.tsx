@@ -123,12 +123,7 @@ export default function ProductsGridContent({ categoryId, search }: ProductsGrid
     };
 
     fetchProducts();
-  }, [categoryId,
-      search,
-      filters.category_id,
-      filters.price_from,
-      filters.price_to,
-      JSON.stringify(filters.spec_filters)]);
+  }, [categoryId, search, filters.category_id, filters.price_from, filters.price_to, filters.spec_filters]);
 
   const handleProductClick = async (productId: string) => {
     try {

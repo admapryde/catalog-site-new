@@ -1,37 +1,10 @@
 import { Metadata } from 'next';
-import { notFound } from 'next/navigation';
 import PageRenderer from '@/components/PageRenderer';
 
-// Генерация метаданных для страницы
-export async function generateMetadata({ params }: { params: { slug: string[] } }): Promise<Metadata> {
-  const slug = params.slug?.join('/') || '';
-
-  if (!slug) {
-    return {};
-  }
-
-  try {
-    const { createClient } = await import('@/lib/supabase-server');
-    const supabase = await createClient();
-
-    const { data: page, error } = await supabase
-      .from('pages')
-      .select('title, slug')
-      .eq('slug', slug)
-      .single();
-
-    if (error || !page) {
-      return {};
-    }
-
-    return {
-      title: page.title,
-      description: `Информация о ${page.title}`,
-    };
-  } catch (error) {
-    return {};
-  }
-}
+export const metadata: Metadata = {
+  title: 'О нас',
+  description: 'Информация о нашей компании',
+};
 
 async function getPageData(slug: string) {
   // Для серверных компонентов используем прямой вызов Supabase
@@ -100,20 +73,19 @@ async function getPageData(slug: string) {
   };
 }
 
-export default async function DynamicPage({ params }: { params: { slug: string[] } }) {
-  const slug = params.slug?.join('/') || '';
-
-  // Не обрабатываем пустой слаг или системные маршруты
-  if (!slug || ['admin', 'api', 'auth'].includes(slug)) {
-    // Для всех маршрутов, которые не совпадают с другими маршрутами, возвращаем 404
-    return notFound();
-  }
-
-  const page = await getPageData(slug);
+export default async function AboutPage() {
+  const page = await getPageData('about');
 
   if (!page) {
-    // Если страница не найдена в базе данных, возвращаем 404
-    return notFound();
+    // Если страница не найдена, показываем сообщение
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-3xl font-bold text-center mb-8">О нас</h1>
+        <div className="text-center text-gray-600">
+          <p>Страница "О нас" еще не создана в админ-панели.</p>
+        </div>
+      </div>
+    );
   }
 
   return (

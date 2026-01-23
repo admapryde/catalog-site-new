@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { FilterState, SpecTypeWithValues } from '@/types';
+import { debounce } from '@/utils/debounce';
 
 interface ProductFiltersProps {
   initialFilters: FilterState;
@@ -23,6 +24,11 @@ export default function ProductFilters({
 }: ProductFiltersProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  // Используем useRef для отслеживания первого рендера и текущей категории
+  const isFirstRender = useRef(true);
+  const selectedCategoryRef = useRef<string | undefined>(initialFilters.category_id);
+
   const [priceFrom, setPriceFrom] = useState<string>(initialFilters.price_from?.toString() || '');
   const [priceTo, setPriceTo] = useState<string>(initialFilters.price_to?.toString() || '');
   const [availableSpecs, setAvailableSpecs] = useState<SpecTypeWithValues[]>([]);
@@ -31,6 +37,14 @@ export default function ProductFilters({
 
   // Состояние для диапазонных фильтров
   const [rangeFilters, setRangeFilters] = useState<Record<string, { min: string; max: string }>>({});
+
+  // Создаем debounced версию onFilterChange
+  const debouncedOnFilterChange = useCallback(
+    debounce((filters: FilterState) => {
+      onFilterChange(filters);
+    }, 300),
+    [onFilterChange]
+  );
 
   // Загружаем категории, если мы на странице /catalog (без categoryId)
   useEffect(() => {
@@ -52,51 +66,50 @@ export default function ProductFilters({
     }
   }, [categoryId]);
 
-  // Восстанавливаем фильтры при изменении initialFilters
+  // Восстанавливаем фильтры при изменении initialFilters, но только при смене категории
   useEffect(() => {
     // Обновляем состояние фильтров при изменении initialFilters
-    setPriceFrom(initialFilters.price_from?.toString() || '');
-    setPriceTo(initialFilters.price_to?.toString() || '');
+    // Только если это первая загрузка или сменилась категория
+    if (isFirstRender.current || initialFilters.category_id !== selectedCategoryRef.current) {
+      setPriceFrom(initialFilters.price_from?.toString() || '');
+      setPriceTo(initialFilters.price_to?.toString() || '');
 
-    // Для spec_filters нужно обновить как selectedSpecFilters, так и rangeFilters
-    const newSelectedSpecFilters: Record<string, string[]> = {};
-    const newRangeFilters: Record<string, { min: string; max: string }> = {};
+      // Для spec_filters нужно обновить как selectedSpecFilters, так и rangeFilters
+      const newSelectedSpecFilters: Record<string, string[]> = {};
+      const newRangeFilters: Record<string, { min: string; max: string }> = {};
 
-    if (initialFilters.spec_filters) {
-      Object.entries(initialFilters.spec_filters).forEach(([key, values]) => {
-        // Проверяем, является ли это диапазонным фильтром
-        const isRangeFilter = values.some(v => v.startsWith('min:') || v.startsWith('max:'));
+      if (initialFilters.spec_filters) {
+        Object.entries(initialFilters.spec_filters).forEach(([key, values]) => {
+          // Проверяем, является ли это диапазонным фильтром
+          const isRangeFilter = values.some(v => v.startsWith('min:') || v.startsWith('max:'));
 
-        if (isRangeFilter) {
-          let minVal = '';
-          let maxVal = '';
+          if (isRangeFilter) {
+            let minVal = '';
+            let maxVal = '';
 
-          values.forEach(v => {
-            if (v.startsWith('min:')) {
-              minVal = v.substring(4);
-            } else if (v.startsWith('max:')) {
-              maxVal = v.substring(4);
-            }
-          });
+            values.forEach(v => {
+              if (v.startsWith('min:')) {
+                minVal = v.substring(4);
+              } else if (v.startsWith('max:')) {
+                maxVal = v.substring(4);
+              }
+            });
 
-          newRangeFilters[key] = { min: minVal, max: maxVal };
-        } else {
-          newSelectedSpecFilters[key] = [...values];
-        }
-      });
+            newRangeFilters[key] = { min: minVal, max: maxVal };
+          } else {
+            newSelectedSpecFilters[key] = [...values];
+          }
+        });
+      }
+
+      setSelectedSpecFilters(newSelectedSpecFilters);
+      setRangeFilters(newRangeFilters);
+
+      // Обновляем значение категории для отслеживания
+      selectedCategoryRef.current = initialFilters.category_id;
+      isFirstRender.current = false;
     }
-
-    setSelectedSpecFilters(newSelectedSpecFilters);
-    setRangeFilters(newRangeFilters);
-  }, [
-    initialFilters.price_from,
-    initialFilters.price_to,
-    // Используем JSON.stringify только как зависимость, чтобы избежать лишних перерисовок
-    JSON.stringify({
-      spec_filters: initialFilters.spec_filters,
-      category_id: initialFilters.category_id
-    })
-  ]);
+  }, [initialFilters, initialFilters.category_id]);
 
   // Загружаем доступные характеристики при изменении категории
   useEffect(() => {
@@ -148,7 +161,7 @@ export default function ProductFilters({
     };
 
     fetchSpecValues();
-  }, [categoryId, JSON.stringify(initialFilters)]);
+  }, [categoryId, initialFilters.category_id]);
 
   // Обновляем фильтры при изменении состояния
   useEffect(() => {
@@ -197,10 +210,10 @@ export default function ProductFilters({
       spec_filters: combinedSpecFilters
     };
 
-    onFilterChange(filters);
-  }, [priceFrom, priceTo, JSON.stringify(selectedSpecFilters), JSON.stringify(rangeFilters), JSON.stringify(initialFilters), onFilterChange]);
+    debouncedOnFilterChange(filters);
+  }, [priceFrom, priceTo, selectedSpecFilters, rangeFilters, initialFilters.category_id, debouncedOnFilterChange]);
 
-  const handleSpecFilterChange = (propertyName: string, value: string, checked: boolean) => {
+  const handleSpecFilterChange = useCallback((propertyName: string, value: string, checked: boolean) => {
     setSelectedSpecFilters(prev => {
       const currentValues = prev[propertyName] || [];
       let newValues: string[];
@@ -216,9 +229,9 @@ export default function ProductFilters({
         [propertyName]: newValues
       };
     });
-  };
+  }, []);
 
-  const handleRangeFilterChange = (propertyName: string, minOrMax: 'min' | 'max', value: string) => {
+  const handleRangeFilterChange = useCallback((propertyName: string, minOrMax: 'min' | 'max', value: string) => {
     setRangeFilters(prev => ({
       ...prev,
       [propertyName]: {
@@ -226,9 +239,9 @@ export default function ProductFilters({
         [minOrMax]: value
       }
     }));
-  };
+  }, []);
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setPriceFrom('');
     setPriceTo('');
     setSelectedSpecFilters({});
@@ -244,15 +257,19 @@ export default function ProductFilters({
       spec_filters: {}
     };
 
+    // Сбрасываем ref категории при очистке фильтров
+    selectedCategoryRef.current = newFilters.category_id;
+
     onFilterChange(newFilters);
-  };
+  }, [categoryId, initialFilters.category_id, onFilterChange]);
 
   // Определяем, есть ли активные фильтры
-  const hasActiveFilters =
-    priceFrom !== '' ||
-    priceTo !== '' ||
-    Object.keys(selectedSpecFilters).some(key => selectedSpecFilters[key].length > 0) ||
-    Object.keys(rangeFilters).some(key => rangeFilters[key].min !== '' || rangeFilters[key].max !== '');
+  const hasActiveFilters = useMemo(() => {
+    return priceFrom !== '' ||
+      priceTo !== '' ||
+      Object.keys(selectedSpecFilters).some(key => selectedSpecFilters[key].length > 0) ||
+      Object.keys(rangeFilters).some(key => rangeFilters[key].min !== '' || rangeFilters[key].max !== '');
+  }, [priceFrom, priceTo, selectedSpecFilters, rangeFilters]);
 
   return (
     <div className={`fixed inset-y-0 left-0 z-50 w-80 bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
@@ -303,6 +320,9 @@ export default function ProductFilters({
                       console.error('Ошибка при разборе сохраненных фильтров:', error);
                     }
                   }
+
+                  // Обновляем ref категории при выборе новой категории
+                  selectedCategoryRef.current = selectedCategoryId;
 
                   onFilterChange({
                     category_id: selectedCategoryId,

@@ -373,14 +373,16 @@ export default function ProductsManager() {
         <div className="mb-6">
           <h3 className="text-lg font-medium text-gray-800 mb-3">Изображения товара</h3>
           <FileUpload
-            onFileUpload={(url) => {
-              const newImage: ProductImage = {
-                id: Date.now().toString(),
-                product_id: editingId || 'new',
-                image_url: url,
-                is_main: images.length === 0 // Первое изображение автоматически становится главным
-              };
-              setImages([...images, newImage]);
+            onFileUpload={(urls) => {
+              urls.forEach(url => {
+                const newImage: ProductImage = {
+                  id: Date.now().toString(),
+                  product_id: editingId || 'new',
+                  image_url: url,
+                  is_main: images.length === 0 // Первое изображение автоматически становится главным
+                };
+                setImages(prev => [...prev, newImage]);
+              });
             }}
             folder="products"
             label="Загрузить изображение товара"

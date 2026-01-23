@@ -3,12 +3,13 @@
 import { useState } from 'react';
 
 interface FileUploadProps {
-  onFileUpload: (fileUrl: string) => void;
+  onFileUpload: (fileUrls: string[]) => void;
   folder: string;
   label?: string;
+  multiple?: boolean;
 }
 
-export default function FileUpload({ onFileUpload, folder, label = "Загрузить файл" }: FileUploadProps) {
+export default function FileUpload({ onFileUpload, folder, label = "Загрузить файл", multiple = false }: FileUploadProps) {
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -16,42 +17,58 @@ export default function FileUpload({ onFileUpload, folder, label = "Загруз
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
 
-    const file = files[0];
-
-    // Проверка типа файла
-    if (!file.type.startsWith('image/')) {
-      setError('Пожалуйста, выберите изображение');
+    // Проверка количества файлов для множественной загрузки
+    if (multiple && files.length > 10) { // Ограничение на 10 файлов за раз
+      setError('Можно загрузить максимум 10 файлов за раз');
       return;
     }
 
-    // Проверка размера файла (максимум 2MB)
-    if (file.size > 2 * 1024 * 1024) {
-      setError('Файл слишком большой. Максимальный размер 2MB');
-      return;
+    const filesToProcess = multiple ? Array.from(files) : [files[0]];
+
+    // Проверка типов и размеров файлов
+    for (const file of filesToProcess) {
+      // Проверка типа файла
+      if (!file.type.startsWith('image/')) {
+        setError('Пожалуйста, выберите только изображения');
+        return;
+      }
+
+      // Проверка размера файла (максимум 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        setError('Один из файлов слишком большой. Максимальный размер 2MB');
+        return;
+      }
     }
 
     setError(null);
     setUploading(true);
 
     try {
-      // Создаем FormData для отправки файла на сервер
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('folder', folder);
+      const uploadedUrls: string[] = [];
 
-      // Отправляем файл на сервер для загрузки в Cloudinary
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
+      // Загружаем файлы по одному
+      for (const file of filesToProcess) {
+        // Создаем FormData для отправки файла на сервер
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('folder', folder);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Ошибка загрузки файла');
+        // Отправляем файл на сервер для загрузки в Cloudinary
+        const response = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Ошибка загрузки файла');
+        }
+
+        const data = await response.json();
+        uploadedUrls.push(data.url); // Добавляем URL изображения из Cloudinary
       }
 
-      const data = await response.json();
-      onFileUpload(data.url); // Передаем URL изображения из Cloudinary
+      onFileUpload(uploadedUrls); // Передаем массив URL изображений
     } catch (err: any) {
       console.error('Ошибка загрузки изображения:', err);
       setError(err.message || 'Произошла ошибка при загрузке изображения');
@@ -102,7 +119,7 @@ export default function FileUpload({ onFileUpload, folder, label = "Загруз
         <input
           id={`file-upload-${folder}`}
           type="file"
-          multiple={false}
+          multiple={multiple}
           accept="image/*"
           className="hidden"
           onChange={handleChange}

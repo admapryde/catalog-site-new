@@ -127,6 +127,18 @@ export default function AdminSidebar({ username, role, children }: SidebarProps)
           </li>
           <li>
             <a
+              href="/admin/pages"
+              className={`block py-3 px-6 text-gray-700 hover:bg-blue-50 hover:text-blue-600 border-l-4 ${
+                isActive('/admin/pages')
+                  ? 'border-blue-600 bg-blue-50'
+                  : 'border-transparent'
+              }`}
+            >
+              Страницы
+            </a>
+          </li>
+          <li>
+            <a
               href="/admin/settings"
               className={`block py-3 px-6 text-gray-700 hover:bg-blue-50 hover:text-blue-600 border-l-4 ${
                 isActive('/admin/settings')

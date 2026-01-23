@@ -27,8 +27,8 @@ export default function GeneralSettingsForm({ initialSettings }: GeneralSettings
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleSiteIconUpload = (iconUrl: string) => {
-    setFormData(prev => ({ ...prev, site_icon: iconUrl }));
+  const handleSiteIconUpload = (iconUrls: string[]) => {
+    setFormData(prev => ({ ...prev, site_icon: iconUrls[0] || '' }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

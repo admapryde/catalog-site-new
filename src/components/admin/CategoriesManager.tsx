@@ -254,7 +254,7 @@ export default function CategoriesManager() {
             </div>
           )}
           <FileUpload
-            onFileUpload={(url) => setImageUrl(url)}
+            onFileUpload={(urls) => setImageUrl(urls[0] || '')}
             folder="categories"
             label="Загрузить изображение категории"
           />

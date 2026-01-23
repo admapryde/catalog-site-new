@@ -261,6 +261,10 @@ The application includes a comprehensive audit system that tracks all administra
 - `categories` - Category
 - `users` - User
 - `admin_access` - Admin Access
+- `pages` - Page
+- `page_blocks` - Page Block
+- `page_block_images` - Page Block Image
+- `page_block_links` - Page Block Link
 
 ### Audit History Dashboard
 
@@ -618,6 +622,10 @@ VALUES ('admin', 'admin@example.com', crypt('admin123', gen_salt('bf')), 'admin'
 - `categories` - Категория
 - `users` - Пользователь
 - `admin_access` - Доступ администратора
+- `pages` - Страница
+- `page_blocks` - Блок страницы
+- `page_block_images` - Изображение блока страницы
+- `page_block_links` - Ссылка блока страницы
 
 ### Панель истории аудита
 

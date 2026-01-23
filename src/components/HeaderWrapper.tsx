@@ -85,28 +85,27 @@ export default function HeaderWrapper() {
     };
   }, []);
 
-  // Показываем пустой заголовок до тех пор, пока компонент не смонтирован
+  // Показываем заголовок с заглушками до тех пор, пока компонент не смонтирован
   // или пока идет загрузка и нет кэшированных настроек
   if (!mounted || (isLoading && !headerSettings)) {
-    // Показываем пустую структуру без видимого содержимого
+    // Показываем структуру с заглушками, чтобы избежать скачков при гидратации
     return (
       <header className="bg-white shadow-md sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center space-x-10">
-            <div className="text-xl font-bold text-gray-800 opacity-0 pointer-events-none">
-              {/* Этот div сохраняет место для текста, но делает его невидимым */}
-              &nbsp;
+            <div className="text-xl font-bold text-gray-800">
+              <div className="h-6 w-24 bg-gray-200 rounded animate-pulse"></div>
             </div>
-            <nav className="hidden md:flex space-x-6 opacity-0 pointer-events-none">
-              <span className="text-gray-600">&nbsp;</span>
-              <span className="text-gray-600">&nbsp;</span>
-              <span className="text-gray-600">&nbsp;</span>
-              <span className="text-gray-600">&nbsp;</span>
+            <nav className="hidden md:flex space-x-6">
+              <div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
+              <div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
             </nav>
           </div>
           <div className="flex items-center space-x-4">
             <div className="w-full md:w-96 lg:w-[500px] xl:w-[600px] px-4 py-2 border border-gray-300 rounded-lg bg-gray-100">
-              <div className="h-5 bg-gray-300 rounded"></div>
+              <div className="h-5 bg-gray-200 rounded animate-pulse"></div>
             </div>
           </div>
         </div>
@@ -124,19 +123,19 @@ export default function HeaderWrapper() {
     <header className="bg-white shadow-md sticky top-0 z-50">
       <div className="container mx-auto px-4 py-4 flex items-center justify-between">
         <div className="flex items-center space-x-10">
-          <div className="text-xl font-bold text-gray-800 opacity-0 pointer-events-none">
-            &nbsp;
+          <div className="text-xl font-bold text-gray-800">
+            <div className="h-6 w-24 bg-gray-200 rounded"></div>
           </div>
-          <nav className="hidden md:flex space-x-6 opacity-0 pointer-events-none">
-            <span className="text-gray-600">&nbsp;</span>
-            <span className="text-gray-600">&nbsp;</span>
-            <span className="text-gray-600">&nbsp;</span>
-            <span className="text-gray-600">&nbsp;</span>
+          <nav className="hidden md:flex space-x-6">
+            <div className="h-4 w-16 bg-gray-200 rounded"></div>
+            <div className="h-4 w-16 bg-gray-200 rounded"></div>
+            <div className="h-4 w-16 bg-gray-200 rounded"></div>
+            <div className="h-4 w-16 bg-gray-200 rounded"></div>
           </nav>
         </div>
         <div className="flex items-center space-x-4">
           <div className="w-full md:w-96 lg:w-[500px] xl:w-[600px] px-4 py-2 border border-gray-300 rounded-lg bg-gray-100">
-            <div className="h-5 bg-gray-300 rounded"></div>
+            <div className="h-5 bg-gray-200 rounded"></div>
           </div>
         </div>
       </div>

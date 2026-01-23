@@ -635,7 +635,7 @@ export default function BannerManager() {
                 </div>
               )}
               <FileUpload
-                onFileUpload={(url) => setImage(url)}
+                onFileUpload={(urls) => setImage(urls[0] || '')}
                 folder="banners"
                 label="Загрузить изображение баннера"
               />

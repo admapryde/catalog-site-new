@@ -2,6 +2,7 @@ import { requireAdminSession } from '@/components/ProtectedRoute';
 import { createClient } from '@/lib/supabase-server';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import FooterSettingsForm from '@/components/admin/FooterSettingsForm';
+import ClientOnlyAdminPageWrapper from '@/components/admin/ClientOnlyAdminPageWrapper';
 
 interface FooterSettings {
   footer_catalog_title: string;
@@ -270,24 +271,14 @@ export default async function FooterSettingsPage() {
   const settings = await getFooterSettings();
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="flex">
-        {/* Сайдбар */}
-        <AdminSidebar />
+    <ClientOnlyAdminPageWrapper>
+      <h1 className="text-3xl font-bold text-gray-800 mb-8">Футтер</h1>
 
-        {/* Основной контент */}
-        <main className="flex-1 p-8">
-          <div className="max-w-6xl mx-auto">
-            <h1 className="text-3xl font-bold text-gray-800 mb-8">Футтер</h1>
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <h2 className="text-xl font-semibold text-gray-800 mb-6">Настройки футера</h2>
 
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h2 className="text-xl font-semibold text-gray-800 mb-6">Настройки футера</h2>
-
-              <FooterSettingsForm initialSettings={settings} updateAction={updateFooterSettings} />
-            </div>
-          </div>
-        </main>
+        <FooterSettingsForm initialSettings={settings} updateAction={updateFooterSettings} />
       </div>
-    </div>
+    </ClientOnlyAdminPageWrapper>
   );
 }

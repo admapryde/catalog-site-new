@@ -2,6 +2,7 @@ import { requireAdminSession } from '@/components/ProtectedRoute';
 import { createClient } from '@/lib/supabase-server';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import HeaderSettingsForm from '@/components/admin/HeaderSettingsForm';
+import ClientOnlyAdminPageWrapper from '@/components/admin/ClientOnlyAdminPageWrapper';
 import { headers } from 'next/headers';
 
 interface HeaderSettings {
@@ -141,19 +142,10 @@ export default async function HeaderSettingsPage() {
   const settings = await getHeaderSettings();
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="flex">
-        <AdminSidebar />
+    <ClientOnlyAdminPageWrapper>
+      <h1 className="text-3xl font-bold text-gray-800 mb-8">Шапка сайта</h1>
 
-        {/* Основной контент */}
-        <main className="flex-1 p-8">
-          <div className="max-w-4xl mx-auto">
-            <h1 className="text-3xl font-bold text-gray-800 mb-8">Шапка сайта</h1>
-
-            <HeaderSettingsForm initialSettings={settings} updateAction={updateHeaderSettings} />
-          </div>
-        </main>
-      </div>
-    </div>
+      <HeaderSettingsForm initialSettings={settings} updateAction={updateHeaderSettings} />
+    </ClientOnlyAdminPageWrapper>
   );
 }

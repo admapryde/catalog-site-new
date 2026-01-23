@@ -14,6 +14,8 @@
     "test:cloudinary": "node -r tsx test-cloudinary.ts",
     "db:add-missing": "node add-missing-data.js",
     "db:seed-admin": "node -r tsx src/scripts/seed-admin-users.ts",
+    "db:set-user-role": "node -r tsx scripts/set-user-role.ts",
+    "db:set-user-role-email": "SET_BY_EMAIL=true node -r tsx scripts/set-user-role.ts",
     "cache:clear": "node scripts/clear-cache.js"
   },
   "dependencies": {

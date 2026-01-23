@@ -134,6 +134,47 @@ export interface HeaderSettings {
   nav_contacts: string;
 }
 
+// Типы для страниц
+export interface Page {
+  id: string;
+  title: string;
+  slug: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PageBlock {
+  id: string;
+  page_id: string;
+  block_type: 'text' | 'photo' | 'links';
+  title: string;
+  content?: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PageBlockImage {
+  id: string;
+  block_id: string;
+  image_url: string;
+  layout_type: 'simple' | 'banner' | 'horizontal_pair' | 'horizontal_triple' | 'grid_four' | 'image_text_side';
+  is_main?: boolean;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PageBlockLink {
+  id: string;
+  block_id: string;
+  title: string;
+  url: string;
+  sort_order: number;
+  created_at: string;
+  updated_at: string;
+}
+
 // Обновим интерфейс Product, чтобы включить изображения и характеристики
 export interface Product {
   id: string;

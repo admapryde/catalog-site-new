@@ -74,3 +74,50 @@ catalog-site@
 
 # Documentation files not needed for runtime
 Правки.txt
+
+# Build artifacts and temporary files
+catalog-site@
+.next/
+out/
+build/
+dist/
+public/dist/
+
+# Development and test files
+__tests__/
+test-*.js
+test-*.ts
+test-*.tsx
+test-*.jsx
+debug-*.js
+debug-*.ts
+check-*.js
+check-*.ts
+
+# Temporary files
+*.tmp
+*.temp
+*.log
+next_logs.txt
+cookies*.txt
+
+# Local configuration files
+.env.local
+.env.development
+.env.production
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Scripts and temporary files
+*.sh
+filters-fix-summary.js
+test-filters-fix.js

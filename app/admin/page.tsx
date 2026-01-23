@@ -4,6 +4,7 @@ import AdminGuard from '@/components/AdminGuard';
 import { redirect } from 'next/navigation';
 import AuditHistoryDashboard from '@/components/admin/AuditHistoryDashboard';
 import AdminSidebar from '@/components/admin/AdminSidebar';
+import ClientOnlyAdminPageWrapper from '@/components/admin/ClientOnlyAdminPageWrapper';
 
 interface Stats {
   products: number;
@@ -93,44 +94,34 @@ export default async function AdminPage() {
   // Оборачиваем контент в AdminGuard для дополнительной защиты на клиентской стороне
   return (
     <AdminGuard>
-      <div className="min-h-screen bg-gray-50">
-        <div className="flex">
-          {/* Сайдбар */}
-          <AdminSidebar username={adminInfo.username} role={adminInfo.role} />
-
-          {/* Основной контент */}
-          <main className="flex-1 p-8">
-            <div className="max-w-6xl mx-auto">
-              <h1 className="text-3xl font-bold text-gray-800 mb-6">Дашборд</h1>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                <div className="bg-white p-6 rounded-lg shadow">
-                  <h3 className="text-lg font-medium text-gray-700 mb-2">Всего товаров</h3>
-                  <p className="text-3xl font-bold text-blue-600">{stats.products}</p>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow">
-                  <h3 className="text-lg font-medium text-gray-700 mb-2">Всего разделов</h3>
-                  <p className="text-3xl font-bold text-green-600">{stats.categories}</p>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow">
-                  <h3 className="text-lg font-medium text-gray-700 mb-2">Групп баннеров</h3>
-                  <p className="text-3xl font-bold text-purple-600">{stats.bannerGroups}</p>
-                </div>
-                <div className="bg-white p-6 rounded-lg shadow">
-                  <h3 className="text-lg font-medium text-gray-700 mb-2">Разделов ГС</h3>
-                  <p className="text-3xl font-bold text-orange-600">{stats.homepageSections}</p>
-                </div>
-              </div>
-
-              <div className="bg-white p-6 rounded-lg shadow">
-                <h2 className="text-xl font-semibold text-gray-800 mb-4">Последние действия</h2>
-                <div className="h-96 overflow-y-auto">
-                  <AuditHistoryDashboard />
-                </div>
-              </div>
-            </div>
-          </main>
+      <ClientOnlyAdminPageWrapper username={adminInfo.username} role={adminInfo.role}>
+        <h1 className="text-3xl font-bold text-gray-800 mb-6">Дашборд</h1>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-lg font-medium text-gray-700 mb-2">Всего товаров</h3>
+            <p className="text-3xl font-bold text-blue-600">{stats.products}</p>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-lg font-medium text-gray-700 mb-2">Всего разделов</h3>
+            <p className="text-3xl font-bold text-green-600">{stats.categories}</p>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-lg font-medium text-gray-700 mb-2">Групп баннеров</h3>
+            <p className="text-3xl font-bold text-purple-600">{stats.bannerGroups}</p>
+          </div>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-lg font-medium text-gray-700 mb-2">Разделов ГС</h3>
+            <p className="text-3xl font-bold text-orange-600">{stats.homepageSections}</p>
+          </div>
         </div>
-      </div>
+
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Последние действия</h2>
+          <div className="h-96 overflow-y-auto">
+            <AuditHistoryDashboard />
+          </div>
+        </div>
+      </ClientOnlyAdminPageWrapper>
     </AdminGuard>
   );
 }

@@ -1,15 +1,15 @@
 import { requireAdminSession } from '@/components/ProtectedRoute';
-import ProductsManager from '@/components/admin/ProductsManager';
 import AdminSidebar from '@/components/admin/AdminSidebar';
+import PagesManager from '@/components/admin/PagesManager';
 import ClientOnlyAdminPageWrapper from '@/components/admin/ClientOnlyAdminPageWrapper';
 
-export default async function ProductsPage() {
+export default async function PagesPage() {
   // Проверяем сессию администратора
   await requireAdminSession();
 
   return (
     <ClientOnlyAdminPageWrapper>
-      <ProductsManager />
+      <PagesManager />
     </ClientOnlyAdminPageWrapper>
   );
 }
