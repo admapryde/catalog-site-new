@@ -6,6 +6,7 @@ import OptimizedImage from '@/components/OptimizedImage';
 import { Product } from '@/types';
 import styles from '@/components/homepage-sections.module.css';
 import ProductModal from '@/components/ProductModal';
+import ProductTitle from '@/components/ProductTitle';
 
 interface HomepageSection {
   id: string;
@@ -79,7 +80,7 @@ export default function HomepageSections({ sections }: { sections: HomepageSecti
                   return (
                     <div
                       key={item.id}
-                      className={styles.homepageSectionCard}
+                      className={`${styles.homepageSectionCard} group`}
                       onClick={() => handleProductClick(product.id)}
                       style={{ cursor: 'pointer' }}
                     >
@@ -107,8 +108,12 @@ export default function HomepageSections({ sections }: { sections: HomepageSecti
                         )}
                       </div>
                       <div className={styles.homepageSectionContent}>
-                        <h3 className={`${styles.homepageSectionCardTitle} text-left`}>{product.name}</h3>
-                        <p className="text-lg font-bold text-gray-900">{product.price?.toLocaleString('ru-RU')} ₽</p>
+                        <ProductTitle
+                          title={product.name}
+                          className={`${styles.homepageSectionCardTitle} text-left`}
+                        />
+                        <p className="text-xs text-gray-500 mb-1">Цена</p>
+                        <p className="text-xl font-bold text-gray-900">{product.price?.toLocaleString('ru-RU')} ₽</p>
                       </div>
                     </div>
                   );

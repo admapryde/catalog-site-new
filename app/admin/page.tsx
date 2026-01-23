@@ -1,10 +1,10 @@
 import { cookies } from 'next/headers';
 import { createClient } from '@/lib/supabase-server';
 import AdminGuard from '@/components/AdminGuard';
-import { redirect } from 'next/navigation';
 import AuditHistoryDashboard from '@/components/admin/AuditHistoryDashboard';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import ClientOnlyAdminPageWrapper from '@/components/admin/ClientOnlyAdminPageWrapper';
+import { getAdminSession } from '@/services/admin-auth-service';
 
 interface Stats {
   products: number;
@@ -73,6 +73,7 @@ async function getStats(): Promise<Stats> {
 
 export default async function AdminPage() {
   // Получаем информацию о пользователе через Supabase Auth
+  // Проверка авторизации уже выполнена в middleware, здесь мы просто получаем данные
   const supabase = await createClient();
 
   const {
@@ -80,20 +81,24 @@ export default async function AdminPage() {
     error,
   } = await supabase.auth.getUser();
 
-  // Оборачиваем контент в AdminGuard для проверки сессии на клиентской стороне
-  // Middleware уже обеспечивает базовую защиту маршрутов
+  if (error || !user) {
+    // Если по какой-то причине сессия недействительна, перенаправляем на логин
+    // Но это маловероятно, так как middleware уже проверил это
+    console.error('Ошибка получения данных пользователя:', error);
+  }
 
+  const userRole = user?.user_metadata?.role || 'user';
   const adminInfo = {
     username: user?.email || user?.id || 'Unknown',
-    role: user?.user_metadata?.role || 'user'
+    role: userRole
   };
 
   // Получаем статистику
   const stats = await getStats();
 
-  // Оборачиваем контент в AdminGuard для дополнительной защиты на клиентской стороне
+  // Оборачиваем контент в AdminGuard, передавая роль пользователя
   return (
-    <AdminGuard>
+    <AdminGuard userRole={userRole}>
       <ClientOnlyAdminPageWrapper username={adminInfo.username} role={adminInfo.role}>
         <h1 className="text-3xl font-bold text-gray-800 mb-6">Дашборд</h1>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

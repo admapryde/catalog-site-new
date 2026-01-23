@@ -122,7 +122,7 @@ export default function AdminSidebar({ username, role, children }: SidebarProps)
                   : 'border-transparent'
               }`}
             >
-              Футтер
+              Подвал
             </a>
           </li>
           <li>

@@ -1,0 +1,17 @@
+.productCardTitle {
+  font-weight: 400; /* font-normal */
+  margin-bottom: 0.5rem; /* mb-2 */
+  color: #4b5563; /* text-gray-600 */
+  text-align: left;
+  overflow: hidden;
+  display: block;
+}
+
+/* Добавляем класс для элементов, которые должны реагировать на hover родительского элемента */
+.productCardTitleHoverable {
+  transition: color 0.3s ease;
+}
+
+.group:hover .productCardTitleHoverable {
+  color: #2563eb; /* group-hover:text-blue-600 equivalent */
+}

@@ -1,12 +1,12 @@
 import { NextRequest } from 'next/server';
-import { createClient } from '@/lib/supabase-server';
+import { createAPIClient } from '@/lib/supabase-server';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { email, password } = body;
 
-    const supabase = await createClient();
+    const supabase = await createAPIClient(request);
 
     const { data, error } = await supabase.auth.signInWithPassword({
       email,

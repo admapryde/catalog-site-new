@@ -70,9 +70,18 @@
 
 .homepageSectionCardTitle {
   font-size: 1.25rem; /* text-xl */
-  font-weight: 600; /* font-semibold */
+  font-weight: 400; /* font-normal */
   margin-bottom: 0.5rem; /* mb-2 */
-  color: #1f2937; /* text-gray-800 */
+  color: #4b5563; /* text-gray-600 */
+}
+
+/* Добавляем класс для элементов, которые должны реагировать на hover родительского элемента */
+.homepageSectionCardTitleHoverable {
+  transition: color 0.3s ease;
+}
+
+.group:hover .homepageSectionCardTitleHoverable {
+  color: #2563eb; /* group-hover:text-blue-600 equivalent */
 }
 
 .homepageSectionDescription {

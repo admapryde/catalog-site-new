@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { createSupabaseBrowserClient } from '@/lib/supabase-browser-client';
 
 export default function LoginPage() {
   const searchParams = useSearchParams();
@@ -9,6 +10,7 @@ export default function LoginPage() {
   const [error, setError] = useState(searchParams?.get('error') || '');
   const [isLoading, setIsLoading] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const supabase = createSupabaseBrowserClient();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -21,26 +23,22 @@ export default function LoginPage() {
     const password = formData.get('password') as string;
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
+      // Прямая аутентификация через Supabase
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || 'Ошибка при входе');
+      if (error) {
+        console.error('Ошибка аутентификации:', error);
+        setError(error.message || 'Ошибка при входе');
         setIsLoading(false);
         return;
       }
 
-      console.log('Успешная аутентификация:', data);
-
       // При успешной аутентификации перенаправляем на админ панель
-      window.location.href = '/admin';
+      router.push('/admin');
+      router.refresh(); // Обновляем состояние роутера
     } catch (err) {
       console.error('Ошибка при входе:', err);
       setError('Произошла ошибка при попытке входа');

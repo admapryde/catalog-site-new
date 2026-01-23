@@ -415,7 +415,7 @@ export default function ProductFilters({
                   }}
                   className="w-full p-2 border border-gray-400 rounded focus:ring-0 focus:border-gray-500 text-gray-900"
                 >
-                  <option value="" className="text-gray-400">Выберите {spec.property_name.toLowerCase()}</option>
+                  <option value="" className="text-gray-500">Выбрать</option>
                   {spec.available_values.map(value => (
                     <option key={`${spec.property_name}-${value}`} value={value} className="text-gray-900">
                       {value}

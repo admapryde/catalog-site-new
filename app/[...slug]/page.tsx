@@ -4,7 +4,7 @@ import PageRenderer from '@/components/PageRenderer';
 
 // Генерация метаданных для страницы
 export async function generateMetadata({ params }: { params: { slug: string[] } }): Promise<Metadata> {
-  const slug = params.slug?.join('/') || '';
+  const slug = (await params).slug?.join('/') || '';
 
   if (!slug) {
     return {};
@@ -101,7 +101,7 @@ async function getPageData(slug: string) {
 }
 
 export default async function DynamicPage({ params }: { params: { slug: string[] } }) {
-  const slug = params.slug?.join('/') || '';
+  const slug = (await params).slug?.join('/') || '';
 
   // Не обрабатываем пустой слаг или системные маршруты
   if (!slug || ['admin', 'api', 'auth'].includes(slug)) {

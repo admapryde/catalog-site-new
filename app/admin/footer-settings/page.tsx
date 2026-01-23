@@ -272,7 +272,7 @@ export default async function FooterSettingsPage() {
 
   return (
     <ClientOnlyAdminPageWrapper>
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">Футтер</h1>
+      <h1 className="text-3xl font-bold text-gray-800 mb-8">Подвал</h1>
 
       <div className="bg-white rounded-lg shadow-md p-6">
         <h2 className="text-xl font-semibold text-gray-800 mb-6">Настройки футера</h2>

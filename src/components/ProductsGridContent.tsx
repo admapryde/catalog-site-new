@@ -10,6 +10,8 @@ import { lruCache } from '@/lib/cache-config';
 import ProductModal from '@/components/ProductModal';
 import FilterButton from '@/components/FilterButton';
 import { useFilterState } from '@/hooks/useFilterState';
+import styles from '@/components/products-grid-content.module.css';
+import ProductTitle from '@/components/ProductTitle';
 
 interface ProductsGridContentProps {
   categoryId?: string;
@@ -240,8 +242,12 @@ export default function ProductsGridContent({ categoryId, search }: ProductsGrid
                 )}
               </div>
               <div className="p-4">
-                <h3 className="font-medium text-gray-800 group-hover:text-blue-600 mb-2 line-clamp-2 h-12">{product.name}</h3>
-                <p className="text-lg font-bold text-gray-900">{product.price?.toLocaleString('ru-RU')} ₽</p>
+                <ProductTitle
+                  title={product.name}
+                  className={styles.productCardTitle}
+                />
+                <p className="text-xs text-gray-500 mb-1">Цена</p>
+                <p className="text-xl font-bold text-gray-900">{product.price?.toLocaleString('ru-RU')} ₽</p>
               </div>
             </div>
           );

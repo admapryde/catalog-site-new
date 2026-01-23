@@ -1,7 +1,7 @@
 import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import { authConfig } from "../../../../auth.config"
-import { authenticateAdmin } from "@/services/admin-auth-service"
+import { createClient } from "@/lib/supabase-server"
 
 export const {
   handlers: { GET, POST },
@@ -17,21 +17,33 @@ export const {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        const user = await authenticateAdmin(
-          credentials?.email as string,
-          credentials?.password as string
-        )
+        const supabase = await createClient()
 
-        if (user) {
-          return {
-            id: user.id,
-            name: user.email, // используем email как имя, так как username отсутствует
-            email: user.email || "",
-            role: user.role
-          }
+        // Прямая аутентификация через Supabase
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: credentials?.email as string,
+          password: credentials?.password as string
+        })
+
+        if (error || !data.user) {
+          console.error('Ошибка аутентификации в Supabase:', error)
+          return null
         }
 
-        return null
+        // Проверяем, что пользователь является администратором
+        const userRole = data.user.user_metadata?.role || 'user'
+        if (userRole !== 'admin' && userRole !== 'super_admin') {
+          console.log('Пользователь не является администратором')
+          return null
+        }
+
+        // Возвращаем данные пользователя
+        return {
+          id: data.user.id,
+          name: data.user.email,
+          email: data.user.email || "",
+          role: userRole
+        }
       }
     })
   ],
@@ -41,20 +53,21 @@ export const {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id
-        if ('role' in user) {
-          token.role = user.role
-        }
+        token.role = user.role
       }
       return token
     },
     async session({ session, token }) {
       if (token) {
         session.user.id = token.id as string
-        if ('role' in token) {
-          session.user.role = token.role as string
-        }
+        session.user.role = token.role as string
       }
       return session
-    }
+    },
+  },
+  // Отключаем автоматические стратегии сессий, чтобы использовать Supabase
+  session: {
+    strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 дней
   }
 })

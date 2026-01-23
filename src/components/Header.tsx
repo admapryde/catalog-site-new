@@ -208,8 +208,8 @@ export default function Header({ settings }: { settings: HeaderSettings }) {
                 value={searchQuery}
                 onChange={handleInputChange}
                 onFocus={() => (searchResults.products.length > 0 || searchResults.categories.length > 0) && setShowDropdown(true)}
-                placeholder="Поиск товаров и категорий..."
-                className="w-full md:w-96 lg:w-[500px] xl:w-[600px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-gray-900 placeholder-gray-700"
+                placeholder="Поиск"
+                className="w-full md:w-96 lg:w-[500px] xl:w-[600px] px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-gray-600 placeholder-gray-500"
               />
               <button
                 type="submit"

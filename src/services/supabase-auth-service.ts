@@ -1,6 +1,7 @@
 import { createSupabaseBrowserClient } from '@/lib/supabase-browser-client';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { retryOnRateLimit } from '@/lib/retry-utils';
 
 export interface AuthUser {
   id: string;
@@ -20,28 +21,37 @@ export async function signInWithPassword(email: string, password: string): Promi
 
   const supabase = createSupabaseBrowserClient();
 
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
+  try {
+    const result = await retryOnRateLimit(async () => {
+      return await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+    });
 
-  if (error) {
+    const { data, error } = result;
+
+    if (error) {
+      console.error('Ошибка при аутентификации через Supabase:', error);
+      return null;
+    }
+
+    if (!data.user) {
+      console.log('Пользователь не найден');
+      return null;
+    }
+
+    console.log('Аутентификация через Supabase успешна');
+
+    return {
+      id: data.user.id,
+      email: data.user.email || '',
+      role: data.user.user_metadata?.role || 'user',
+    };
+  } catch (error) {
     console.error('Ошибка при аутентификации через Supabase:', error);
     return null;
   }
-
-  if (!data.user) {
-    console.log('Пользователь не найден');
-    return null;
-  }
-
-  console.log('Аутентификация через Supabase успешна');
-
-  return {
-    id: data.user.id,
-    email: data.user.email || '',
-    role: data.user.user_metadata?.role || 'user',
-  };
 }
 
 /**
@@ -51,28 +61,37 @@ export async function signInWithPassword(email: string, password: string): Promi
 export async function getSupabaseSession(): Promise<AuthUser | null> {
   const supabase = createSupabaseBrowserClient();
 
-  const {
-    data: { session },
-    error,
-  } = await supabase.auth.getSession();
+  try {
+    const result = await retryOnRateLimit(async () => {
+      return await supabase.auth.getSession();
+    });
 
-  if (error) {
+    const {
+      data: { session },
+      error,
+    } = result;
+
+    if (error) {
+      console.error('Ошибка при получении сессии:', error);
+      return null;
+    }
+
+    if (!session) {
+      return null;
+    }
+
+    // Пропускаем проверку времени жизни сессии в серверном компоненте
+    // Время жизни сессии проверяется в middleware/proxy
+
+    return {
+      id: session.user.id,
+      email: session.user.email || '',
+      role: session.user.user_metadata?.role || 'user',
+    };
+  } catch (error) {
     console.error('Ошибка при получении сессии:', error);
     return null;
   }
-
-  if (!session) {
-    return null;
-  }
-
-  // Пропускаем проверку времени жизни сессии в серверном компоненте
-  // Время жизни сессии проверяется в middleware/proxy
-
-  return {
-    id: session.user.id,
-    email: session.user.email || '',
-    role: session.user.user_metadata?.role || 'user',
-  };
 }
 
 /**
@@ -95,9 +114,11 @@ export async function requireSupabaseSession(): Promise<AuthUser> {
 export async function signOut(): Promise<void> {
   const supabase = createSupabaseBrowserClient();
 
-  const { error } = await supabase.auth.signOut();
-
-  if (error) {
+  try {
+    await retryOnRateLimit(async () => {
+      return await supabase.auth.signOut();
+    });
+  } catch (error) {
     console.error('Ошибка при выходе из системы:', error);
   }
 
