@@ -74,7 +74,7 @@ async function getGeneralSettings() {
 import { CACHE_TTL } from '@/lib/cache-config';
 import { cookies, headers } from 'next/headers';
 
-// Асинхронная функция для получения категорий
+// Асинхронная функция для получения категорий и заголовка сетки категорий
 async function fetchCategories() {
   'use server';
 
@@ -82,19 +82,44 @@ async function fetchCategories() {
     // Вместо использования fetch к API маршрутам, напрямую используем Supabase клиент
     const supabase = await import('@/lib/supabase-server').then(mod => mod.createClient());
 
-    const { data, error } = await supabase
+    // Получаем категории
+    const { data: categories, error: categoriesError } = await supabase
       .from('categories')
       .select('*')
       .order('sort_order', { ascending: true });
 
-    if (error) {
-      throw error;
+    if (categoriesError) {
+      throw categoriesError;
     }
 
-    return data || [];
+    // Получаем заголовок для сетки категорий из homepage_sections
+    const { data: section, error: sectionError } = await supabase
+      .from('homepage_sections')
+      .select('title')
+      .eq('section_type', 'categories_grid')
+      .single(); // Ожидаем одну запись
+
+    let categoriesTitle = 'Категории'; // Значение по умолчанию
+
+    if (sectionError) {
+      // Если запись не найдена или произошла другая ошибка, используем значение по умолчанию
+      if (sectionError.code !== 'PGRST116') { // PGRST116 означает, что запись не найдена
+        console.error('Ошибка получения заголовка сетки категорий:', sectionError);
+      }
+    } else if (section) {
+      categoriesTitle = section.title;
+    }
+
+    return {
+      categories: categories || [],
+      title: categoriesTitle
+    };
   } catch (error) {
     console.error('Ошибка получения категорий:', error);
-    return []; // Возвращаем пустой массив вместо проброса ошибки
+    return {
+      categories: [], // Возвращаем пустой массив вместо проброса ошибки
+      title: 'Категории'
+    }; // Возвращаем значение по умолчанию
   }
 }
 
@@ -173,16 +198,18 @@ async function fetchHomepageSections() {
 
 export default async function HomePage() {
   // Выполняем параллельные запросы
-  const [categories, bannerGroups, homepageSections] = await Promise.all([
+  const [categoriesData, bannerGroups, homepageSections] = await Promise.all([
     fetchCategories(),
     fetchBanners(),
     fetchHomepageSections()
   ]);
 
+  const { categories = [], title: categoriesTitle = 'Категории' } = categoriesData;
+
   return (
     <div>
       {/* Сетка категорий */}
-      <CategoriesGrid categories={categories || []} />
+      <CategoriesGrid categories={categories} title={categoriesTitle} />
 
       {/* Блоки баннеров */}
       {bannerGroups?.map((group: any) => (

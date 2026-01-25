@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const sectionsResult = await supabaseWithRetry(supabase, (client) =>
       client
         .from('homepage_sections')
-        .select('id, title, position, created_at, updated_at')
+        .select('id, title, position, section_type, created_at, updated_at')
         .order('position', { ascending: true })
     );
 

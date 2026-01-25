@@ -12,7 +12,12 @@ interface Category {
   sort_order: number;
 }
 
-export default function CategoriesGrid({ categories }: { categories: Category[] }) {
+interface CategoriesGridProps {
+  categories: Category[];
+  title?: string; // Добавляем опциональный заголовок
+}
+
+export default function CategoriesGrid({ categories, title = 'Категории' }: CategoriesGridProps) {
   const [loading, setLoading] = useState(true);
   const [localCategories, setLocalCategories] = useState<Category[]>([]);
 
@@ -40,7 +45,7 @@ export default function CategoriesGrid({ categories }: { categories: Category[] 
   return (
     <section className={styles.categoriesGridSection}>
       <div className={styles.categoriesGridContainer}>
-        <h2 className={`${styles.categoriesGridTitle} text-center`}>Категории</h2>
+        <h2 className={`${styles.categoriesGridTitle} text-center`}>{title}</h2>
         <div className={styles.categoriesGridGrid}>
           {sortedCategories.slice(0, 16).map((category) => (
             <Link

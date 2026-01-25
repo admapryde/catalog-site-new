@@ -42,17 +42,19 @@ const Footer = dynamic(() => import('@/components/FooterWrapper'), {
 
 // Импортируем HeaderWrapper как обычный компонент
 import HeaderWrapper from '@/components/HeaderWrapper';
+import MobileBottomNav from '@/components/MobileBottomNav';
 
 export default function LayoutWrapper({ children }: { children: ReactNode }) {
   // Для согласованности между сервером и клиентом не используем состояние монтирования
   // поскольку дочерние компоненты сами обрабатывают гидратацию
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100">
+    <div className="flex flex-col min-h-screen bg-gray-100 pb-16 md:pb-0">
       <HeaderWrapper />
       <main className="flex-grow bg-gray-100">
         {children}
       </main>
       <Footer />
+      <MobileBottomNav />
     </div>
   );
 }

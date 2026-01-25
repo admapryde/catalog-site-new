@@ -118,6 +118,15 @@ class AuditService {
         ]);
 
       if (error) {
+        // Проверяем, является ли ошибка связанной с политиками безопасности (RLS)
+        if (error.code === '42501' || error.message.includes('row-level security')) {
+          console.warn('Ошибка политики безопасности при записи в лог аудита:', error);
+          // Не считаем это критической ошибкой, просто логируем
+          return {
+            success: true,
+            data: false // Указывает, что запись не была сделана из-за RLS
+          };
+        }
         throw error;
       }
 

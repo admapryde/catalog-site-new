@@ -54,7 +54,7 @@ export default function FilterButton({
     <>
       <button
         onClick={() => setIsFiltersOpen(true)}
-        className="fixed top-24 left-4 z-40 bg-white px-4 py-2 rounded-lg shadow-lg hover:shadow-xl transition-shadow flex items-center space-x-2"
+        className="fixed top-24 left-4 z-50 bg-white px-4 py-2 rounded-lg shadow-lg hover:shadow-xl transition-shadow flex items-center space-x-2"
         aria-label="Фильтры"
       >
         <span className="text-gray-700 text-sm font-medium">Фильтры</span>
@@ -71,7 +71,7 @@ export default function FilterButton({
       </button>
 
       <div
-        className={`fixed inset-0 z-40 transition-opacity ${isFiltersOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
+        className={`fixed inset-0 z-50 transition-opacity ${isFiltersOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
         style={{ backgroundColor: 'rgba(0, 0, 0, 0.25)' }}
         onClick={() => setIsFiltersOpen(false)}
       ></div>

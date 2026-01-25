@@ -61,29 +61,20 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { block_id, image_url, layout_type, sort_order, is_main } = body;
+    const { block_id, image_url, layout_type, text_content, sort_order, is_main } = body;
 
     const supabase = await createAPIClient(request);
 
-    // Проверяем, есть ли уже изображения в этом блоке
-    const { data: existingImages, error: fetchError } = await supabaseWithRetry(supabase, async (client) =>
-      await client
-        .from('page_block_images')
-        .select('id')
-        .eq('block_id', block_id)
-    ) as { data: any; error: any };
-
-    if (fetchError) {
-      console.error('Ошибка при проверке существующих изображений:', fetchError);
+    // Подготовим объект для вставки, включая text_content только если оно определено
+    const insertObject: any = { block_id, image_url, layout_type, sort_order };
+    if (typeof text_content !== 'undefined') {
+      insertObject.text_content = text_content;
     }
-
-    // Если это первое изображение в блоке, делаем его главным по умолчанию
-    const shouldSetAsMain = (!existingImages || existingImages.length === 0) && is_main !== false;
 
     const result = await supabaseWithRetry(supabase, async (client) =>
       await client
         .from('page_block_images')
-        .insert([{ block_id, image_url, layout_type, sort_order, is_main: shouldSetAsMain }])
+        .insert([insertObject])
         .select()
     ) as { data: any; error: any };
 
@@ -117,25 +108,20 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { id, block_id, image_url, layout_type, sort_order, is_main } = body;
+    const { id, block_id, image_url, layout_type, text_content, sort_order, is_main } = body;
 
     const supabase = await createAPIClient(request);
 
-    // Если устанавливается is_main = true, то сначала сбрасываем is_main у других изображений этого блока
-    if (is_main === true) {
-      await supabaseWithRetry(supabase, async (client) =>
-        await client
-          .from('page_block_images')
-          .update({ is_main: false })
-          .eq('block_id', block_id)
-          .neq('id', id)
-      ).catch(err => console.error('Ошибка сброса is_main у других изображений:', err));
+    // Подготовим объект для обновления, включая text_content только если оно определено
+    const updateObject: any = { block_id, image_url, layout_type, sort_order };
+    if (typeof text_content !== 'undefined') {
+      updateObject.text_content = text_content;
     }
 
     const result = await supabaseWithRetry(supabase, async (client) =>
       await client
         .from('page_block_images')
-        .update({ block_id, image_url, layout_type, sort_order, is_main })
+        .update(updateObject)
         .eq('id', id)
         .select()
     ) as { data: any; error: any };

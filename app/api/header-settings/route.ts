@@ -8,6 +8,8 @@ export interface HeaderSettings {
   nav_catalog: string;
   nav_about: string;
   nav_contacts: string;
+  contact: string;
+  logo_image_url: string;
 }
 
 // Получаем настройки шапки сайта (без кэширования в unstable_cache из-за ограничений на динамические данные)
@@ -23,7 +25,7 @@ async function getHeaderSettings() {
     const { data, error } = await supabase
       .from('site_settings')
       .select('setting_key, setting_value')
-      .in('setting_key', ['header_title', 'nav_home', 'nav_catalog', 'nav_about', 'nav_contacts']);
+      .in('setting_key', ['header_title', 'nav_home', 'nav_catalog', 'nav_about', 'nav_contacts', 'contact', 'logo_image_url']);
 
     if (error) {
       console.error('Ошибка получения настроек шапки:', error.message || error);
@@ -33,7 +35,9 @@ async function getHeaderSettings() {
         nav_home: 'Главная',
         nav_catalog: 'Каталог',
         nav_about: 'О нас',
-        nav_contacts: 'Контакты'
+        nav_contacts: 'Контакты',
+        contact: '+7 (XXX) XXX-XX-XX',
+        logo_image_url: ''
       };
     }
 
@@ -51,7 +55,9 @@ async function getHeaderSettings() {
       nav_home: settings.nav_home || 'Главная',
       nav_catalog: settings.nav_catalog || 'Каталог',
       nav_about: settings.nav_about || 'О нас',
-      nav_contacts: settings.nav_contacts || 'Контакты'
+      nav_contacts: settings.nav_contacts || 'Контакты',
+      contact: settings.contact || '+7 (XXX) XXX-XX-XX',
+      logo_image_url: settings.logo_image_url || ''
     };
   } catch (error) {
     console.error('Ошибка получения настроек шапки:', error);
@@ -82,7 +88,9 @@ export async function GET(request: NextRequest) {
       nav_home: 'Главная',
       nav_catalog: 'Каталог',
       nav_about: 'О нас',
-      nav_contacts: 'Контакты'
+      nav_contacts: 'Контакты',
+      contact: '+7 (XXX) XXX-XX-XX',
+      logo_image_url: ''
     };
 
     const response = Response.json(defaultData);

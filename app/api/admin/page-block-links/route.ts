@@ -102,33 +102,73 @@ export async function PUT(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { id, block_id, title, url, sort_order } = body;
 
-    const supabase = await createAPIClient(request);
+    // Поддержка массового обновления
+    if (Array.isArray(body) && body.length > 0) {
+      // Массовое обновление
+      const updates = body;
 
-    const result = await supabaseWithRetry(supabase, async (client) =>
-      await client
-        .from('page_block_links')
-        .update({ block_id, title, url, sort_order })
-        .eq('id', id)
-        .select()
-    ) as { data: any; error: any };
+      const supabase = await createAPIClient(request);
 
-    if (result.error) {
-      console.error('Ошибка при обновлении ссылки блока:', result.error);
-      return Response.json({ error: result.error.message }, { status: 500 });
+      // Выполняем обновления в одной транзакции
+      const results = [];
+      for (const update of updates) {
+        const { id, block_id, title, url, sort_order } = update;
+
+        const result = await supabaseWithRetry(supabase, async (client) =>
+          await client
+            .from('page_block_links')
+            .update({ block_id, title, url, sort_order })
+            .eq('id', id)
+            .select()
+        ) as { data: any; error: any };
+
+        if (result.error) {
+          console.error('Ошибка при обновлении ссылки блока:', result.error);
+          return Response.json({ error: result.error.message }, { status: 500 });
+        }
+
+        results.push(result.data[0]);
+
+        // Логируем обновление ссылки в аудите
+        try {
+          await auditService.logUpdate('admin', 'page_block_links', id);
+        } catch (auditError) {
+          console.error('Ошибка записи в аудит при обновлении ссылки:', auditError);
+        }
+      }
+
+      return Response.json(results);
+    } else {
+      // Одиночное обновление (старая логика)
+      const { id, block_id, title, url, sort_order } = body;
+
+      const supabase = await createAPIClient(request);
+
+      const result = await supabaseWithRetry(supabase, async (client) =>
+        await client
+          .from('page_block_links')
+          .update({ block_id, title, url, sort_order })
+          .eq('id', id)
+          .select()
+      ) as { data: any; error: any };
+
+      if (result.error) {
+        console.error('Ошибка при обновлении ссылки блока:', result.error);
+        return Response.json({ error: result.error.message }, { status: 500 });
+      }
+
+      const { data } = result;
+
+      // Логируем обновление ссылки в аудите
+      try {
+        await auditService.logUpdate('admin', 'page_block_links', id);
+      } catch (auditError) {
+        console.error('Ошибка записи в аудит при обновлении ссылки:', auditError);
+      }
+
+      return Response.json(data);
     }
-
-    const { data } = result;
-
-    // Логируем обновление ссылки в аудите
-    try {
-      await auditService.logUpdate('admin', 'page_block_links', id);
-    } catch (auditError) {
-      console.error('Ошибка записи в аудит при обновлении ссылки:', auditError);
-    }
-
-    return Response.json(data);
   } catch (error: any) {
     return Response.json({ error: error.message }, { status: 500 });
   }

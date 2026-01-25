@@ -73,6 +73,7 @@ export interface HomepageSection {
   id: string;
   title: string;
   position: number;
+  section_type?: string; // Добавляем тип раздела для специальных случаев
   created_at: string;
   updated_at: string;
 }
@@ -132,6 +133,8 @@ export interface HeaderSettings {
   nav_catalog: string;
   nav_about: string;
   nav_contacts: string;
+  contact: string;
+  logo_image_url: string;
 }
 
 // Типы для страниц
@@ -159,7 +162,7 @@ export interface PageBlockImage {
   block_id: string;
   image_url: string;
   layout_type: 'simple' | 'banner' | 'horizontal_pair' | 'horizontal_triple' | 'grid_four' | 'image_text_side';
-  is_main?: boolean;
+  text_content?: string;
   sort_order: number;
   created_at: string;
   updated_at: string;

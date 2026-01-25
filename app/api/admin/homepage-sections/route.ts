@@ -28,14 +28,14 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { title, position } = body;
+    const { title, position, section_type } = body;
 
     const supabase = await createAPIClient(request);
 
     const result = await supabaseWithRetry(supabase, (client) =>
       client
         .from('homepage_sections')
-        .insert([{ title, position: position || 1 }])
+        .insert([{ title, position: position || 1, section_type: section_type || null }])
         .select()
     ) as { data: any; error: any };
 
@@ -75,14 +75,14 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const body = await request.json();
-    const { id, title, position } = body;
+    const { id, title, position, section_type } = body;
 
     const supabase = await createAPIClient(request);
 
     const result = await supabaseWithRetry(supabase, (client) =>
       client
         .from('homepage_sections')
-        .update({ title, position })
+        .update({ title, position, section_type })
         .eq('id', id)
         .select()
     ) as { data: any; error: any };

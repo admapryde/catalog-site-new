@@ -9,6 +9,7 @@ export default function HomepageSectionsManager() {
   const [sectionItems, setSectionItems] = useState<HomepageSectionItem[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [title, setTitle] = useState('');
+  const [sectionType, setSectionType] = useState('');
   const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'sections' | 'items'>('sections');
   const [loading, setLoading] = useState(true);
@@ -105,7 +106,12 @@ export default function HomepageSectionsManager() {
         const response = await fetch('/api/admin/homepage-sections', {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: editingSectionId, title, position: currentSection?.position })
+          body: JSON.stringify({
+            id: editingSectionId,
+            title,
+            position: currentSection?.position,
+            section_type: sectionType // Используем значение из состояния
+          })
         });
 
         if (!response.ok) {
@@ -124,7 +130,11 @@ export default function HomepageSectionsManager() {
         const response = await fetch('/api/admin/homepage-sections', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ title, position: sections.length + 1 })
+          body: JSON.stringify({
+            title,
+            position: sections.length + 1,
+            section_type: sectionType || null // Используем значение из состояния
+          })
         });
 
         if (!response.ok) {
@@ -142,10 +152,11 @@ export default function HomepageSectionsManager() {
 
       // Сброс формы
       setTitle('');
+      setSectionType('');
       setEditingSectionId(null);
     } catch (error: any) {
       console.error('Ошибка сохранения раздела:', error);
-      showNotification(error.message || 'Произошла ошибка при сохранении раздела', 'error');
+      showNotification(error.message || 'Произошла ошибка при сохранения раздела', 'error');
     }
   };
 
@@ -253,6 +264,7 @@ export default function HomepageSectionsManager() {
 
   const handleEditSection = (section: HomepageSection) => {
     setTitle(section.title);
+    setSectionType(section.section_type || '');
     setEditingSectionId(section.id);
     setActiveTab('sections');
   };
@@ -265,6 +277,14 @@ export default function HomepageSectionsManager() {
   };
 
   const handleDeleteSection = async (id: string) => {
+    const sectionToDelete = sections.find(s => s.id === id);
+
+    // Не позволяем удалять специальный раздел заголовка сетки категорий
+    if (sectionToDelete?.section_type === 'categories_grid') {
+      showNotification('Нельзя удалить заголовок сетки категорий. Его можно только редактировать.', 'error');
+      return;
+    }
+
     if (confirm('Вы уверены, что хотите удалить этот раздел?')) {
       try {
         const response = await fetch(`/api/admin/homepage-sections?id=${id}`, {
@@ -290,7 +310,7 @@ export default function HomepageSectionsManager() {
         showNotification('Раздел успешно удален!', 'success');
       } catch (error: any) {
         console.error('Ошибка удаления раздела:', error);
-        showNotification(error.message || 'Произошла ошибка при удалении раздела', 'error');
+        showNotification(error.message || 'Произошла ошибка при удаления раздела', 'error');
       }
     }
   };
@@ -337,30 +357,39 @@ export default function HomepageSectionsManager() {
   const moveSectionUp = async (index: number) => {
     if (index === 0) return; // Первая секция, нельзя двигать выше
 
+    const sectionToMove = sections[index];
+    // Не позволяем перемещать специальный раздел
+    if (sectionToMove.section_type === 'categories_grid') {
+      showNotification('Нельзя перемещать заголовок сетки категорий.', 'error');
+      return;
+    }
+
     // Создаем новый массив с обновленным порядком
     const newSections = [...sections];
-    const movedSection = newSections.splice(index, 1)[0];
-    newSections.splice(index - 1, 0, movedSection);
+
+    // Меняем местами элементы
+    [newSections[index - 1], newSections[index]] = [newSections[index], newSections[index - 1]];
 
     // Обновляем position для всех секций
-    const reorderedSections = newSections.map((section, idx) => ({
+    const updatedSections = newSections.map((section, idx) => ({
       ...section,
       position: idx + 1  // Позиции начинаются с 1
     }));
 
-    setSections(reorderedSections);
+    setSections(updatedSections);
 
-    // Обновляем порядок в базе данных
+    // Обновляем порядок в базе данных для всех разделов
     try {
       await Promise.all(
-        reorderedSections.map(section =>
+        updatedSections.map(section =>
           fetch('/api/admin/homepage-sections', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               id: section.id,
               title: section.title,
-              position: section.position
+              position: section.position,
+              section_type: section.section_type
             })
           })
         )
@@ -375,30 +404,39 @@ export default function HomepageSectionsManager() {
   const moveSectionDown = async (index: number) => {
     if (index === sections.length - 1) return; // Последняя секция, нельзя двигать ниже
 
+    const sectionToMove = sections[index];
+    // Не позволяем перемещать специальный раздел
+    if (sectionToMove.section_type === 'categories_grid') {
+      showNotification('Нельзя перемещать заголовок сетки категорий.', 'error');
+      return;
+    }
+
     // Создаем новый массив с обновленным порядком
     const newSections = [...sections];
-    const movedSection = newSections.splice(index, 1)[0];
-    newSections.splice(index + 1, 0, movedSection);
+
+    // Меняем местами элементы
+    [newSections[index + 1], newSections[index]] = [newSections[index], newSections[index + 1]];
 
     // Обновляем position для всех секций
-    const reorderedSections = newSections.map((section, idx) => ({
+    const updatedSections = newSections.map((section, idx) => ({
       ...section,
       position: idx + 1  // Позиции начинаются с 1
     }));
 
-    setSections(reorderedSections);
+    setSections(updatedSections);
 
-    // Обновляем порядок в базе данных
+    // Обновляем порядок в базе данных для всех разделов
     try {
       await Promise.all(
-        reorderedSections.map(section =>
+        updatedSections.map(section =>
           fetch('/api/admin/homepage-sections', {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               id: section.id,
               title: section.title,
-              position: section.position
+              position: section.position,
+              section_type: section.section_type
             })
           })
         )
@@ -566,6 +604,20 @@ export default function HomepageSectionsManager() {
                 required
               />
             </div>
+            <div className="mb-4">
+              <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="sectionType">
+                Тип раздела
+              </label>
+              <input
+                id="sectionType"
+                type="text"
+                value={sectionType}
+                onChange={(e) => setSectionType(e.target.value)}
+                className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                placeholder="Введите тип раздела (например: categories_grid)"
+              />
+              <p className="text-sm text-gray-500 mt-1">Оставьте пустым для обычного раздела, используйте 'categories_grid' для заголовка сетки категорий</p>
+            </div>
             <div className="flex items-center justify-between">
               <button
                 type="submit"
@@ -579,6 +631,7 @@ export default function HomepageSectionsManager() {
                   onClick={() => {
                     setEditingSectionId(null);
                     setTitle('');
+                    setSectionType('');
                   }}
                   className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
                 >
@@ -588,12 +641,57 @@ export default function HomepageSectionsManager() {
             </div>
           </form>
 
+          {/* Кнопка для создания специального раздела "categories_grid" если его нет */}
+          {!sections.some(s => s.section_type === 'categories_grid') && (
+            <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <h3 className="text-lg font-bold text-blue-800 mb-2">Специальный раздел</h3>
+              <p className="text-gray-700 mb-3">Заголовок сетки категорий ещё не создан. Создайте его, чтобы управлять названием "Категории" на главной странице.</p>
+              <button
+                onClick={async () => {
+                  try {
+                    const response = await fetch('/api/admin/homepage-sections', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        title: 'Категории',
+                        position: sections.length + 1,
+                        section_type: 'categories_grid'
+                      })
+                    });
+
+                    if (!response.ok) {
+                      const errorData = await response.json();
+                      throw new Error(errorData.error || 'Ошибка создания заголовка сетки категорий');
+                    }
+
+                    const newSection = await response.json();
+
+                    // Обновляем состояние
+                    const updatedSections = [...sections, newSection[0]].sort((a, b) => a.position - b.position);
+                    setSections(updatedSections);
+
+                    showNotification('Заголовок сетки категорий успешно создан!', 'success');
+                  } catch (error: any) {
+                    console.error('Ошибка создания заголовка сетки категорий:', error);
+                    showNotification(error.message || 'Произошла ошибка при создании заголовка сетки категорий', 'error');
+                  }
+                }}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+              >
+                Создать заголовок сетки категорий
+              </button>
+            </div>
+          )}
+
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Название
+                  </th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Тип
                   </th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Перемещение
@@ -604,51 +702,66 @@ export default function HomepageSectionsManager() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {sections.map((section, index) => (
-                  <tr key={section.id}>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{section.title}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <div className="flex space-x-2">
+                {sections.map((section, index) => {
+                  const isSpecialSection = section.section_type === 'categories_grid';
+                  return (
+                    <tr
+                      key={section.id}
+                      className={`${isSpecialSection ? 'bg-blue-50 border-l-4 border-blue-500' : ''}`}
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className={`text-sm ${isSpecialSection ? 'font-semibold text-blue-700' : 'font-medium text-gray-900'}`}>
+                          {section.title}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className={`text-sm ${isSpecialSection ? 'text-blue-600 font-medium' : 'text-gray-500'}`}>
+                          {section.section_type || '-'}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => moveSectionUp(index)}
+                            disabled={index === 0 || isSpecialSection}
+                            className={`p-1 rounded ${(index === 0 || isSpecialSection) ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:text-blue-600'}`}
+                            title={isSpecialSection ? 'Перемещение запрещено для специального раздела' : 'Переместить вверх'}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => moveSectionDown(index)}
+                            disabled={index === sections.length - 1 || isSpecialSection}
+                            className={`p-1 rounded ${(index === sections.length - 1 || isSpecialSection) ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:text-blue-600'}`}
+                            title={isSpecialSection ? 'Перемещение запрещено для специального раздела' : 'Переместить вниз'}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <button
-                          onClick={() => moveSectionUp(index)}
-                          disabled={index === 0}
-                          className={`p-1 rounded ${index === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:text-blue-600'}`}
-                          title="Переместить вверх"
+                          onClick={() => handleEditSection(section)}
+                          className={`${isSpecialSection ? 'text-blue-600 hover:text-blue-800' : 'text-indigo-600 hover:text-indigo-900'} mr-4`}
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
-                          </svg>
+                          Редактировать
                         </button>
                         <button
-                          onClick={() => moveSectionDown(index)}
-                          disabled={index === sections.length - 1}
-                          className={`p-1 rounded ${index === sections.length - 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:text-blue-600'}`}
-                          title="Переместить вниз"
+                          onClick={() => handleDeleteSection(section.id)}
+                          className={`${isSpecialSection ? 'text-blue-400 hover:text-blue-600 cursor-not-allowed' : 'text-red-600 hover:text-red-900'}`}
+                          disabled={isSpecialSection}
+                          title={isSpecialSection ? 'Удаление запрещено для специального раздела' : undefined}
                         >
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                          </svg>
+                          {isSpecialSection ? 'Заблокировано' : 'Удалить'}
                         </button>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <button
-                        onClick={() => handleEditSection(section)}
-                        className="text-indigo-600 hover:text-indigo-900 mr-4"
-                      >
-                        Редактировать
-                      </button>
-                      <button
-                        onClick={() => handleDeleteSection(section.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        Удалить
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

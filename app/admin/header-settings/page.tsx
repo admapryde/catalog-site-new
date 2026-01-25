@@ -11,6 +11,8 @@ interface HeaderSettings {
   nav_catalog: string;
   nav_about: string;
   nav_contacts: string;
+  contact: string;
+  logo_image_url: string;
 }
 
 async function getHeaderSettings(): Promise<HeaderSettings> {
@@ -21,7 +23,7 @@ async function getHeaderSettings(): Promise<HeaderSettings> {
     const { data, error } = await supabase
       .from('site_settings')
       .select('setting_key, setting_value')
-      .in('setting_key', ['header_title', 'nav_home', 'nav_catalog', 'nav_about', 'nav_contacts']);
+      .in('setting_key', ['header_title', 'nav_home', 'nav_catalog', 'nav_about', 'nav_contacts', 'contact', 'logo_image_url']);
 
     if (error) {
       console.error('Ошибка получения настроек шапки:', error.message || error);
@@ -31,7 +33,9 @@ async function getHeaderSettings(): Promise<HeaderSettings> {
         nav_home: 'Главная',
         nav_catalog: 'Каталог',
         nav_about: 'О нас',
-        nav_contacts: 'Контакты'
+        nav_contacts: 'Контакты',
+        contact: '+7 (XXX) XXX-XX-XX',
+        logo_image_url: ''
       };
     }
 
@@ -49,7 +53,9 @@ async function getHeaderSettings(): Promise<HeaderSettings> {
       nav_home: settings.nav_home || 'Главная',
       nav_catalog: settings.nav_catalog || 'Каталог',
       nav_about: settings.nav_about || 'О нас',
-      nav_contacts: settings.nav_contacts || 'Контакты'
+      nav_contacts: settings.nav_contacts || 'Каталог',
+      contact: settings.contact || '+7 (XXX) XXX-XX-XX',
+      logo_image_url: settings.logo_image_url || ''
     };
   } catch (err) {
     console.error('Неожиданная ошибка получения настроек шапки:', err);
@@ -59,7 +65,9 @@ async function getHeaderSettings(): Promise<HeaderSettings> {
       nav_home: 'Главная',
       nav_catalog: 'Каталог',
       nav_about: 'О нас',
-      nav_contacts: 'Контакты'
+      nav_contacts: 'Контакты',
+      contact: '+7 (XXX) XXX-XX-XX',
+      logo_image_url: ''
     };
   }
 }
@@ -79,6 +87,8 @@ async function updateHeaderSettings(formData: FormData) {
     const nav_catalog = formData.get('nav_catalog') as string;
     const nav_about = formData.get('nav_about') as string;
     const nav_contacts = formData.get('nav_contacts') as string;
+    const contact = formData.get('contact') as string;
+    const logo_image_url = formData.get('logo_image_url') as string;
 
     // Обновляем или создаем настройки в базе данных
     const settings = [
@@ -86,7 +96,9 @@ async function updateHeaderSettings(formData: FormData) {
       { setting_key: 'nav_home', setting_value: nav_home },
       { setting_key: 'nav_catalog', setting_value: nav_catalog },
       { setting_key: 'nav_about', setting_value: nav_about },
-      { setting_key: 'nav_contacts', setting_value: nav_contacts }
+      { setting_key: 'nav_contacts', setting_value: nav_contacts },
+      { setting_key: 'contact', setting_value: contact },
+      { setting_key: 'logo_image_url', setting_value: logo_image_url }
     ];
 
     for (const setting of settings) {

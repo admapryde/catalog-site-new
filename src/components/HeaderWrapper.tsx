@@ -90,12 +90,14 @@ export default function HeaderWrapper() {
   if (!mounted || (isLoading && !headerSettings)) {
     // Показываем структуру с заглушками, чтобы избежать скачков при гидратации
     return (
-      <header className="bg-white shadow-md sticky top-0 z-50">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center space-x-10">
-            <div className="text-xl font-bold text-gray-800">
-              <div className="h-6 w-24 bg-gray-200 rounded animate-pulse"></div>
-            </div>
+      <header className="bg-white shadow-md sticky top-0 z-50 h-16">
+        {/* Заглушка для логотипа */}
+        <div className="absolute top-1/2 left-2 transform -translate-y-1/2 z-50">
+          <div className="h-16 w-32 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+
+        <div className="container mx-auto px-2 h-full flex items-center justify-between relative">
+          <div className="flex items-center space-x-10 ml-28">
             <nav className="hidden md:flex space-x-6">
               <div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
               <div className="h-4 w-16 bg-gray-200 rounded animate-pulse"></div>
@@ -120,12 +122,14 @@ export default function HeaderWrapper() {
 
   // Если нет ни кэшированных, ни загруженных настроек, показываем пустой заголовок
   return (
-    <header className="bg-white shadow-md sticky top-0 z-50">
-      <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-        <div className="flex items-center space-x-10">
-          <div className="text-xl font-bold text-gray-800">
-            <div className="h-6 w-24 bg-gray-200 rounded"></div>
-          </div>
+    <header className="bg-white shadow-md sticky top-0 z-50 h-16">
+      {/* Заглушка для логотипа */}
+      <div className="absolute top-1/2 left-2 transform -translate-y-1/2 z-50">
+        <div className="h-16 w-32 bg-gray-200 rounded"></div>
+      </div>
+
+      <div className="container mx-auto px-2 h-full flex items-center justify-between relative">
+        <div className="flex items-center space-x-10 ml-28">
           <nav className="hidden md:flex space-x-6">
             <div className="h-4 w-16 bg-gray-200 rounded"></div>
             <div className="h-4 w-16 bg-gray-200 rounded"></div>

@@ -82,6 +82,7 @@ export default function PagesManager() {
           urls: blockImages.map(img => img.image_url)
         };
       });
+
       setImageFiles(newImageFiles);
     }
   }, [selectedPageId, blocks, images, links]);
@@ -182,6 +183,41 @@ export default function PagesManager() {
           b.id === editingBlockId ? updatedBlock[0] : b
         );
         setBlocks(updatedBlocks);
+
+        // Если это фото-блок, обновляем layout_type и text_content у связанных изображений
+        if (blockType === 'photo') {
+          try {
+            // Получаем изображения для этого блока
+            const imagesResponse = await fetch(`/api/admin/page-block-images?blockId=${editingBlockId}`);
+            if (imagesResponse.ok) {
+              const blockImages = await imagesResponse.json();
+
+              // Обновляем layout_type и text_content для всех изображений этого блока
+              await Promise.all(
+                blockImages.map(async (image: any) => {
+                  const updateResponse = await fetch('/api/admin/page-block-images', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                      id: image.id,
+                      block_id: image.block_id,
+                      image_url: image.image_url,
+                      layout_type: imageLayoutType, // Используем текущий выбранный тип размещения
+                      text_content: imageLayoutType === 'image_text_side' ? blockContent : undefined, // Обновляем текст, если тип размещения "Фото и текст"
+                      sort_order: image.sort_order
+                    })
+                  });
+
+                  if (!updateResponse.ok) {
+                    console.error('Ошибка обновления изображения:', await updateResponse.text());
+                  }
+                })
+              );
+            }
+          } catch (error) {
+            console.error('Ошибка при обновлении изображений:', error);
+          }
+        }
       } else {
         // Создание нового блока
         const blocksInPage = blocks.filter(b => b.page_id === selectedPageId);
@@ -211,29 +247,37 @@ export default function PagesManager() {
         // Обновляем imageFiles для нового блока
         setImageFiles([...imageFiles, { blockId: newBlock[0].id, urls: [] }]);
 
-        // Если есть временные изображения, привязываем их к новому блоку
-        const tempImages = images.filter(img => img.block_id === 'temp');
-        if (tempImages.length > 0) {
-          for (const tempImage of tempImages) {
-            try {
-              const imageResponse = await fetch('/api/admin/page-block-images', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  block_id: newBlock[0].id,
-                  image_url: tempImage.image_url,
-                  layout_type: tempImage.layout_type,
-                  sort_order: tempImage.sort_order
-                })
-              });
+        // Привязываем изображение, которое было загружено для этой страницы
+        const tempImagesForPage = imageFiles.find(item => item.blockId === `temp_for_${selectedPageId}`);
+        if (tempImagesForPage && tempImagesForPage.urls.length > 0) {
+          // Сохраняем только первое изображение (теперь у нас может быть только одно изображение на блок)
+          try {
+            const imageResponse = await fetch('/api/admin/page-block-images', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                block_id: newBlock[0].id,
+                image_url: tempImagesForPage.urls[0],
+                layout_type: blockType === 'photo' ? imageLayoutType : 'simple', // Используем layout_type для фото-блока
+                text_content: blockType === 'photo' && imageLayoutType === 'image_text_side' ? blockContent : undefined, // Добавляем текст, если тип размещения "Фото и текст"
+                sort_order: 0
+              })
+            });
 
-              if (imageResponse.ok) {
-                // Удаляем временное изображение из состояния
-                setImages(prev => prev.filter(img => img.id !== tempImage.id));
-              }
-            } catch (err) {
-              console.error('Ошибка сохранения временного изображения:', err);
+            if (imageResponse.ok) {
+              const newImage = await imageResponse.json();
+
+              // Обновляем локальное состояние изображений
+              setImages(prev => [...prev, newImage[0]]);
+
+              // Удаляем обработанные временные изображения из состояния
+              const updatedImageFiles = imageFiles.filter(item => item.blockId !== `temp_for_${selectedPageId}`);
+              setImageFiles(updatedImageFiles);
+            } else {
+              console.error('Ошибка сохранения изображения для нового блока:', await imageResponse.text());
             }
+          } catch (err) {
+            console.error('Ошибка сохранения изображения для нового блока:', err);
           }
         }
       }
@@ -260,10 +304,22 @@ export default function PagesManager() {
   const handleEditBlock = (block: PageBlock) => {
     setBlockTitle(block.title);
     setBlockType(block.block_type);
-    setBlockContent(block.content || '');
+
+    // Для фото-блока с типом размещения "image_text_side" получаем текст из изображения
+    if (block.block_type === 'photo') {
+      const blockImage = images.find(img => img.block_id === block.id);
+      if (blockImage && blockImage.layout_type === 'image_text_side') {
+        setBlockContent(blockImage.text_content || '');
+      } else {
+        setBlockContent('');
+      }
+    } else {
+      setBlockContent(block.content || '');
+    }
+
     setEditingBlockId(block.id);
     setActiveTab('blocks');
-    
+
     // Устанавливаем выбранную страницу для контекста
     setSelectedPageId(block.page_id);
   };
@@ -363,24 +419,27 @@ export default function PagesManager() {
       return updatedBlock || block;
     });
 
-    // Обновляем порядок в базе данных
+    // Обновляем порядок в базе данных с помощью массового обновления
     try {
-      await Promise.all(
-        reorderedBlocksInPage.map(block =>
-          fetch('/api/admin/page-blocks', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id: block.id,
-              page_id: block.page_id,
-              block_type: block.block_type,
-              title: block.title,
-              content: block.content,
-              sort_order: block.sort_order
-            })
-          })
-        )
-      );
+      const updates = reorderedBlocksInPage.map(block => ({
+        id: block.id,
+        page_id: block.page_id,
+        block_type: block.block_type,
+        title: block.title,
+        content: block.content,
+        sort_order: block.sort_order
+      }));
+
+      const response = await fetch('/api/admin/page-blocks', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Ошибка обновления порядка блоков: ${response.status} ${response.statusText}. ${errorText}`);
+      }
 
       // Обновляем состояние только после успешного сохранения
       setBlocks(updatedBlocks);
@@ -417,24 +476,27 @@ export default function PagesManager() {
       return updatedBlock || block;
     });
 
-    // Обновляем порядок в базе данных
+    // Обновляем порядок в базе данных с помощью массового обновления
     try {
-      await Promise.all(
-        reorderedBlocksInPage.map(block =>
-          fetch('/api/admin/page-blocks', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id: block.id,
-              page_id: block.page_id,
-              block_type: block.block_type,
-              title: block.title,
-              content: block.content,
-              sort_order: block.sort_order
-            })
-          })
-        )
-      );
+      const updates = reorderedBlocksInPage.map(block => ({
+        id: block.id,
+        page_id: block.page_id,
+        block_type: block.block_type,
+        title: block.title,
+        content: block.content,
+        sort_order: block.sort_order
+      }));
+
+      const response = await fetch('/api/admin/page-blocks', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Ошибка обновления порядка блоков: ${response.status} ${response.statusText}. ${errorText}`);
+      }
 
       // Обновляем состояние только после успешного сохранения
       setBlocks(updatedBlocks);
@@ -444,55 +506,105 @@ export default function PagesManager() {
     }
   };
 
-  const handleImageUpload = async (urls: string[], blockId: string) => {
+  const handleImageUpload = async (urls: string[], blockId: string, layoutType?: 'simple' | 'image_text_side' | 'banner' | 'horizontal_pair' | 'horizontal_triple' | 'grid_four', textContent?: string) => {
     try {
-      // Добавляем новые изображения в базу данных
-      for (let i = 0; i < urls.length; i++) {
-        const sortOrder = i; // Порядок изображений в блоке
-        
-        await fetch('/api/admin/page-block-images', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            block_id: blockId,
-            image_url: urls[i],
-            layout_type: imageLayoutType,
-            sort_order: sortOrder
-          })
-        });
-      }
+      // Если layoutType не передан, используем текущее значение
+      const currentLayoutType = layoutType || imageLayoutType;
 
-      // Обновляем локальное состояние
-      const newImages = urls.map((url, index) => ({
-        id: `${Date.now()}-${index}`, // временный ID
-        block_id: blockId,
-        image_url: url,
-        layout_type: imageLayoutType,
-        is_main: false, // По умолчанию не главное изображение
-        sort_order: index,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }));
-      
-      setImages([...images, ...newImages]);
-      
-      // Обновляем imageFiles
-      const updatedImageFiles = [...imageFiles];
-      const existingIndex = updatedImageFiles.findIndex(item => item.blockId === blockId);
-      if (existingIndex >= 0) {
-        updatedImageFiles[existingIndex] = {
-          ...updatedImageFiles[existingIndex],
-          urls: [...updatedImageFiles[existingIndex].urls, ...urls]
-        };
+      // Если блок еще не создан (используем специальный ID для временных изображений)
+      if (blockId.startsWith('temp_')) {
+        // Обновляем imageFiles с временным ID, заменяем любые существующие изображения
+        const updatedImageFiles = [...imageFiles];
+        const existingIndex = updatedImageFiles.findIndex(item => item.blockId === blockId);
+
+        if (existingIndex >= 0) {
+          updatedImageFiles[existingIndex] = { blockId, urls };
+        } else {
+          updatedImageFiles.push({ blockId, urls });
+        }
+        setImageFiles(updatedImageFiles);
+
+        // Обновляем локальное состояние с временным ID, заменяем любые существующие изображения
+        const newImages = urls.map((url, index) => ({
+          id: `temp-${Date.now()}-${index}`, // временный ID
+          block_id: blockId,
+          image_url: url,
+          layout_type: currentLayoutType,
+          text_content: currentLayoutType === 'image_text_side' ? textContent : undefined,
+          sort_order: index,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }));
+
+        // Удаляем старые временные изображения для этого блока
+        const filteredImages = images.filter(img => !img.block_id.startsWith('temp_') || img.block_id !== blockId);
+        setImages([...filteredImages, ...newImages]);
       } else {
-        updatedImageFiles.push({ blockId, urls });
-      }
-      setImageFiles(updatedImageFiles);
+        // Проверяем, есть ли уже изображения для этого блока и удаляем их
+        const existingImages = images.filter(img => img.block_id === blockId);
+        for (const existingImage of existingImages) {
+          try {
+            // Удаляем изображение из базы данных
+            const response = await fetch(`/api/admin/page-block-images?id=${existingImage.id}`, {
+              method: 'DELETE'
+            });
 
-      showNotification('Изображения успешно добавлены!', 'success');
+            if (!response.ok) {
+              console.error('Ошибка удаления старого изображения:', await response.text());
+            }
+          } catch (err) {
+            console.error('Ошибка при удалении старого изображения:', err);
+          }
+        }
+
+        // Добавляем новое изображение в базу данных
+        try {
+          const response = await fetch('/api/admin/page-block-images', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              block_id: blockId,
+              image_url: urls[0], // Берем только первое изображение
+              layout_type: currentLayoutType,
+              text_content: currentLayoutType === 'image_text_side' ? textContent : undefined,
+              sort_order: 0
+            })
+          });
+
+          if (response.ok) {
+            const newImage = await response.json();
+
+            // Удаляем старые изображения для этого блока из локального состояния
+            const filteredImages = images.filter(img => img.block_id !== blockId);
+            // Добавляем новое изображение
+            setImages([...filteredImages, newImage[0]]);
+
+            // Обновляем imageFiles
+            const updatedImageFiles = [...imageFiles];
+            const existingIndex = updatedImageFiles.findIndex(item => item.blockId === blockId);
+
+            if (existingIndex >= 0) {
+              updatedImageFiles[existingIndex] = { blockId, urls: [urls[0]] };
+            } else {
+              updatedImageFiles.push({ blockId, urls: [urls[0]] });
+            }
+            setImageFiles(updatedImageFiles);
+          } else {
+            console.error('Ошибка сохранения изображения:', await response.text());
+            showNotification('Ошибка при сохранения изображения', 'error');
+            return;
+          }
+        } catch (err) {
+          console.error('Ошибка при запросе к API:', err);
+          showNotification('Ошибка при сохранении изображения', 'error');
+          return;
+        }
+      }
+
+      showNotification('Изображение успешно добавлено!', 'success');
     } catch (error) {
-      console.error('Ошибка при добавлении изображений:', error);
-      showNotification('Ошибка при добавлении изображений', 'error');
+      console.error('Ошибка при добавлении изображения:', error);
+      showNotification('Ошибка при добавлении изображения', 'error');
     }
   };
 
@@ -627,23 +739,26 @@ export default function PagesManager() {
       return updatedLink || link;
     });
 
-    // Обновляем порядок в базе данных
+    // Обновляем порядок в базе данных с помощью массового обновления
     try {
-      await Promise.all(
-        reorderedLinksInBlock.map(link =>
-          fetch('/api/admin/page-block-links', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id: link.id,
-              block_id: link.block_id,
-              title: link.title,
-              url: link.url,
-              sort_order: link.sort_order
-            })
-          })
-        )
-      );
+      const updates = reorderedLinksInBlock.map(link => ({
+        id: link.id,
+        block_id: link.block_id,
+        title: link.title,
+        url: link.url,
+        sort_order: link.sort_order
+      }));
+
+      const response = await fetch('/api/admin/page-block-links', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Ошибка обновления порядка ссылок: ${response.status} ${response.statusText}. ${errorText}`);
+      }
 
       // Обновляем состояние только после успешного сохранения
       setLinks(updatedLinks);
@@ -680,23 +795,26 @@ export default function PagesManager() {
       return updatedLink || link;
     });
 
-    // Обновляем порядок в базе данных
+    // Обновляем порядок в базе данных с помощью массового обновления
     try {
-      await Promise.all(
-        reorderedLinksInBlock.map(link =>
-          fetch('/api/admin/page-block-links', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id: link.id,
-              block_id: link.block_id,
-              title: link.title,
-              url: link.url,
-              sort_order: link.sort_order
-            })
-          })
-        )
-      );
+      const updates = reorderedLinksInBlock.map(link => ({
+        id: link.id,
+        block_id: link.block_id,
+        title: link.title,
+        url: link.url,
+        sort_order: link.sort_order
+      }));
+
+      const response = await fetch('/api/admin/page-block-links', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates)
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Ошибка обновления порядка ссылок: ${response.status} ${response.statusText}. ${errorText}`);
+      }
 
       // Обновляем состояние только после успешного сохранения
       setLinks(updatedLinks);
@@ -710,8 +828,7 @@ export default function PagesManager() {
     if (confirm('Вы уверены, что хотите удалить это изображение?')) {
       try {
         // Проверяем, является ли ID временным (не настоящим UUID)
-        // Временные ID создаются как `${Date.now()}-${index}`
-        const isTemporaryId = /^\d+-\d+$/.test(imageId);
+        const isTemporaryId = /^temp-\d+|^\d+-\d+$/.test(imageId);
 
         if (!isTemporaryId) {
           // Если это настоящий ID, удаляем из базы данных
@@ -729,11 +846,11 @@ export default function PagesManager() {
         const filteredImages = images.filter(img => img.id !== imageId);
         setImages(filteredImages);
 
-        // Обновляем imageFiles
+        // Обновляем imageFiles - удаляем изображение из соответствующей записи
         const updatedImageFiles = imageFiles.map(item => ({
           ...item,
           urls: item.urls.filter(url => url !== imageUrl)
-        }));
+        })).filter(item => item.urls.length > 0); // Удаляем пустые записи
         setImageFiles(updatedImageFiles);
 
         showNotification('Изображение успешно удалено!', 'success');
@@ -956,7 +1073,7 @@ export default function PagesManager() {
                   </div>
                 )}
 
-                {blockType === 'photo' && editingBlockId && (
+                {blockType === 'photo' && (
                   <div className="mb-4 p-4 bg-gray-50 rounded-lg">
                     <label className="block text-gray-700 text-sm font-bold mb-2">
                       Тип размещения изображений
@@ -967,11 +1084,7 @@ export default function PagesManager() {
                       className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline mb-4"
                     >
                       <option value="simple">Простое</option>
-                      <option value="banner">Баннер</option>
-                      <option value="horizontal_pair">Два фото горизонтально</option>
-                      <option value="horizontal_triple">Три фото горизонтально</option>
-                      <option value="grid_four">Четыре фото сеткой</option>
-                      <option value="image_text_side">Фото и текст рядом</option>
+                      <option value="image_text_side">Фото и текст</option>
                     </select>
 
                     {(imageLayoutType === 'image_text_side') && (
@@ -989,109 +1102,62 @@ export default function PagesManager() {
                       </div>
                     )}
 
-                    <FileUpload
-                      onFileUpload={(urls) => {
-                        // Ограничиваем количество изображений до 4
-                        const currentImagesCount = images.filter(img => img.block_id === editingBlockId).length;
-                        const remainingSlots = 4 - currentImagesCount;
-
-                        if (remainingSlots <= 0) {
-                          showNotification('Можно загрузить максимум 4 изображения для одного блока', 'error');
-                          return;
-                        }
-
-                        const limitedUrls = urls.slice(0, remainingSlots);
-                        handleImageUpload(limitedUrls, editingBlockId);
-
-                        if (urls.length > remainingSlots) {
-                          showNotification(`Загружено только ${remainingSlots} из ${urls.length} изображений (максимум 4)`, 'error');
-                        }
-                      }}
-                      folder="page-blocks"
-                      label="Загрузить изображения (максимум 4)"
-                      multiple={true}
-                    />
-
-                    {/* Отображение загруженных изображений для текущего редактируемого блока */}
-                    {images.filter(img => img.block_id === editingBlockId).length > 0 && (
-                      <div className="mt-6">
-                        <h4 className="text-md font-semibold text-gray-700 mb-3">Выберите главное изображение:</h4>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                          {images
-                            .filter(img => img.block_id === editingBlockId)
-                            .sort((a, b) => a.sort_order - b.sort_order)
-                            .map((image) => (
-                              <div key={image.id} className="relative">
-                                <div className="flex items-center mb-2">
-                                  <input
-                                    type="radio"
-                                    id={`main-image-${image.id}`}
-                                    name={`main-image-${editingBlockId}`}
-                                    checked={image.is_main || false}
-                                    onChange={() => {
-                                      // Обновляем изображения, устанавливая текущее как главное
-                                      const updatedImages = images.map(img => ({
-                                        ...img,
-                                        is_main: img.id === image.id
-                                      }));
-                                      setImages(updatedImages);
-
-                                      // Также обновляем в базе данных
-                                      fetch('/api/admin/page-block-images', {
-                                        method: 'PUT',
-                                        headers: { 'Content-Type': 'application/json' },
-                                        body: JSON.stringify({
-                                          id: image.id,
-                                          block_id: image.block_id,
-                                          image_url: image.image_url,
-                                          layout_type: image.layout_type,
-                                          sort_order: image.sort_order,
-                                          is_main: true
-                                        })
-                                      }).catch(err => console.error('Ошибка обновления главного изображения:', err));
-
-                                      // Сбрасываем остальные изображения этого блока в is_main: false
-                                      const otherImages = images.filter(img => img.block_id === editingBlockId && img.id !== image.id);
-                                      otherImages.forEach(otherImg => {
-                                        fetch('/api/admin/page-block-images', {
-                                          method: 'PUT',
-                                          headers: { 'Content-Type': 'application/json' },
-                                          body: JSON.stringify({
-                                            id: otherImg.id,
-                                            block_id: otherImg.block_id,
-                                            image_url: otherImg.image_url,
-                                            layout_type: otherImg.layout_type,
-                                            sort_order: otherImg.sort_order,
-                                            is_main: false
-                                          })
-                                        }).catch(err => console.error('Ошибка обновления изображения:', err));
-                                      });
-                                    }}
-                                    className="mr-2"
-                                  />
-                                  <label htmlFor={`main-image-${image.id}`} className="text-xs text-gray-600 truncate flex-1">
-                                    Главное
-                                  </label>
-                                </div>
-                                <OptimizedImage
-                                  src={image.image_url}
-                                  alt={`Изображение для блока ${blocks.find(b => b.id === editingBlockId)?.title}`}
-                                  width={200}
-                                  height={150}
-                                  className={`rounded-lg object-cover w-full h-32 ${image.is_main ? 'ring-2 ring-blue-500' : ''}`}
-                                />
-                                <button
-                                  type="button"
-                                  onClick={() => handleDeleteImage(image.id, image.image_url)}
-                                  className="absolute top-1 right-1 text-red-500 hover:text-red-700 bg-white rounded-full w-6 h-6 flex items-center justify-center z-10"
-                                >
-                                  ✕
-                                </button>
-                                <p className="text-xs mt-1 text-center truncate">{image.layout_type}</p>
-                              </div>
-                            ))}
+                    {/* Отображение текущего изображения, если оно есть */}
+                    {(editingBlockId && images.some(img => img.block_id === editingBlockId)) && (
+                      <div className="mb-4">
+                        <label className="block text-gray-700 text-sm font-bold mb-2">
+                          Текущее изображение
+                        </label>
+                        <div className="flex items-center">
+                          <OptimizedImage
+                            src={images.find(img => img.block_id === editingBlockId)?.image_url || ''}
+                            alt="Текущее изображение блока"
+                            width={96}
+                            height={48}
+                            className="h-16 w-32 object-cover rounded border"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              // Удаляем текущее изображение
+                              const imageToDelete = images.find(img => img.block_id === editingBlockId);
+                              if (imageToDelete) {
+                                handleDeleteImage(imageToDelete.id, imageToDelete.image_url);
+                              }
+                            }}
+                            className="ml-4 text-red-600 hover:text-red-800 text-sm"
+                          >
+                            Удалить изображение
+                          </button>
                         </div>
                       </div>
+                    )}
+
+                    {/* Форма загрузки изображения, если нет текущего изображения или создаем новый блок */}
+                    {(!editingBlockId || !images.some(img => img.block_id === editingBlockId)) && (
+                      <FileUpload
+                        onFileUpload={(urls) => {
+                          // Ограничиваем до одного изображения на блок
+                          const currentImageExists = editingBlockId ? images.some(img => img.block_id === editingBlockId) : false;
+
+                          if (currentImageExists) {
+                            showNotification('Для одного блока можно загрузить только одно изображение', 'error');
+                            return;
+                          }
+
+                          // Берем только первое изображение из загруженных
+                          const firstImageUrl = urls[0];
+
+                          // Если блок еще не создан (при создании нового блока), используем временный ID
+                          const targetBlockId = editingBlockId ? editingBlockId : selectedPageId ? `temp_for_${selectedPageId}` : '';
+                          if (targetBlockId) {
+                            handleImageUpload([firstImageUrl], targetBlockId, imageLayoutType, blockContent);
+                          }
+                        }}
+                        folder="page-blocks"
+                        label="Загрузить изображение"
+                        multiple={false}
+                      />
                     )}
                   </div>
                 )}

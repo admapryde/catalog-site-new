@@ -19,6 +19,7 @@ interface PageRendererProps {
         block_id: string;
         image_url: string;
         layout_type: 'simple' | 'banner' | 'horizontal_pair' | 'horizontal_triple' | 'grid_four' | 'image_text_side';
+        text_content?: string;
         sort_order: number;
         created_at: string;
         updated_at: string;
@@ -110,6 +111,7 @@ function renderPhotoBlock(
     image_url: string;
     layout_type: 'simple' | 'banner' | 'horizontal_pair' | 'horizontal_triple' | 'grid_four' | 'image_text_side';
     sort_order: number;
+    text_content?: string;
     is_main?: boolean;
   }> | null,
   content?: string
@@ -217,7 +219,7 @@ function renderPhotoBlock(
       );
 
     case 'image_text_side':
-      // Фото и текст рядом (главное изображение и текст из content)
+      // Фото и текст рядом (главное изображение и текст из text_content изображения)
       return (
         <div className="flex flex-col md:flex-row gap-8 items-start">
           <div className="md:w-1/2 overflow-hidden rounded-xl shadow-lg border border-gray-200">
@@ -232,7 +234,10 @@ function renderPhotoBlock(
             </div>
           </div>
           <div className="md:w-1/2 prose prose-lg max-w-none text-gray-700 font-[var(--font-pt-sans)]">
-            {content && <p className="text-lg leading-relaxed whitespace-pre-line">{content}</p>}
+            {(mainImage?.text_content || sortedImages[0]?.text_content) &&
+              <p className="text-lg leading-relaxed whitespace-pre-line">
+                {mainImage?.text_content || sortedImages[0].text_content}
+              </p>}
           </div>
         </div>
       );
