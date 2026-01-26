@@ -156,7 +156,7 @@ export default function ProductsGridContent({ categoryId, search }: ProductsGrid
         />
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {[...Array(8)].map((_, index) => (
-            <div key={index} className="bg-white rounded-lg shadow-md overflow-hidden animate-pulse">
+            <div key={index} className="bg-white/85 rounded-lg shadow-md overflow-hidden animate-pulse">
               <div className="relative pb-[100%] bg-gray-200"></div>
               <div className="p-4">
                 <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
@@ -216,7 +216,7 @@ export default function ProductsGridContent({ categoryId, search }: ProductsGrid
             <div
               key={product.id}
               onClick={() => handleProductClick(product.id)}
-              className="block group bg-white rounded-lg shadow-md overflow-hidden transition-transform duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer"
+              className="block group bg-white/85 rounded-lg shadow-md overflow-hidden transition-transform duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer"
             >
               <div className="relative pb-[100%]"> {/* Квадратный аспект */}
                 {mainImage ? (

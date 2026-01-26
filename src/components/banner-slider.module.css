@@ -1,6 +1,6 @@
 .bannerSliderSection {
   padding: 2rem 0; /* py-8 */
-  background-color: white; /* bg-white */
+  background-color: transparent; /* Используем прозрачный фон для отображения общего фона сайта */
 }
 
 .bannerSliderContainer {

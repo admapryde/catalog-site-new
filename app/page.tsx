@@ -22,6 +22,7 @@ async function getGeneralSettings() {
           site_title: 'Каталог',
           site_icon: '/favicon.png',
           site_footer_info: '© 2026 Каталог. Все права защищены.',
+          bg_image: '', // Добавляем новое поле
         };
       }
 
@@ -31,6 +32,7 @@ async function getGeneralSettings() {
         site_title: 'Каталог',
         site_icon: '/favicon.ico',
         site_footer_info: '© 2026 Каталог. Все права защищены.',
+        bg_image: '', // Добавляем новое поле
       };
     }
 
@@ -40,6 +42,7 @@ async function getGeneralSettings() {
         site_title: 'Каталог',
         site_icon: '/favicon.ico',
         site_footer_info: '© 2026 Каталог. Все права защищены.',
+        bg_image: '', // Добавляем новое поле
       };
     }
 
@@ -49,6 +52,7 @@ async function getGeneralSettings() {
       site_title: settings.site_title || 'Каталог',
       site_icon: settings.site_icon || '/favicon.ico',
       site_footer_info: settings.site_footer_info || '© 2026 Каталог. Все права защищены.',
+      bg_image: settings.bg_image !== undefined ? settings.bg_image : '', // Добавляем новое поле
     };
   } catch (error: any) {
     // Проверяем, является ли ошибка связанной с отсутствием таблицы
@@ -67,6 +71,7 @@ async function getGeneralSettings() {
       site_title: 'Каталог',
       site_icon: '/favicon.ico',
       site_footer_info: '© 2026 Каталог. Все права защищены.',
+      bg_image: '', // Добавляем новое поле
     };
   }
 }
@@ -209,22 +214,24 @@ export default async function HomePage() {
 
   return (
     <HomePageWithModal>
-      <div>
-        {/* Сетка категорий */}
-        <CategoriesGrid categories={categories} title={categoriesTitle} />
+      <div className="py-8 pt-24 md:pt-8"> {/* Убран bg-white/90, чтобы использовать фон из LayoutWrapper */}
+        <div className="container mx-auto px-4"> {/* Ограничиваем ширину контента для согласованности с другими страницами */}
+          {/* Сетка категорий */}
+          <CategoriesGrid categories={categories} title={categoriesTitle} />
 
-        {/* Блоки баннеров */}
-        {bannerGroups?.map((group: any) => (
-          <BannerSlider key={group.id} group={{
-            id: group.id,
-            title: group.title,
-            position: group.position,
-            banners: group.banners || []
-          }} />
-        ))}
+          {/* Блоки баннеров */}
+          {bannerGroups?.map((group: any) => (
+            <BannerSlider key={group.id} group={{
+              id: group.id,
+              title: group.title,
+              position: group.position,
+              banners: group.banners || []
+            }} />
+          ))}
 
-        {/* Разделы ГС */}
-        <HomepageSections sections={homepageSections || []} />
+          {/* Разделы ГС */}
+          <HomepageSections sections={homepageSections || []} />
+        </div>
       </div>
     </HomePageWithModal>
   );

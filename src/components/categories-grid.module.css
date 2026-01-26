@@ -1,6 +1,6 @@
 .categoriesGridSection {
   padding: 3rem 0;
-  background-color: #f9fafb; /* bg-gray-50 equivalent */
+  background-color: transparent; /* Используем прозрачный фон для отображения общего фона сайта */
 }
 
 .categoriesGridContainer {
@@ -37,6 +37,7 @@
 
 .categoriesGridItem {
   position: relative;
+  background-color: rgba(255, 255, 255, 0.85); /* Полупрозрачный белый фон для карточки категории */
   border-radius: 0.5rem; /* rounded-lg */
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); /* shadow-md */
   overflow: hidden;

@@ -6,6 +6,7 @@ export interface GeneralSettings {
   site_title: string;
   site_icon: string;
   site_footer_info: string;
+  bg_image?: string; // Новое поле для фонового изображения
   created_at: string;
   updated_at: string;
 }
@@ -38,7 +39,7 @@ export async function getGeneralSettings(): Promise<GeneralSettings> {
     // Получаем общие настройки сайта
     const { data, error } = await supabase
       .from('general_settings')
-      .select('*')
+      .select('*, bg_image')
       .limit(1);  // Берем только первую запись
 
     if (error) {
@@ -98,6 +99,7 @@ export async function getGeneralSettings(): Promise<GeneralSettings> {
       site_title: settings.site_title || 'Каталог',
       site_icon: settings.site_icon || '/favicon.png',
       site_footer_info: settings.site_footer_info || '© 2026 Каталог. Все права защищены.',
+      bg_image: settings.bg_image || '', // Добавляем новое поле
       created_at: settings.created_at || new Date().toISOString(),
       updated_at: settings.updated_at || new Date().toISOString()
     };
@@ -149,7 +151,7 @@ export async function initializeGeneralSettingsIfNeeded(): Promise<boolean> {
     // Проверяем, существует ли уже запись в таблице general_settings
     const { data: existingRecord, error: selectError } = await supabase
       .from('general_settings')
-      .select('id')
+      .select('id, bg_image')
       .limit(1);
 
     if (selectError && selectError.code !== '42P01') { // 42P01 означает, что таблица не существует
@@ -165,6 +167,7 @@ export async function initializeGeneralSettingsIfNeeded(): Promise<boolean> {
           site_title: 'Каталог',
           site_icon: '/favicon.png',
           site_footer_info: '© 2026 Каталог. Все права защищены.',
+          bg_image: '', // Добавляем новое поле
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }]);
@@ -203,7 +206,7 @@ export async function updateGeneralSettings(settings: Partial<GeneralSettings>):
     // Сначала получаем существующую запись, чтобы получить её ID
     const { data: existingData, error: selectError } = await supabase
       .from('general_settings')
-      .select('id')
+      .select('id, bg_image')
       .limit(1);
 
     if (selectError) {
@@ -225,6 +228,7 @@ export async function updateGeneralSettings(settings: Partial<GeneralSettings>):
           site_title: settings.site_title,
           site_icon: settings.site_icon,
           site_footer_info: settings.site_footer_info,
+          bg_image: settings.bg_image,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         }]);
@@ -249,6 +253,7 @@ export async function updateGeneralSettings(settings: Partial<GeneralSettings>):
         site_title: settings.site_title,
         site_icon: settings.site_icon,
         site_footer_info: settings.site_footer_info,
+        bg_image: settings.bg_image,
         updated_at: new Date().toISOString()
       })
       .eq('id', existingData[0].id); // Используем ID для обновления конкретной записи

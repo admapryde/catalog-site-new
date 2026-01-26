@@ -52,7 +52,7 @@ export default function PageRenderer({ page }: PageRendererProps) {
           {sortedBlocks.map((block) => (
             <div
               key={block.id}
-              className="bg-white rounded-2xl shadow-lg p-6 md:p-8 transition-all duration-300 hover:shadow-xl"
+              className="bg-white/85 rounded-2xl shadow-lg p-6 md:p-8 transition-all duration-300 hover:shadow-xl"
             >
               <h2 className="text-2xl md:text-3xl font-bold text-gray-800 mb-8 text-center font-[var(--font-jost)] pb-4 border-b border-gray-100">
                 {block.title}

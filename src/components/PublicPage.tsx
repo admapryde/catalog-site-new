@@ -88,7 +88,7 @@ export default function PublicPage({ slug }: PublicPageProps) {
         <div className="animate-pulse">
           <div className="h-12 bg-gray-200 rounded w-1/3 mx-auto mb-12"></div>
           <div className="space-y-16">
-            <div className="bg-white rounded-2xl shadow-lg p-6 md:p-8">
+            <div className="bg-white/85 rounded-2xl shadow-lg p-6 md:p-8">
               <div className="h-8 bg-gray-200 rounded w-1/2 mb-8"></div>
               <div className="h-4 bg-gray-200 rounded w-full mb-2"></div>
               <div className="h-4 bg-gray-200 rounded w-5/6 mb-2"></div>

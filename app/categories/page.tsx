@@ -120,7 +120,7 @@ export default async function AllCategoriesPage() {
                     <Link
                       href={`/product/${product.id}`}
                       key={product.id}
-                      className="block group bg-white rounded-lg shadow-md overflow-hidden transition-transform duration-300 hover:shadow-lg hover:-translate-y-1"
+                      className="block group bg-white/85 rounded-lg shadow-md overflow-hidden transition-transform duration-300 hover:shadow-lg hover:-translate-y-1"
                     >
                       <div className="relative pb-[100%]"> {/* Квадратный аспект */}
                         <OptimizedImage

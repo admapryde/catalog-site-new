@@ -7,6 +7,7 @@ interface GeneralSettings {
   site_title: string;
   site_icon: string;
   site_footer_info: string;
+  bg_image?: string;
 }
 
 interface GeneralSettingsFormProps {
@@ -52,6 +53,7 @@ export default function GeneralSettingsForm({ initialSettings }: GeneralSettings
           site_title: formData.site_title,
           site_icon: formData.site_icon,
           site_footer_info: formData.site_footer_info,
+          bg_image: formData.bg_image,
         }),
       });
 
@@ -115,6 +117,42 @@ export default function GeneralSettingsForm({ initialSettings }: GeneralSettings
               type="hidden"
               name="site_icon"
               value={formData.site_icon}
+            />
+          </div>
+        )}
+      </div>
+
+      <div className="mb-4">
+        <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="bg_image">
+          Изображение фона сайта
+        </label>
+        <FileUpload
+          onFileUpload={(urls) => setFormData(prev => ({ ...prev, bg_image: urls[0] || '' }))}
+          folder="background-images"
+          label="Загрузить изображение фона"
+          isFavicon={false}
+        />
+        {formData.bg_image && (
+          <div className="mt-2">
+            <p className="text-gray-600 text-sm">Текущее изображение фона:</p>
+            <div className="flex items-center justify-between mt-1">
+              <img
+                src={formData.bg_image}
+                alt="Текущее изображение фона"
+                className="w-32 h-24 object-cover mt-1 border rounded"
+              />
+              <button
+                type="button"
+                onClick={() => setFormData(prev => ({ ...prev, bg_image: '' }))}
+                className="ml-4 bg-red-500 hover:bg-red-600 text-white font-bold py-1 px-3 rounded text-sm"
+              >
+                Удалить
+              </button>
+            </div>
+            <input
+              type="hidden"
+              name="bg_image"
+              value={formData.bg_image}
             />
           </div>
         )}

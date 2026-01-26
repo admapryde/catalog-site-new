@@ -27,7 +27,19 @@ export default function FooterWrapper() {
     if (cachedFooterSettings && cachedGeneralSettings) {
       try {
         const parsedFooterSettings = JSON.parse(cachedFooterSettings);
-        const parsedGeneralSettings = JSON.parse(cachedGeneralSettings);
+        let parsedGeneralSettings = JSON.parse(cachedGeneralSettings);
+
+        // Убедимся, что parsedGeneralSettings соответствует типу GeneralSettings
+        parsedGeneralSettings = {
+          id: parsedGeneralSettings.id || '',
+          site_title: parsedGeneralSettings.site_title || 'Каталог',
+          site_icon: parsedGeneralSettings.site_icon || '/favicon.png',
+          site_footer_info: parsedGeneralSettings.site_footer_info || '© 2026 Каталог. Все права защищены.',
+          bg_image: parsedGeneralSettings.bg_image || '',
+          created_at: parsedGeneralSettings.created_at || new Date().toISOString(),
+          updated_at: parsedGeneralSettings.updated_at || new Date().toISOString()
+        };
+
         setFooterSettings(parsedFooterSettings);
         setGeneralSettings(parsedGeneralSettings);
         hasCachedSettings = true;

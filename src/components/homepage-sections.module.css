@@ -1,10 +1,10 @@
 .homepageSectionsSection {
   padding: 3rem 0;
-  background-color: white; /* bg-white */
+  background-color: transparent; /* Используем прозрачный фон для отображения общего фона сайта */
 }
 
 .homepageSectionsSectionAlt {
-  background-color: #f9fafb; /* bg-gray-50 */
+  background-color: transparent; /* Используем прозрачный фон для отображения общего фона сайта */
 }
 
 .homepageSectionsContainer {
@@ -40,7 +40,7 @@
 }
 
 .homepageSectionCard {
-  background-color: white; /* bg-white */
+  background-color: rgba(255, 255, 255, 0.85); /* Полупрозрачный белый фон для карточки товара */
   border-radius: 0.5rem; /* rounded-lg */
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); /* shadow-md */
   overflow: hidden;

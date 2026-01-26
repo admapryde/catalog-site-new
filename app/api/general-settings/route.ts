@@ -19,6 +19,7 @@ export interface GeneralSettings {
   site_title: string;
   site_icon: string;
   site_footer_info: string;
+  bg_image?: string; // Новое поле для фонового изображения
   created_at: string;
   updated_at: string;
 }
@@ -56,6 +57,7 @@ export async function GET(request: NextRequest) {
           site_title: 'Каталог',
           site_icon: '/favicon.png',
           site_footer_info: '© 2026 Каталог. Все права защищены.',
+          bg_image: '', // Добавляем новое поле
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
         };
@@ -73,6 +75,7 @@ export async function GET(request: NextRequest) {
         site_title: 'Каталог',
         site_icon: '/favicon.ico',
         site_footer_info: '© 2026 Каталог. Все права защищены.',
+        bg_image: '', // Добавляем новое поле
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       });
@@ -89,6 +92,7 @@ export async function GET(request: NextRequest) {
         site_title: 'Каталог',
         site_icon: '/favicon.ico',
         site_footer_info: '© 2026 Каталог. Все права защищены.',
+        bg_image: '', // Добавляем новое поле
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -106,6 +110,7 @@ export async function GET(request: NextRequest) {
       site_title: settings.site_title || 'Каталог',
       site_icon: settings.site_icon || '/favicon.ico',
       site_footer_info: settings.site_footer_info || '© 2026 Каталог. Все права защищены.',
+      bg_image: settings.bg_image !== undefined ? settings.bg_image : '', // Добавляем новое поле
       created_at: settings.created_at || new Date().toISOString(),
       updated_at: settings.updated_at || new Date().toISOString()
     };
@@ -125,6 +130,7 @@ export async function GET(request: NextRequest) {
         site_title: 'Каталог',
         site_icon: '/favicon.ico',
         site_footer_info: '© 2026 Каталог. Все права защищены.',
+        bg_image: '', // Добавляем новое поле
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -142,6 +148,7 @@ export async function GET(request: NextRequest) {
       site_title: 'Каталог',
       site_icon: '/favicon.ico',
       site_footer_info: '© 2026 Каталог. Все права защищены.',
+      bg_image: '', // Добавляем новое поле
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString()
     });
@@ -154,14 +161,15 @@ export async function GET(request: NextRequest) {
 
 export async function PUT(request: NextRequest) {
   try {
-    const { site_title, site_icon, site_footer_info } = await request.json();
+    const { site_title, site_icon, site_footer_info, bg_image } = await request.json();
 
     // Используем сервис для обновления настроек (функция сама решит, обновлять или создавать)
     const updateResult = await import('@/services/general-settings-service')
       .then(mod => mod.updateGeneralSettings({
         site_title,
         site_icon,
-        site_footer_info
+        site_footer_info,
+        bg_image
       }));
 
     if (updateResult) {

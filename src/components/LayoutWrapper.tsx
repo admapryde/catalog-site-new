@@ -2,8 +2,9 @@
 
 import { ReactNode, useState, useEffect } from 'react';
 import dynamic from 'next/dynamic';
+import BackgroundSetter from './BackgroundSetter';
 
-// Динамический импорт компонентов Footer для избежания проблем с гидрацией
+// Динамический импорт компонентов для избежания проблем с гидрацией
 const Footer = dynamic(() => import('@/components/FooterWrapper'), {
   ssr: false,
   loading: () => (
@@ -40,17 +41,57 @@ const Footer = dynamic(() => import('@/components/FooterWrapper'), {
   )
 });
 
+const SiteBackground = dynamic(() => import('./SiteBackground'), {
+  ssr: false
+});
+
 // Импортируем HeaderWrapper как обычный компонент
 import HeaderWrapper from '@/components/HeaderWrapper';
 import MobileBottomNav from '@/components/MobileBottomNav';
 
+interface GeneralSettings {
+  bg_image?: string;
+}
+
 export default function LayoutWrapper({ children }: { children: ReactNode }) {
-  // Для согласованности между сервером и клиентом не используем состояние монтирования
-  // поскольку дочерние компоненты сами обрабатывают гидратацию
+  const [bgImage, setBgImage] = useState<string | undefined>(undefined);
+
+  useEffect(() => {
+    const fetchSettings = async () => {
+      try {
+        const response = await fetch('/api/general-settings');
+        if (response.ok) {
+          const settings: GeneralSettings = await response.json();
+          setBgImage(settings.bg_image);
+        }
+      } catch (error) {
+        console.error('Ошибка загрузки настроек:', error);
+      }
+    };
+
+    fetchSettings();
+
+    // Подписываемся на событие обновления метаданных
+    const handleUpdateMetadata = () => {
+      fetchSettings();
+    };
+
+    window.addEventListener('update-metadata', handleUpdateMetadata);
+
+    return () => {
+      window.removeEventListener('update-metadata', handleUpdateMetadata);
+    };
+  }, []);
+
+  // Пока bgImage не загружен, используем прозрачный фон для избежания гидрации
+  const mainClass = `flex-grow ${bgImage ? 'bg-transparent' : 'bg-white'}`;
+
   return (
-    <div className="flex flex-col min-h-screen bg-gray-100 pb-16 md:pb-0">
+    <div className="min-h-screen flex flex-col pb-16 md:pb-0">
+      <SiteBackground bgImage={bgImage} />
+      <BackgroundSetter bgImage={bgImage} />
       <HeaderWrapper />
-      <main className="flex-grow bg-gray-100">
+      <main className={mainClass}>
         {children}
       </main>
       <Footer />

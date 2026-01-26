@@ -21,20 +21,10 @@
   }
 }
 
-:root {
-  --body-bg: var(--background);
-  --custom-bg-image: none;
-}
-
-html {
-  height: 100%;
-}
-
 body {
-  background: var(--body-bg, var(--background));
+  background: var(--background);
   color: var(--foreground);
   font-family: var(--font-pt-sans), ui-sans-serif, system-ui, sans-serif;
-  min-height: 100vh;
 }
 
 /* Применяем красивый шрифт к заголовкам */
