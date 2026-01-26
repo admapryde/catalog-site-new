@@ -73,6 +73,7 @@ async function getGeneralSettings() {
 
 import { CACHE_TTL } from '@/lib/cache-config';
 import { cookies, headers } from 'next/headers';
+import HomePageWithModal from '@/components/HomePageWithModal';
 
 // Асинхронная функция для получения категорий и заголовка сетки категорий
 async function fetchCategories() {
@@ -207,22 +208,24 @@ export default async function HomePage() {
   const { categories = [], title: categoriesTitle = 'Категории' } = categoriesData;
 
   return (
-    <div>
-      {/* Сетка категорий */}
-      <CategoriesGrid categories={categories} title={categoriesTitle} />
+    <HomePageWithModal>
+      <div>
+        {/* Сетка категорий */}
+        <CategoriesGrid categories={categories} title={categoriesTitle} />
 
-      {/* Блоки баннеров */}
-      {bannerGroups?.map((group: any) => (
-        <BannerSlider key={group.id} group={{
-          id: group.id,
-          title: group.title,
-          position: group.position,
-          banners: group.banners || []
-        }} />
-      ))}
+        {/* Блоки баннеров */}
+        {bannerGroups?.map((group: any) => (
+          <BannerSlider key={group.id} group={{
+            id: group.id,
+            title: group.title,
+            position: group.position,
+            banners: group.banners || []
+          }} />
+        ))}
 
-      {/* Разделы ГС */}
-      <HomepageSections sections={homepageSections || []} />
-    </div>
+        {/* Разделы ГС */}
+        <HomepageSections sections={homepageSections || []} />
+      </div>
+    </HomePageWithModal>
   );
 }

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ProductDetail } from '@/types';
 import OptimizedImage from '@/components/OptimizedImage';
+import ShareButton from '@/components/ShareButton';
 
 interface ProductModalProps {
   product: ProductDetail | null;
@@ -113,7 +114,7 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
   const thumbnailImages = allImages.filter((_, index) => index !== currentImageIndex);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4">
       {/* Overlay - создает эффект затемнения фона */}
       <div
         className="fixed inset-0"
@@ -128,13 +129,13 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
       {/* Модальное окно */}
       <div
         ref={modalRef}
-        className={`relative z-50 w-full max-w-6xl bg-white rounded-lg shadow-2xl flex flex-col max-h-[calc(100vh-2rem)] transition-opacity duration-150 ${
+        className={`relative z-50 w-full bg-white flex flex-col h-full max-h-screen md:max-h-[calc(100vh-2rem)] transition-opacity duration-150 ${
           isClosing ? 'animate-modal-scale-out' : (isOpen ? 'opacity-100 animate-modal-scale-fast' : 'opacity-0')
-        }`}
+        } md:max-w-6xl md:rounded-lg md:shadow-2xl`}
       >
-        <div className="overflow-hidden rounded-lg flex-grow">
-          <div className="overflow-y-auto p-8 max-h-[calc(100vh-8rem)] relative">
-            {/* Close button - similar to banner arrows */}
+        <div className="overflow-hidden flex-grow">
+          <div className="overflow-y-auto relative h-full max-h-screen p-4 md:p-8 md:max-h-[calc(100vh-8rem)]">
+            {/* Close button - stays fixed at top right corner */}
             <button
               onClick={() => {
                 // If enlarged image is open, close only the enlarged image
@@ -145,12 +146,12 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
                   setEnlargedImageOpen(false);
                 }
               }}
-              className="absolute top-2 right-2 z-20 flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-white border border-gray-300 hover:bg-gray-100 transition-all shadow-md"
+              className="fixed top-2 right-2 z-50 flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white border border-gray-300 hover:bg-gray-100 transition-all shadow-md md:absolute md:top-2 md:right-2"
               aria-label="Закрыть"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                className="h-4 w-4 sm:h-6 sm:w-6 text-gray-600"
+                className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -159,7 +160,7 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
               </svg>
             </button>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 pt-10 pr-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-10 pb-20 md:gap-12 md:pt-10 md:pr-10 md:pb-0 md:pl-0">
               {/* Left column (media) */}
               <div className="relative">
                 <div className="mb-4 relative">
@@ -284,9 +285,10 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
                 </div>
 
                 <div className="flex space-x-4">
-                  <button className="border border-gray-300 hover:border-gray-400 text-gray-700 font-medium py-3 px-6 rounded-lg transition">
-                    В избранное
-                  </button>
+                  <ShareButton
+                    productName={product.name}
+                    productUrl={`/product/${product.id}`}
+                  />
                 </div>
               </div>
             </div>
