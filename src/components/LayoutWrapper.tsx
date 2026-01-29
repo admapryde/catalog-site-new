@@ -71,9 +71,14 @@ export default function LayoutWrapper({ children }: { children: ReactNode }) {
 
           // Обновляем класс после получения настроек
           setMainClass(`flex-grow ${settings.bg_image ? 'bg-transparent' : 'bg-white'}`);
+        } else {
+          // Если не удалось получить настройки, используем белый фон
+          setMainClass('flex-grow bg-white');
         }
       } catch (error) {
         console.error('Ошибка загрузки настроек:', error);
+        // В случае ошибки используем белый фон
+        setMainClass('flex-grow bg-white');
       }
     };
 
@@ -91,13 +96,17 @@ export default function LayoutWrapper({ children }: { children: ReactNode }) {
     };
   }, []);
 
+  // Используем bg-white на сервере и в начале клиентского рендеринга,
+  // чтобы избежать гидрационной ошибки
+  const effectiveMainClass = isClient ? mainClass : 'flex-grow bg-white';
+
   return (
     <div className="min-h-screen flex flex-col pb-16 md:pb-0">
       {/* Показываем SiteBackground только на клиенте, чтобы избежать гидрации */}
       {isClient && <SiteBackground bgImage={bgImage} />}
       <BackgroundSetter bgImage={bgImage} />
       <HeaderWrapper />
-      <main className={isClient ? mainClass : "flex-grow bg-white"}>
+      <main className={effectiveMainClass}>
         {children}
       </main>
       <Footer />

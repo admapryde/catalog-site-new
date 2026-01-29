@@ -81,19 +81,12 @@ export async function POST(request: NextRequest) {
       console.error('Ошибка записи в аудит при создании категории:', auditError);
     }
 
-    /*
-    // Инвалидируем кэш для категорий на главной странице
+    // Инвалидируем кэш для админ панели категорий
     try {
-      const { revalidateTag, revalidatePath } = await import('next/cache');
-      await Promise.allSettled([
-        revalidateTag('homepage_categories'),
-        revalidatePath('/'),
-        revalidatePath('/api/categories')
-      ]);
+      cacheManager.delete('admin_categories');
     } catch (cacheError) {
-      console.error('Ошибка инвалидации кэша категорий:', cacheError);
+      console.error('Ошибка инвалидации кэша админ панели категорий:', cacheError);
     }
-    */
 
     return Response.json(data);
   } catch (error: any) {
@@ -128,19 +121,12 @@ export async function PUT(request: NextRequest) {
       console.error('Ошибка записи в аудит при обновлении категории:', auditError);
     }
 
-    /*
-    // Инвалидируем кэш для категорий на главной странице
+    // Инвалидируем кэш для админ панели категорий
     try {
-      const { revalidateTag, revalidatePath } = await import('next/cache');
-      await Promise.allSettled([
-        revalidateTag('homepage_categories'),
-        revalidatePath('/'),
-        revalidatePath('/api/categories')
-      ]);
+      cacheManager.delete('admin_categories');
     } catch (cacheError) {
-      console.error('Ошибка инвалидации кэша категорий:', cacheError);
+      console.error('Ошибка инвалидации кэша админ панели категорий:', cacheError);
     }
-    */
 
     return Response.json(data);
   } catch (error: any) {
@@ -197,19 +183,12 @@ export async function DELETE(request: NextRequest) {
       console.error('Ошибка записи в аудит при удалении категории:', auditError);
     }
 
-    /*
-    // Инвалидируем кэш для категорий на главной странице
+    // Инвалидируем кэш для админ панели категорий
     try {
-      const { revalidateTag, revalidatePath } = await import('next/cache');
-      await Promise.allSettled([
-        revalidateTag('homepage_categories'),
-        revalidatePath('/'),
-        revalidatePath('/api/categories')
-      ]);
+      cacheManager.delete('admin_categories');
     } catch (cacheError) {
-      console.error('Ошибка инвалидации кэша категорий:', cacheError);
+      console.error('Ошибка инвалидации кэша админ панели категорий:', cacheError);
     }
-    */
 
     return Response.json({ success: true });
   } catch (error: any) {

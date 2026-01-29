@@ -1,18 +1,24 @@
 .bannerSliderSection {
-  padding: 2rem 0; /* py-8 */
+  padding: 1rem 0; /* Уменьшили вертикальные отступы */
   background-color: transparent; /* Используем прозрачный фон для отображения общего фона сайта */
+  width: 100%;
 }
 
 .bannerSliderContainer {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 0.5rem; /* Уменьшаем отступы по краям */
+  width: 100%;
+  padding: 0; /* Убираем внутренние отступы, чтобы баннер доходил до краев серого фона */
+}
+
+@media (min-width: 768px) {
+  .bannerSliderContainer {
+    padding: 0; /* Убираем внутренние отступы, чтобы баннер доходил до краев серого фона */
+  }
 }
 
 .bannerSliderTitle {
   font-size: 1.5rem; /* text-2xl */
   font-weight: 700; /* font-bold */
-  margin-bottom: 1rem; /* mb-4 */
+  margin-bottom: 0.5rem; /* Уменьшили отступ снизу от заголовка до баннера */
   color: #1f2937; /* text-gray-800 */
 }
 
@@ -26,6 +32,7 @@
   border-radius: 0.5rem; /* rounded-lg */
   width: 100%;
   aspect-ratio: 16/9; /* aspect-video */
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Добавляем тень для лучшей видимости границ */
 }
 
 @media (min-width: 768px) {
@@ -37,6 +44,7 @@
 @media (min-width: 1024px) {
   .bannerSliderGroup {
     aspect-ratio: 16/6; /* lg:aspect-[16/6] */
+    width: 100%; /* Занимаем всю ширину контейнера */
   }
 }
 
@@ -53,6 +61,14 @@
   opacity: 0;
   pointer-events: none;
   transition: opacity 500ms ease-in-out;
+  border-radius: 0.5rem; /* Сохраняем скругление для соответствия родительскому контейнеру */
+  overflow: hidden; /* Обеспечиваем, чтобы содержимое не выходило за границы */
+}
+
+@media (min-width: 1024px) {
+  .bannerSliderSlide {
+    border-radius: 0.5rem; /* Сохраняем скругление для соответствия родительскому контейнеру */
+  }
 }
 
 .bannerSliderSlideActive {
@@ -65,12 +81,20 @@
   position: relative;
   width: 100%;
   height: 100%;
+  padding: 0; /* Убираем все отступы */
 }
 
 .bannerSliderImage {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  border-radius: 0; /* Убираем скругление для максимального заполнения */
+}
+
+@media (min-width: 1024px) {
+  .bannerSliderImage {
+    border-radius: 0; /* Убираем скругление для максимального заполнения на десктопе */
+  }
 }
 
 .bannerSliderPrevButton,
@@ -117,6 +141,12 @@
   }
 }
 
+@media (min-width: 1024px) {
+  .bannerSliderPrevButton {
+    left: 1rem; /* Оставляем фиксированный отступ для десктопа */
+  }
+}
+
 .bannerSliderNextButton {
   right: 0.5rem; /* right-2 */
 }
@@ -124,6 +154,12 @@
 @media (min-width: 768px) {
   .bannerSliderNextButton {
     right: 1rem; /* md:right-4 */
+  }
+}
+
+@media (min-width: 1024px) {
+  .bannerSliderNextButton {
+    right: 1rem; /* Оставляем фиксированный отступ для десктопа */
   }
 }
 

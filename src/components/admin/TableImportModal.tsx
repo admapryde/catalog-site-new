@@ -274,146 +274,170 @@ export default function TableImportModal({ isOpen, onClose, onImportComplete }: 
     setTotalRows(mappedProducts.length);
 
     try {
-      // Здесь будет логика импорта продуктов в базу данных
-      for (let i = 0; i < mappedProducts.length; i++) {
-        const product = mappedProducts[i];
+      // Сначала получим все категории и типы характеристик
+      const [categoryResponse, specTypesResponse] = await Promise.all([
+        fetch('/api/categories'),
+        fetch('/api/spec-types')
+      ]);
 
-        // Найдем ID категории по названию
-        const categoryResponse = await fetch('/api/categories');
-        if (!categoryResponse.ok) {
-          throw new Error('Не удалось получить список категорий');
-        }
-        const categories = await categoryResponse.json();
-        const category = categories.find((cat: any) => cat.name === product.category);
+      if (!categoryResponse.ok) {
+        throw new Error('Не удалось получить список категорий');
+      }
+      if (!specTypesResponse.ok) {
+        throw new Error('Не удалось получить типы характеристик');
+      }
 
-        if (!category) {
-          console.warn(`Категория "${product.category}" не найдена для продукта "${product.name}"`);
-          showNotification(`Категория "${product.category}" не найдена для продукта "${product.name}", продукт будет пропущен`, 'error');
-          continue;
-        }
+      const categories = await categoryResponse.json();
+      const specTypes = await specTypesResponse.json();
 
-        // Подготовим объект продукта для отправки
-        const productPayload: Omit<Product, 'id' | 'created_at' | 'updated_at'> = {
-          category_id: category.id,
-          name: product.name,
-          price: product.price,
-          description: product.description
-        };
+      // Создадим маппинг названий категорий в ID
+      const categoryMap = new Map(categories.map((cat: any) => [cat.name, cat.id]));
 
-        // Получим доступные типы характеристик
-        const specTypesResponse = await fetch('/api/spec-types');
-        if (!specTypesResponse.ok) {
-          throw new Error('Не удалось получить типы характеристик');
-        }
-        const specTypes = await specTypesResponse.json();
+      // Создадим маппинг типов характеристик
+      const specTypeMap = new Map<string, string>(specTypes.map((st: any) => [st.filter_type, st.id]));
 
-        // Подготовим характеристики с корректными ID типов
-        const specs = product.specs.map(spec => {
-          // Если spec.spec_type_id уже является UUID, используем его
-          // Иначе ищем соответствующий ID по типу
-          let specTypeId: string | null = spec.spec_type_id || null;
+      // Подготовим все продукты для отправки
+      const productsForImport = mappedProducts
+        .map(product => {
+          const categoryId = categoryMap.get(product.category);
 
-          if (spec.spec_type_id && !spec.spec_type_id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i)) {
-            // Это строковый тип, ищем соответствующий ID
-            const matchingSpecType = specTypes.find((st: any) =>
-              st.filter_type === spec.spec_type_id
-            );
-            specTypeId = matchingSpecType ? matchingSpecType.id : null;
-          } else if (!spec.spec_type_id) {
-            // Если тип не указан, передаем null
-            specTypeId = null;
+          if (!categoryId) {
+            console.warn(`Категория "${product.category}" не найдена для продукта "${product.name}"`);
+            showNotification(`Категория "${product.category}" не найдена для продукта "${product.name}", продукт будет пропущен`, 'error');
+            return null;
           }
 
-          return {
-            property_name: spec.property_name,
-            value: spec.value,
-            spec_type_id: specTypeId
+          // Подготовим объект продукта для отправки
+          const productPayload = {
+            category_id: categoryId,
+            name: product.name,
+            price: product.price,
+            description: product.description
           };
-        });
 
-        // Отправим продукт в API
-        const response = await fetch('/api/admin/products', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            ...productPayload,
-            images: [], // Сначала создадим продукт без изображений
-            specs
-          })
-        });
+          // Подготовим характеристики с корректными ID типов
+          const specs = product.specs.map(spec => {
+            // Если spec.spec_type_id уже является UUID, используем его
+            // Иначе ищем соответствующий ID по типу
+            let specTypeId: string | null = spec.spec_type_id || null;
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          const errorMessage = errorData.error || `Ошибка при импорте продукта: ${product.name}`;
-          console.error(errorMessage);
-          showNotification(errorMessage, 'error');
-          continue; // Переходим к следующему продукту
-        }
-
-        const createdProduct = await response.json();
-
-        // Теперь загрузим изображения, если они есть
-        if (product.images.length > 0) {
-          // Для каждого URL изображения нужно создать ProductImage
-          for (const [index, imageUrl] of product.images.entries()) {
-            try {
-              // Сначала скачаем изображение по URL
-              const imageResponse = await fetch(imageUrl);
-
-              if (!imageResponse.ok) {
-                console.error(`Не удалось скачать изображение: ${imageUrl}`);
-                continue;
-              }
-
-              // Преобразуем в blob
-              const imageBlob = await imageResponse.blob();
-
-              // Создадим File из blob
-              const fileName = imageUrl.split('/').pop() || `product_image_${Date.now()}.jpg`;
-              const imageFile = new File([imageBlob], fileName, { type: imageBlob.type });
-
-              // Создадим FormData для отправки файла на сервер
-              const formData = new FormData();
-              formData.append('file', imageFile);
-              formData.append('folder', 'products');
-
-              // Отправим файл на сервер для загрузки в Cloudinary
-              const uploadResponse = await fetch('/api/upload', {
-                method: 'POST',
-                body: formData,
-              });
-
-              if (!uploadResponse.ok) {
-                const errorData = await uploadResponse.json();
-                console.error(`Ошибка загрузки изображения в Cloudinary:`, errorData.error);
-                continue;
-              }
-
-              const uploadData = await uploadResponse.json();
-
-              // Теперь добавим изображение в базу данных
-              const imagePayload: Omit<ProductImage, 'id'> = {
-                product_id: createdProduct.id,
-                image_url: uploadData.url,
-                is_main: index === 0 // Первое изображение - главное
-              };
-
-              const dbImageResponse = await fetch('/api/admin/product-images', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(imagePayload)
-              });
-
-              if (!dbImageResponse.ok) {
-                console.error(`Ошибка при добавлении изображения в БД для продукта ${createdProduct.id}:`, await dbImageResponse.text());
-              }
-            } catch (error) {
-              console.error(`Ошибка при обработке изображения ${imageUrl}:`, error);
+            if (spec.spec_type_id && !spec.spec_type_id.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i)) {
+              // Это строковый тип, ищем соответствующий ID
+              const foundSpecTypeId = specTypeMap.get(spec.spec_type_id);
+              specTypeId = foundSpecTypeId || null;
+            } else if (!spec.spec_type_id) {
+              // Если тип не указан, передаем null
+              specTypeId = null;
             }
+
+            return {
+              property_name: spec.property_name,
+              value: spec.value,
+              spec_type_id: specTypeId
+            };
+          });
+
+          return {
+            ...productPayload,
+            images: [], // Изображения будут загружены отдельно после создания продукта
+            specs
+          };
+        })
+        .filter((product): product is Exclude<typeof product, null> => product !== null); // Убираем null значения
+
+      // Отправим все продукты за один запрос
+      const response = await fetch('/api/admin/products/batch-import', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include', // Включаем куки для аутентификации
+        body: JSON.stringify({ products: productsForImport })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        const errorMessage = errorData.error || 'Ошибка при импорте продуктов';
+        console.error(errorMessage);
+        showNotification(errorMessage, 'error');
+        return;
+      }
+
+      const createdProducts = await response.json();
+
+      // Теперь обработаем изображения для созданных продуктов
+      const productsWithImages = mappedProducts.filter(product => product.images.length > 0);
+
+      for (let i = 0; i < productsWithImages.length; i++) {
+        const product = productsWithImages[i];
+        const createdProduct = createdProducts.find((p: any) => p.name === product.name);
+
+        if (!createdProduct) continue;
+
+        // Для каждого URL изображения нужно создать ProductImage
+        for (const [index, imageUrl] of product.images.entries()) {
+          try {
+            // Сначала скачаем изображение по URL
+            const imageResponse = await fetch(imageUrl);
+
+            if (!imageResponse.ok) {
+              console.error(`Не удалось скачать изображение: ${imageUrl}`);
+              continue;
+            }
+
+            // Преобразуем в blob
+            const imageBlob = await imageResponse.blob();
+
+            // Создадим File из blob
+            const fileName = imageUrl.split('/').pop() || `product_image_${Date.now()}.jpg`;
+            const imageFile = new File([imageBlob], fileName, { type: imageBlob.type });
+
+            // Создадим FormData для отправки файла на сервер
+            const formData = new FormData();
+            formData.append('file', imageFile);
+            formData.append('folder', 'products');
+
+            // Отправим файл на сервер для загрузки в Cloudinary
+            const uploadResponse = await fetch('/api/upload', {
+              method: 'POST',
+              body: formData,
+            });
+
+            if (!uploadResponse.ok) {
+              const errorData = await uploadResponse.json();
+              console.error(`Ошибка загрузки изображения в Cloudinary:`, errorData.error);
+              continue;
+            }
+
+            const uploadData = await uploadResponse.json();
+
+            // Обновим продукт, добавив к нему изображение напрямую через API продуктов
+            const updatedProduct = {
+              ...createdProduct,
+              images: [
+                ...(createdProduct.images || []),
+                {
+                  product_id: createdProduct.id,
+                  image_url: uploadData.url,
+                  is_main: index === 0 // Первое изображение - главное
+                }
+              ]
+            };
+
+            // Отправим обновленный продукт обратно в API
+            const updateResponse = await fetch('/api/admin/products', {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json'
+              },
+              body: JSON.stringify(updatedProduct)
+            });
+
+            if (!updateResponse.ok) {
+              console.error(`Ошибка при обновлении продукта с изображением для продукта ${createdProduct.id}:`, await updateResponse.text());
+            }
+          } catch (error) {
+            console.error(`Ошибка при обработке изображения ${imageUrl}:`, error);
           }
         }
 
@@ -421,7 +445,7 @@ export default function TableImportModal({ isOpen, onClose, onImportComplete }: 
         setProgress(i + 1);
       }
 
-      showNotification(`Успешно импортировано ${mappedProducts.length} продуктов`, 'success');
+      showNotification(`Успешно импортировано ${productsForImport.length} продуктов`, 'success');
       // Сообщим о завершении импорта
       onImportComplete();
       onClose();

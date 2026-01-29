@@ -216,7 +216,7 @@ const CustomContentBlock = ({ settings }: BlockComponentProps) => {
             <img
               src={imageUrl}
               alt="Пользовательское изображение"
-              className="max-w-full h-auto rounded-lg shadow-md"
+              className="max-w-full h-auto"
             />
           </div>
         )}

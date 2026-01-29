@@ -36,7 +36,7 @@ export default function ClientOnlyHomePage(props: HomePageContentProps) {
           </div>
 
           <div className="grey-background-container">
-            <div className="py-4 animate-pulse">
+            <div className="animate-pulse">
               <div className="h-64 bg-gray-200 rounded w-full"></div>
             </div>
           </div>

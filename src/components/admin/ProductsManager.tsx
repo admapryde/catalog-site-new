@@ -99,7 +99,8 @@ export default function ProductsManager() {
       // Удаляем каждый выделенный товар
       for (const productId of selectedProducts) {
         const response = await fetch(`/api/admin/products?id=${productId}`, {
-          method: 'DELETE'
+          method: 'DELETE',
+          credentials: 'include' // Включаем куки для аутентификации
         });
 
         if (!response.ok) {
@@ -393,7 +394,8 @@ export default function ProductsManager() {
         setProducts(products.filter(prod => prod.id !== id));
 
         const response = await fetch(`/api/admin/products?id=${id}`, {
-          method: 'DELETE'
+          method: 'DELETE',
+          credentials: 'include' // Включаем куки для аутентификации
         });
 
         if (!response.ok) {

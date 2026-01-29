@@ -12,11 +12,11 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search');
     const price_from = searchParams.get('price_from');
     const price_to = searchParams.get('price_to');
-    const limit = parseInt(searchParams.get('limit') || '20'); // Ограничение количества результатов
+    const limit = parseInt(searchParams.get('limit') || '100'); // Ограничение количества результатов (увеличено с 20 до 100)
     const offset = parseInt(searchParams.get('offset') || '0'); // Пагинация
 
     // Ограничиваем максимальное количество результатов
-    const maxLimit = 100;
+    const maxLimit = 1000; // Увеличено с 100 до 1000 для поддержки больших каталогов
     const safeLimit = Math.min(limit, maxLimit);
 
     // Извлекаем фильтры по характеристикам
@@ -28,11 +28,14 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Сначала получаем товары
+    // Сначала получаем товары с информацией о характеристиках, изображениях и категориях
     let query = supabase
       .from('products')
       .select(`
-        *
+        *,
+        category:categories!inner(id, name),
+        product_images(*),
+        product_specs(*)
       `, { count: 'exact' });
 
     if (category_id) {
@@ -106,16 +109,10 @@ export async function GET(request: NextRequest) {
                   filteredProductIds = filteredProductIds.filter(id => currentProductIds.includes(id));
                 }
               } else {
-                // Если нет подходящих товаров для одного из фильтров, возвращаем пустой результат
-                return Response.json([], {
-                  headers: {
-                    'X-Total-Count': '0',
-                    'X-Limit': safeLimit.toString(),
-                    'X-Offset': offset.toString(),
-                    'X-Next-Cache-Tags': 'homepage_products',
-                    'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=60'
-                  }
-                });
+                // Если нет подходящих товаров для одного из фильтров, устанавливаем пустой массив
+                // и прерываем дальнейшую фильтрацию, так как нет товаров, удовлетворяющих всем условиям
+                filteredProductIds = [];
+                break; // Прерываем цикл, так как нет смысла проверять остальные фильтры
               }
             }
           }
@@ -219,6 +216,9 @@ export async function GET(request: NextRequest) {
     }
 
     // Применяем фильтры к исходным данным
+    // ВНИМАНИЕ: В основной логике фильтрация по характеристикам должна происходить в SQL-запросе,
+    // но поскольку мы не можем эффективно фильтровать по вложенным объектам в Supabase,
+    // мы применяем фильтрацию по характеристикам на уровне JavaScript
     if (price_from) {
       orderedProducts = orderedProducts.filter((p: any) => p.price >= parseFloat(price_from));
     }
@@ -256,16 +256,10 @@ export async function GET(request: NextRequest) {
               filteredProductIds = filteredProductIds.filter(id => matchingProductIds.includes(id));
             }
           } else {
-            // Если нет подходящих товаров для одного из фильтров, возвращаем пустой результат
-            return Response.json([], {
-              headers: {
-                'X-Total-Count': '0',
-                'X-Limit': safeLimit.toString(),
-                'X-Offset': offset.toString(),
-                'X-Next-Cache-Tags': 'homepage_products',
-                'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=60'
-              }
-            });
+            // Если нет подходящих товаров для одного из фильтров, устанавливаем пустой массив
+            // и прерываем дальнейшую фильтрацию, так как нет товаров, удовлетворяющих всем условиям
+            filteredProductIds = [];
+            break; // Прерываем цикл, так как нет смысла проверять остальные фильтры
           }
         }
       }

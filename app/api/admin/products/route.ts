@@ -1,6 +1,6 @@
 import { NextRequest } from 'next/server';
 import { createAPIClient, supabaseWithRetry } from '@/lib/supabase-server';
-import { getAdminSession } from '@/services/admin-auth-service';
+import { getAdminSession, getAdminSessionFromRequest } from '@/services/admin-auth-service';
 import { auditService } from '@/utils/audit-service';
 import { cacheManager } from '@/utils/cache-manager';
 
@@ -9,7 +9,7 @@ const CACHE_DURATION = 2 * 60 * 1000; // 2 минуты в миллисекун�
 
 export async function GET(request: NextRequest) {
   // Проверяем, что пользователь аутентифицирован как администратор
-  const adminUser = await getAdminSession();
+  const adminUser = await getAdminSessionFromRequest(request);
   if (!adminUser) {
     return Response.json({ error: 'Требуется аутентификация администратора' }, { status: 401 });
   }
@@ -125,7 +125,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Проверяем, что пользователь аутентифицирован как администратор
-    const adminUser = await getAdminSession();
+    const adminUser = await getAdminSessionFromRequest(request);
     if (!adminUser) {
       return Response.json({ error: 'Требуется аутентификация администратора' }, { status: 401 });
     }
@@ -296,20 +296,13 @@ export async function POST(request: NextRequest) {
       console.error('Ошибка записи в аудит при создании продукта:', auditError);
     }
 
-    /*
-    // Инвалидируем кэш для разделов главной страницы, содержащих продукты
+    // Инвалидируем кэш для админ панели товаров
     try {
-      const { revalidateTag, revalidatePath } = await import('next/cache');
-      await Promise.allSettled([
-        revalidateTag('homepage_sections'),
-        revalidatePath('/'),
-        revalidatePath('/api/homepage-sections'),
-        revalidatePath('/api/products')
-      ]);
+      cacheManager.delete('admin_products_all');
+      cacheManager.delete('admin_products_' + category_id);
     } catch (cacheError) {
-      console.error('Ошибка инвалидации кэша разделов главной страницы:', cacheError);
+      console.error('Ошибка инвалидации кэша админ панели товаров:', cacheError);
     }
-    */
 
     return Response.json(transformedProduct);
   } catch (error: any) {
@@ -320,7 +313,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     // Проверяем, что пользователь аутентифицирован как администратор
-    const adminUser = await getAdminSession();
+    const adminUser = await getAdminSessionFromRequest(request);
     if (!adminUser) {
       return Response.json({ error: 'Требуется аутентификация администратора' }, { status: 401 });
     }
@@ -351,6 +344,13 @@ export async function PUT(request: NextRequest) {
     if (fetchError) {
       return Response.json({ error: fetchError.message }, { status: 500 });
     }
+
+    // Получим оригинальную категорию до обновления для инвалидации кэша
+    const { data: originalProduct, error: originalProductError } = await supabase
+      .from('products')
+      .select('category_id')
+      .eq('id', id)
+      .single();
 
     // Подготовим обновление основного продукта
     const productUpdates: any = {};
@@ -557,20 +557,20 @@ export async function PUT(request: NextRequest) {
       console.error('Ошибка записи в аудит при обновлении продукта:', auditError);
     }
 
-    /*
-    // Инвалидируем кэш для разделов главной страницы, содержащих продукты
+    // Инвалидируем кэш для админ панели товаров
     try {
-      const { revalidateTag, revalidatePath } = await import('next/cache');
-      await Promise.allSettled([
-        revalidateTag('homepage_sections'),
-        revalidatePath('/'),
-        revalidatePath('/api/homepage-sections'),
-        revalidatePath('/api/products')
-      ]);
+      cacheManager.delete('admin_products_all');
+      // Инвалидируем кэш для старой категории (до обновления)
+      if (!originalProductError && originalProduct) {
+        cacheManager.delete('admin_products_' + originalProduct.category_id);
+      }
+      // Инвалидируем кэш для новой категории (после обновления)
+      if (category_id) {
+        cacheManager.delete('admin_products_' + category_id);
+      }
     } catch (cacheError) {
-      console.error('Ошибка инвалидации кэша разделов главной страницы:', cacheError);
+      console.error('Ошибка инвалидации кэша админ панели товаров:', cacheError);
     }
-    */
 
     return Response.json(transformedProduct);
   } catch (error: any) {
@@ -583,7 +583,7 @@ import { deleteImageFromCloudinaryByUrl } from '@/utils/cloudinary-helpers';
 export async function DELETE(request: NextRequest) {
   try {
     // Проверяем, что пользователь аутентифицирован как администратор
-    const adminUser = await getAdminSession();
+    const adminUser = await getAdminSessionFromRequest(request);
     if (!adminUser) {
       return Response.json({ error: 'Требуется аутентификация администратора' }, { status: 401 });
     }
@@ -620,6 +620,13 @@ export async function DELETE(request: NextRequest) {
       }
     }
 
+    // Получаем категорию удаляемого продукта для инвалидации кэша до удаления
+    const { data: productData, error: productFetchError } = await supabase
+      .from('products')
+      .select('category_id')
+      .eq('id', id)
+      .single();
+
     // Удаляем продукт (каскадно удалятся связанные изображения и характеристики)
     const { error: deleteError } = await supabase
       .from('products')
@@ -637,20 +644,16 @@ export async function DELETE(request: NextRequest) {
       console.error('Ошибка записи в аудит при удалении продукта:', auditError);
     }
 
-    /*
-    // Инвалидируем кэш для разделов главной страницы, содержащих продукты
+    // Инвалидируем кэш для админ панели товаров
     try {
-      const { revalidateTag, revalidatePath } = await import('next/cache');
-      await Promise.allSettled([
-        revalidateTag('homepage_sections'),
-        revalidatePath('/'),
-        revalidatePath('/api/homepage-sections'),
-        revalidatePath('/api/products')
-      ]);
+      cacheManager.delete('admin_products_all');
+
+      if (!productFetchError && productData) {
+        cacheManager.delete('admin_products_' + productData.category_id);
+      }
     } catch (cacheError) {
-      console.error('Ошибка инвалидации кэша разделов главной страницы:', cacheError);
+      console.error('Ошибка инвалидации кэша админ панели товаров:', cacheError);
     }
-    */
 
     return Response.json({ success: true });
   } catch (error: any) {
