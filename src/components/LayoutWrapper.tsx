@@ -55,14 +55,22 @@ interface GeneralSettings {
 
 export default function LayoutWrapper({ children }: { children: ReactNode }) {
   const [bgImage, setBgImage] = useState<string | undefined>(undefined);
+  const [mainClass, setMainClass] = useState('flex-grow bg-white'); // Устанавливаем начальное значение как на сервере
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
+
+    // Только на клиенте обновляем состояние и класс
     const fetchSettings = async () => {
       try {
         const response = await fetch('/api/general-settings');
         if (response.ok) {
           const settings: GeneralSettings = await response.json();
           setBgImage(settings.bg_image);
+
+          // Обновляем класс после получения настроек
+          setMainClass(`flex-grow ${settings.bg_image ? 'bg-transparent' : 'bg-white'}`);
         }
       } catch (error) {
         console.error('Ошибка загрузки настроек:', error);
@@ -83,15 +91,13 @@ export default function LayoutWrapper({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  // Пока bgImage не загружен, используем прозрачный фон для избежания гидрации
-  const mainClass = `flex-grow ${bgImage ? 'bg-transparent' : 'bg-white'}`;
-
   return (
     <div className="min-h-screen flex flex-col pb-16 md:pb-0">
-      <SiteBackground bgImage={bgImage} />
+      {/* Показываем SiteBackground только на клиенте, чтобы избежать гидрации */}
+      {isClient && <SiteBackground bgImage={bgImage} />}
       <BackgroundSetter bgImage={bgImage} />
       <HeaderWrapper />
-      <main className={mainClass}>
+      <main className={isClient ? mainClass : "flex-grow bg-white"}>
         {children}
       </main>
       <Footer />

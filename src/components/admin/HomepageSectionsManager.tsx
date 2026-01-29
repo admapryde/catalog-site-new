@@ -6,7 +6,9 @@ import { useNotification } from '@/hooks/useNotification';
 
 export default function HomepageSectionsManager() {
   const [sections, setSections] = useState<HomepageSection[]>([]);
+  const [originalSections, setOriginalSections] = useState<HomepageSection[]>([]); // Сохраняем оригинальный порядок
   const [sectionItems, setSectionItems] = useState<HomepageSectionItem[]>([]);
+  const [originalSectionItems, setOriginalSectionItems] = useState<HomepageSectionItem[]>([]); // Сохраняем оригинальный порядок
   const [products, setProducts] = useState<Product[]>([]);
   const [title, setTitle] = useState('');
   const [sectionType, setSectionType] = useState('');
@@ -22,6 +24,9 @@ export default function HomepageSectionsManager() {
   const [sortOrder, setSortOrder] = useState(0);
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
 
+  const [hasSectionChanges, setHasSectionChanges] = useState(false); // Состояние для отслеживания изменений разделов
+  const [hasItemChanges, setHasItemChanges] = useState(false); // Состояние для отслеживания изменений элементов
+
   // Получение данных из API
   useEffect(() => {
     const fetchData = async () => {
@@ -35,6 +40,7 @@ export default function HomepageSectionsManager() {
         // Сортируем разделы по position
         const sortedSections = sectionsData.sort((a, b) => a.position - b.position);
         setSections(sortedSections);
+        setOriginalSections([...sortedSections]); // Сохраняем оригинальный порядок
 
         // Загрузка элементов разделов
         const itemsResponse = await fetch('/api/admin/homepage-section-items');
@@ -43,6 +49,7 @@ export default function HomepageSectionsManager() {
         }
         const itemsData: HomepageSectionItem[] = await itemsResponse.json();
         setSectionItems(itemsData);
+        setOriginalSectionItems([...itemsData]); // Сохраняем оригинальный порядок
 
         // Загрузка всех продуктов
         const productsResponse = await fetch('/api/admin/products');
@@ -354,7 +361,7 @@ export default function HomepageSectionsManager() {
     }
   };
 
-  const moveSectionUp = async (index: number) => {
+  const moveSectionUp = (index: number) => {
     if (index === 0) return; // Первая секция, нельзя двигать выше
 
     const sectionToMove = sections[index];
@@ -377,31 +384,10 @@ export default function HomepageSectionsManager() {
     }));
 
     setSections(updatedSections);
-
-    // Обновляем порядок в базе данных для всех разделов
-    try {
-      await Promise.all(
-        updatedSections.map(section =>
-          fetch('/api/admin/homepage-sections', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id: section.id,
-              title: section.title,
-              position: section.position,
-              section_type: section.section_type
-            })
-          })
-        )
-      );
-    } catch (error) {
-      console.error('Ошибка обновления порядка разделов:', error);
-      // В случае ошибки восстанавливаем исходный порядок
-      setSections(sections);
-    }
+    setHasSectionChanges(true); // Устанавливаем флаг изменений
   };
 
-  const moveSectionDown = async (index: number) => {
+  const moveSectionDown = (index: number) => {
     if (index === sections.length - 1) return; // Последняя секция, нельзя двигать ниже
 
     const sectionToMove = sections[index];
@@ -424,31 +410,10 @@ export default function HomepageSectionsManager() {
     }));
 
     setSections(updatedSections);
-
-    // Обновляем порядок в базе данных для всех разделов
-    try {
-      await Promise.all(
-        updatedSections.map(section =>
-          fetch('/api/admin/homepage-sections', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id: section.id,
-              title: section.title,
-              position: section.position,
-              section_type: section.section_type
-            })
-          })
-        )
-      );
-    } catch (error) {
-      console.error('Ошибка обновления порядка разделов:', error);
-      // В случае ошибки восстанавливаем исходный порядок
-      setSections(sections);
-    }
+    setHasSectionChanges(true); // Устанавливаем флаг изменений
   };
 
-  const moveItemUp = async (itemId: string) => {
+  const moveItemUp = (itemId: string) => {
     const itemToMove = sectionItems.find(b => b.id === itemId);
     if (!itemToMove) return;
 
@@ -475,32 +440,11 @@ export default function HomepageSectionsManager() {
       return updatedItem || item;
     });
 
-    // Обновляем порядок в базе данных
-    try {
-      await Promise.all(
-        reorderedItemsInSection.map(item =>
-          fetch('/api/admin/homepage-section-items', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id: item.id,
-              section_id: item.section_id,
-              product_id: item.product_id,
-              sort_order: item.sort_order
-            })
-          })
-        )
-      );
-
-      // Обновляем состояние только после успешного сохранения
-      setSectionItems(updatedSectionItems);
-    } catch (error) {
-      console.error('Ошибка обновления порядка элементов разделов:', error);
-      // В случае ошибки не обновляем состояние
-    }
+    setSectionItems(updatedSectionItems);
+    setHasItemChanges(true); // Устанавливаем флаг изменений
   };
 
-  const moveItemDown = async (itemId: string) => {
+  const moveItemDown = (itemId: string) => {
     const itemToMove = sectionItems.find(b => b.id === itemId);
     if (!itemToMove) return;
 
@@ -527,29 +471,83 @@ export default function HomepageSectionsManager() {
       return updatedItem || item;
     });
 
-    // Обновляем порядок в базе данных
-    try {
-      await Promise.all(
-        reorderedItemsInSection.map(item =>
-          fetch('/api/admin/homepage-section-items', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id: item.id,
-              section_id: item.section_id,
-              product_id: item.product_id,
-              sort_order: item.sort_order
-            })
-          })
-        )
-      );
+    setSectionItems(updatedSectionItems);
+    setHasItemChanges(true); // Устанавливаем флаг изменений
+  };
 
-      // Обновляем состояние только после успешного сохранения
-      setSectionItems(updatedSectionItems);
-    } catch (error) {
-      console.error('Ошибка обновления порядка элементов разделов:', error);
-      // В случае ошибки не обновляем состояние
+  // Функция для сохранения изменений порядка разделов
+  const saveSectionOrderChanges = async () => {
+    try {
+      // Отправляем все изменения в одном запросе
+      const response = await fetch('/api/admin/homepage-sections/update-order', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sections: sections.map(section => ({
+            id: section.id,
+            position: section.position
+          }))
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Ошибка сохранения порядка разделов');
+      }
+
+      showNotification('Порядок разделов успешно сохранен!', 'success');
+      setHasSectionChanges(false); // Сбрасываем флаг изменений
+    } catch (error: any) {
+      console.error('Ошибка сохранения порядка разделов:', error);
+      showNotification(error.message || 'Произошла ошибка при сохранении порядка разделов', 'error');
+      // В случае ошибки восстанавливаем исходный порядок
+      setSections([...originalSections]);
+      setHasSectionChanges(false);
     }
+  };
+
+  // Функция для отмены изменений разделов
+  const cancelSectionOrderChanges = () => {
+    setSections([...originalSections]); // Восстанавливаем исходный порядок
+    setHasSectionChanges(false); // Сбрасываем флаг изменений
+  };
+
+  // Функция для сохранения изменений порядка элементов
+  const saveItemOrderChanges = async () => {
+    try {
+      // Отправляем все изменения в одном запросе
+      const response = await fetch('/api/admin/homepage-section-items/update-order', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          items: sectionItems.map(item => ({
+            id: item.id,
+            section_id: item.section_id,
+            sort_order: item.sort_order
+          }))
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Ошибка сохранения порядка элементов');
+      }
+
+      showNotification('Порядок элементов успешно сохранен!', 'success');
+      setHasItemChanges(false); // Сбрасываем флаг изменений
+    } catch (error: any) {
+      console.error('Ошибка сохранения порядка элементов:', error);
+      showNotification(error.message || 'Произошла ошибка при сохранении порядка элементов', 'error');
+      // В случае ошибки восстанавливаем исходный порядок
+      setSectionItems([...originalSectionItems]);
+      setHasItemChanges(false);
+    }
+  };
+
+  // Функция для отмены изменений элементов
+  const cancelItemOrderChanges = () => {
+    setSectionItems([...originalSectionItems]); // Восстанавливаем исходный порядок
+    setHasItemChanges(false); // Сбрасываем флаг изменений
   };
 
   if (loading) {
@@ -684,6 +682,25 @@ export default function HomepageSectionsManager() {
           )}
 
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            {hasSectionChanges && (
+              <div className="bg-yellow-50 border-b border-yellow-200 p-4 flex justify-between">
+                <span className="text-yellow-700">Есть несохраненные изменения порядка разделов</span>
+                <div className="space-x-2">
+                  <button
+                    onClick={saveSectionOrderChanges}
+                    className="bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-3 rounded text-sm"
+                  >
+                    Сохранить изменения
+                  </button>
+                  <button
+                    onClick={cancelSectionOrderChanges}
+                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-1 px-3 rounded text-sm"
+                  >
+                    Отменить
+                  </button>
+                </div>
+              </div>
+            )}
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
@@ -837,6 +854,25 @@ export default function HomepageSectionsManager() {
           </form>
 
           {/* Отображение отдельной таблицы для каждого раздела */}
+          {hasItemChanges && (
+            <div className="bg-yellow-50 border-b border-yellow-200 p-4 mb-4 flex justify-between">
+              <span className="text-yellow-700">Есть несохраненные изменения порядка элементов</span>
+              <div className="space-x-2">
+                <button
+                  onClick={saveItemOrderChanges}
+                  className="bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-3 rounded text-sm"
+                >
+                  Сохранить изменения
+                </button>
+                <button
+                  onClick={cancelItemOrderChanges}
+                  className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-1 px-3 rounded text-sm"
+                >
+                  Отменить
+                </button>
+              </div>
+            </div>
+          )}
           {sections.map((section) => {
             const sectionItemsForSection = sectionItems.filter(item => item.section_id === section.id);
 

@@ -8,10 +8,12 @@ import { useNotification } from '@/hooks/useNotification';
 
 export default function CategoriesManager() {
   const [categories, setCategories] = useState<Category[]>([]);
+  const [originalCategories, setOriginalCategories] = useState<Category[]>([]); // Сохраняем оригинальный порядок
   const [name, setName] = useState('');
   const [imageUrl, setImageUrl] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false); // Состояние для отслеживания изменений
 
   const { showNotification, renderNotification } = useNotification();
 
@@ -27,6 +29,7 @@ export default function CategoriesManager() {
         // Сортируем категории по sort_order
         const sortedCategories = data.sort((a, b) => a.sort_order - b.sort_order);
         setCategories(sortedCategories);
+        setOriginalCategories([...sortedCategories]); // Сохраняем оригинальный порядок
       } catch (error: any) {
         console.error('Ошибка загрузки категорий:', error);
         showNotification(error.message || 'Ошибка загрузки категорий', 'error');
@@ -94,7 +97,7 @@ export default function CategoriesManager() {
     }
   };
 
-  const moveCategoryUp = async (index: number) => {
+  const moveCategoryUp = (index: number) => {
     if (index === 0) return; // Первая категория, нельзя двигать выше
 
     // Создаем новый массив с обновленным порядком
@@ -109,31 +112,10 @@ export default function CategoriesManager() {
     }));
 
     setCategories(reorderedCategories);
-
-    // Обновляем порядок в базе данных
-    try {
-      await Promise.all(
-        reorderedCategories.map(category =>
-          fetch('/api/admin/categories', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id: category.id,
-              name: category.name,
-              image_url: category.image_url,
-              sort_order: category.sort_order
-            })
-          })
-        )
-      );
-    } catch (error) {
-      console.error('Ошибка обновления порядка категорий:', error);
-      // В случае ошибки восстанавливаем исходный порядок
-      setCategories(categories);
-    }
+    setHasUnsavedChanges(true); // Устанавливаем флаг изменений
   };
 
-  const moveCategoryDown = async (index: number) => {
+  const moveCategoryDown = (index: number) => {
     if (index === categories.length - 1) return; // Последняя категория, нельзя двигать ниже
 
     // Создаем новый массив с обновленным порядком
@@ -148,28 +130,44 @@ export default function CategoriesManager() {
     }));
 
     setCategories(reorderedCategories);
+    setHasUnsavedChanges(true); // Устанавливаем флаг изменений
+  };
 
-    // Обновляем порядок в базе данных
+  // Функция для сохранения изменений порядка
+  const saveOrderChanges = async () => {
     try {
-      await Promise.all(
-        reorderedCategories.map(category =>
-          fetch('/api/admin/categories', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id: category.id,
-              name: category.name,
-              image_url: category.image_url,
-              sort_order: category.sort_order
-            })
-          })
-        )
-      );
-    } catch (error) {
-      console.error('Ошибка обновления порядка категорий:', error);
+      // Отправляем все изменения в одном запросе
+      const response = await fetch('/api/admin/categories/update-order', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          categories: categories.map(category => ({
+            id: category.id,
+            sort_order: category.sort_order
+          }))
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Ошибка сохранения порядка категорий');
+      }
+
+      showNotification('Порядок категорий успешно сохранен!', 'success');
+      setHasUnsavedChanges(false); // Сбрасываем флаг изменений
+    } catch (error: any) {
+      console.error('Ошибка сохранения порядка категорий:', error);
+      showNotification(error.message || 'Произошла ошибка при сохранении порядка категорий', 'error');
       // В случае ошибки восстанавливаем исходный порядок
-      setCategories(categories);
+      setCategories([...originalCategories]);
+      setHasUnsavedChanges(false);
     }
+  };
+
+  // Функция для отмены изменений
+  const cancelOrderChanges = () => {
+    setCategories([...originalCategories]); // Восстанавливаем исходный порядок
+    setHasUnsavedChanges(false); // Сбрасываем флаг изменений
   };
 
   const handleEdit = (category: Category) => {
@@ -283,6 +281,25 @@ export default function CategoriesManager() {
       </form>
 
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
+        {hasUnsavedChanges && (
+          <div className="bg-yellow-50 border-b border-yellow-200 p-4 flex justify-between">
+            <span className="text-yellow-700">Есть несохраненные изменения порядка категорий</span>
+            <div className="space-x-2">
+              <button
+                onClick={saveOrderChanges}
+                className="bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-3 rounded text-sm"
+              >
+                Сохранить изменения
+              </button>
+              <button
+                onClick={cancelOrderChanges}
+                className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-1 px-3 rounded text-sm"
+              >
+                Отменить
+              </button>
+            </div>
+          </div>
+        )}
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>

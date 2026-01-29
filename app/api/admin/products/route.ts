@@ -39,7 +39,8 @@ export async function GET(request: NextRequest) {
           *,
           category:categories!inner(id, name),
           product_images(*),
-          product_specs(*)
+          product_specs(*),
+          category_product_order!left(category_id, product_id, sort_order)
         `)
         .order('created_at', { ascending: false })
     ) as { data: any; error: any };
@@ -54,14 +55,38 @@ export async function GET(request: NextRequest) {
             *,
             category:categories!inner(id, name),
             product_images(*),
-            product_specs(*)
+            product_specs(*),
+            category_product_order!left(category_id, product_id, sort_order)
           `)
           .eq('category_id', categoryId)
-          .order('created_at', { ascending: false })
+          .order('category_product_order.sort_order', { ascending: true, nullsFirst: false })
+          .then((query: any) =>
+            query.order('created_at', { ascending: false })
+          )
       ) as { data: any; error: any };
 
       data = categoryResult.data;
       error = categoryResult.error;
+    } else {
+      // Для общего списка товаров тоже применяем сортировку по порядку в категории, если он задан
+      // но сначала сортируем по категории, затем по порядку в категории, затем по дате создания
+      data = data.sort((a: any, b: any) => {
+        // Сначала сортируем по ID категории
+        if (a.category.id !== b.category.id) {
+          return a.category.name.localeCompare(b.category.name);
+        }
+
+        // Затем по порядку в категории (если он задан)
+        const a_sort_order = a.category_product_order?.sort_order ?? Number.MAX_SAFE_INTEGER;
+        const b_sort_order = b.category_product_order?.sort_order ?? Number.MAX_SAFE_INTEGER;
+
+        if (a_sort_order !== b_sort_order) {
+          return a_sort_order - b_sort_order;
+        }
+
+        // Если порядок одинаковый, сортируем по дате создания
+        return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      });
     }
 
     if (error) {
@@ -70,12 +95,20 @@ export async function GET(request: NextRequest) {
     }
 
     // Преобразуем данные, чтобы соответствовать ожидаемой структуре Product
-    const transformedData = data.map((item: any) => ({
-      ...item,
-      images: item.product_images || [],
-      specs: item.product_specs || [],
-      homepage_section_items: item.homepage_section_items || []
-    }));
+    const transformedData = data.map((item: any) => {
+      // Извлекаем информацию о порядке из вложенного объекта
+      const category_product_order = Array.isArray(item.category_product_order) && item.category_product_order.length > 0
+        ? item.category_product_order[0]
+        : null;
+
+      return {
+        ...item,
+        images: item.product_images || [],
+        specs: item.product_specs || [],
+        homepage_section_items: item.homepage_section_items || [],
+        category_product_order: category_product_order
+      };
+    });
 
     // Сохраняем результат в кэш
     cacheManager.set(cacheKey, transformedData);
@@ -205,7 +238,8 @@ export async function POST(request: NextRequest) {
         category:categories!inner(id, name),
         product_images(*),
         product_specs(*),
-        homepage_section_items!left(section_id)
+        homepage_section_items!left(section_id),
+        category_product_order!left(category_id, product_id, sort_order)
       `)
       .eq('id', productId)
       .single();
@@ -234,6 +268,11 @@ export async function POST(request: NextRequest) {
       }, {});
     }
 
+    // Извлекаем информацию о порядке из вложенного объекта
+    const category_product_order = Array.isArray(fullProductData.category_product_order) && fullProductData.category_product_order.length > 0
+      ? fullProductData.category_product_order[0]
+      : null;
+
     // Преобразуем данные, чтобы соответствовать ожидаемой структуре Product
     const transformedProduct = {
       ...fullProductData,
@@ -246,7 +285,8 @@ export async function POST(request: NextRequest) {
           spec_type: specTypeInfo || spec.spec_type,
           spec_type_id: spec.spec_type_id
         };
-      }) || []
+      }) || [],
+      category_product_order: category_product_order
     };
 
     // Логируем создание продукта в аудите
@@ -479,7 +519,8 @@ export async function PUT(request: NextRequest) {
         category:categories!inner(id, name),
         product_images(*),
         product_specs(*),
-        homepage_section_items!left(section_id)
+        homepage_section_items!left(section_id),
+        category_product_order!left(category_id, product_id, sort_order)
       `)
       .eq('id', id)
       .single();
@@ -487,6 +528,11 @@ export async function PUT(request: NextRequest) {
     if (fullProductError) {
       return Response.json({ error: fullProductError.message }, { status: 500 });
     }
+
+    // Извлекаем информацию о порядке из вложенного объекта
+    const category_product_order = Array.isArray(fullProductData.category_product_order) && fullProductData.category_product_order.length > 0
+      ? fullProductData.category_product_order[0]
+      : null;
 
     // Преобразуем данные, чтобы соответствовать ожидаемой структуре Product
     const transformedProduct = {
@@ -500,7 +546,8 @@ export async function PUT(request: NextRequest) {
           spec_type: specTypeInfo || spec.spec_type,
           spec_type_id: spec.spec_type_id
         };
-      }) || []
+      }) || [],
+      category_product_order: category_product_order
     };
 
     // Логируем обновление продукта в аудите

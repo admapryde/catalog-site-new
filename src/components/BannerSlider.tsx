@@ -22,21 +22,39 @@ interface BannerGroup {
   banners: Banner[];
 }
 
-export default function BannerSlider({ group }: { group: BannerGroup }) {
+interface ExtendedBannerSliderProps {
+  group: BannerGroup;
+  autoRotate?: boolean;
+  rotationInterval?: number;
+  showIndicators?: boolean;
+  showNavigation?: boolean;
+}
+
+export default function BannerSlider({
+  group,
+  autoRotate = true,
+  rotationInterval = 5000,
+  showIndicators = true,
+  showNavigation = true
+}: ExtendedBannerSliderProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedProduct, setSelectedProduct] = useState<ProductDetail | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Автоматическая прокрутка каждые 5 секунд
+  // Автоматическая прокрутка, если включена
   useEffect(() => {
+    if (!autoRotate) {
+      return; // Не устанавливаем интервал, если автопрокрутка отключена
+    }
+
     const interval = setInterval(() => {
       setCurrentIndex((prevIndex) =>
         prevIndex === group.banners.length - 1 ? 0 : prevIndex + 1
       );
-    }, 5000);
+    }, rotationInterval);
 
     return () => clearInterval(interval);
-  }, [group.banners.length]);
+  }, [group.banners.length, autoRotate, rotationInterval]);
 
   const goToSlide = (index: number) => {
     setCurrentIndex(index);
@@ -165,36 +183,42 @@ export default function BannerSlider({ group }: { group: BannerGroup }) {
           </div>
 
           {/* Навигационные стрелки */}
-          <button
-            onClick={goToPrevious}
-            className={styles.bannerSliderPrevButton}
-            aria-label="Предыдущий баннер"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
-            </svg>
-          </button>
-          <button
-            onClick={goToNext}
-            className={styles.bannerSliderNextButton}
-            aria-label="Следующий баннер"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
-            </svg>
-          </button>
+          {showNavigation && (
+            <>
+              <button
+                onClick={goToPrevious}
+                className={styles.bannerSliderPrevButton}
+                aria-label="Предыдущий баннер"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+              </button>
+              <button
+                onClick={goToNext}
+                className={styles.bannerSliderNextButton}
+                aria-label="Следующий баннер"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                  <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                </svg>
+              </button>
+            </>
+          )}
 
           {/* Индикаторы */}
-          <div className={styles.bannerSliderIndicators}>
-            {group.banners.map((_, index) => (
-              <button
-                key={index}
-                onClick={() => goToSlide(index)}
-                className={`${styles.bannerSliderIndicator} ${index === currentIndex ? styles.bannerSliderIndicatorActive : ''}`}
-                aria-label={`Перейти к баннеру ${index + 1}`}
-              />
-            ))}
-          </div>
+          {showIndicators && (
+            <div className={styles.bannerSliderIndicators}>
+              {group.banners.map((_, index) => (
+                <button
+                  key={index}
+                  onClick={() => goToSlide(index)}
+                  className={`${styles.bannerSliderIndicator} ${index === currentIndex ? styles.bannerSliderIndicatorActive : ''}`}
+                  aria-label={`Перейти к баннеру ${index + 1}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </div>
 

@@ -23,19 +23,27 @@
 
 .homepageSectionsGrid {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 2rem; /* gap-8 */
+  grid-template-columns: repeat(1, minmax(0, 1fr)); /* 1 колонка для мобильных */
+  gap: 1rem; /* gap-4 */
+}
+
+@media (min-width: 640px) {
+  .homepageSectionsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)); /* sm:grid-cols-2 */
+  }
 }
 
 @media (min-width: 768px) {
   .homepageSectionsGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr)); /* md:grid-cols-2 */
+    grid-template-columns: repeat(3, minmax(0, 1fr)); /* md:grid-cols-3 */
+    gap: 1.5rem; /* md:gap-6 */
   }
 }
 
 @media (min-width: 1024px) {
   .homepageSectionsGrid {
-    grid-template-columns: repeat(3, minmax(0, 1fr)); /* lg:grid-cols-3 */
+    grid-template-columns: repeat(4, minmax(0, 1fr)); /* lg:grid-cols-4 */
+    gap: 2rem; /* gap-8 */
   }
 }
 
@@ -45,6 +53,9 @@
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); /* shadow-md */
   overflow: hidden;
   transition: transform 300ms ease, box-shadow 300ms ease;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
 
 .homepageSectionCard:hover {
@@ -54,7 +65,7 @@
 
 .homepageSectionImageWrapper {
   position: relative;
-  aspect-ratio: 16/9;
+  aspect-ratio: 1/1; /* Квадратное соотношение сторон */
   overflow: hidden;
 }
 
@@ -65,14 +76,29 @@
 }
 
 .homepageSectionContent {
-  padding: 1.5rem; /* p-6 */
+  padding: 1rem; /* p-4 - уменьшаем внутренние отступы */
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.homepageSectionTitle {
+  font-size: 1.5rem; /* text-2xl - такой же, как у баннера */
+  font-weight: 700; /* font-bold - такой же, как у баннера */
+  margin-bottom: 1rem; /* mb-4 - такой же, как у баннера */
+  color: #1f2937; /* text-gray-800 - такой же, как у баннера */
+  text-align: center; /* Выравнивание по центру */
 }
 
 .homepageSectionCardTitle {
-  font-size: 1.25rem; /* text-xl */
-  font-weight: 400; /* font-normal */
-  margin-bottom: 0.5rem; /* mb-2 */
+  font-size: 1rem; /* text-base - уменьшаем размер шрифта */
+  font-weight: 500; /* font-medium */
+  margin-bottom: 0.25rem; /* mb-1 */
   color: #4b5563; /* text-gray-600 */
+  text-align: left; /* Выравнивание по левому краю */
+  flex-grow: 1;
+  display: flex;
+  align-items: flex-start;
 }
 
 /* Добавляем класс для элементов, которые должны реагировать на hover родительского элемента */
@@ -106,20 +132,28 @@
 
 .homepageSectionsSkeleton {
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 2rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
   padding: 3rem 0;
 }
 
-@media (min-width: 768px) {
+@media (min-width: 640px) {
   .homepageSectionsSkeleton {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
   .homepageSectionsSkeleton {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.5rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .homepageSectionsSkeleton {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 2rem;
   }
 }
 

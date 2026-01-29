@@ -1,12 +1,13 @@
 import { Metadata } from "next";
-import CategoriesGrid from '@/components/CategoriesGrid';
-import BannerSlider from '@/components/BannerSlider';
-import HomepageSections from '@/components/HomepageSections';
-import { createClient } from '@/lib/supabase-server';
+import HomePageWithModal from '@/components/HomePageWithModal';
+import { getHomepageStructureServer } from '@/services/homepage-structure-service-server';
+import ClientOnlyHomePage from '@/components/ClientOnlyHomePage';
 
 // Асинхронная функция для получения общих настроек
 async function getGeneralSettings() {
   try {
+    const { createClient } = await import('@/lib/supabase-server');
+
     const supabase = await createClient();
 
     const { data, error } = await supabase
@@ -78,7 +79,6 @@ async function getGeneralSettings() {
 
 import { CACHE_TTL } from '@/lib/cache-config';
 import { cookies, headers } from 'next/headers';
-import HomePageWithModal from '@/components/HomePageWithModal';
 
 // Асинхронная функция для получения категорий и заголовка сетки категорий
 async function fetchCategories() {
@@ -86,7 +86,9 @@ async function fetchCategories() {
 
   try {
     // Вместо использования fetch к API маршрутам, напрямую используем Supabase клиент
-    const supabase = await import('@/lib/supabase-server').then(mod => mod.createClient());
+    const { createClient } = await import('@/lib/supabase-server');
+
+    const supabase = await createClient();
 
     // Получаем категории
     const { data: categories, error: categoriesError } = await supabase
@@ -134,7 +136,9 @@ async function fetchBanners() {
   'use server';
 
   try {
-    const supabase = await import('@/lib/supabase-server').then(mod => mod.createClient());
+    const { createClient } = await import('@/lib/supabase-server');
+
+    const supabase = await createClient();
 
     const { data, error } = await supabase
       .from('banner_groups')
@@ -163,7 +167,9 @@ async function fetchHomepageSections() {
 
   try {
     // Вместо использования fetch к API маршрутам, напрямую используем Supabase клиент
-    const supabase = await import('@/lib/supabase-server').then(mod => mod.createClient());
+    const { createClient } = await import('@/lib/supabase-server');
+
+    const supabase = await createClient();
 
     const { data: sections, error: sectionsError } = await supabase
       .from('homepage_sections')
@@ -203,36 +209,63 @@ async function fetchHomepageSections() {
 }
 
 export default async function HomePage() {
-  // Выполняем параллельные запросы
-  const [categoriesData, bannerGroups, homepageSections] = await Promise.all([
-    fetchCategories(),
-    fetchBanners(),
-    fetchHomepageSections()
-  ]);
+  // Попробуем получить структуру главной страницы из новой системы
+  try {
+    const homepageStructure = await getHomepageStructureServer();
 
-  const { categories = [], title: categoriesTitle = 'Категории' } = categoriesData;
+    // Если структура пуста или не удалось получить, используем старую реализацию для обратной совместимости
+    if (!homepageStructure || !homepageStructure.blocks || homepageStructure.blocks.length === 0) {
+      // Выполняем параллельные запросы для старой реализации
+      const [categoriesData, bannerGroups, homepageSections] = await Promise.all([
+        fetchCategories(),
+        fetchBanners(),
+        fetchHomepageSections()
+      ]);
 
-  return (
-    <HomePageWithModal>
-      <div className="py-8 pt-24 md:pt-8"> {/* Убран bg-white/90, чтобы использовать фон из LayoutWrapper */}
-        <div className="container mx-auto px-4"> {/* Ограничиваем ширину контента для согласованности с другими страницами */}
-          {/* Сетка категорий */}
-          <CategoriesGrid categories={categories} title={categoriesTitle} />
+      const { categories = [], title: categoriesTitle = 'Категории' } = categoriesData;
 
-          {/* Блоки баннеров */}
-          {bannerGroups?.map((group: any) => (
-            <BannerSlider key={group.id} group={{
-              id: group.id,
-              title: group.title,
-              position: group.position,
-              banners: group.banners || []
-            }} />
-          ))}
+      return (
+        <HomePageWithModal>
+          <ClientOnlyHomePage
+            initialUseDynamicHomepage={false}
+            initialCategories={categories}
+            initialCategoriesTitle={categoriesTitle}
+            initialBannerGroups={bannerGroups}
+            initialHomepageSections={homepageSections}
+          />
+        </HomePageWithModal>
+      );
+    }
 
-          {/* Разделы ГС */}
-          <HomepageSections sections={homepageSections || []} />
-        </div>
-      </div>
-    </HomePageWithModal>
-  );
+    // Используем новую динамическую реализацию
+    return (
+      <HomePageWithModal>
+        <ClientOnlyHomePage
+          initialUseDynamicHomepage={true}
+        />
+      </HomePageWithModal>
+    );
+  } catch (error) {
+    console.error('Ошибка получения структуры главной страницы:', error);
+    // В случае ошибки используем старую реализацию
+    const [categoriesData, bannerGroups, homepageSections] = await Promise.all([
+      fetchCategories(),
+      fetchBanners(),
+      fetchHomepageSections()
+    ]);
+
+    const { categories = [], title: categoriesTitle = 'Категории' } = categoriesData;
+
+    return (
+      <HomePageWithModal>
+        <ClientOnlyHomePage
+          initialUseDynamicHomepage={false}
+          initialCategories={categories}
+          initialCategoriesTitle={categoriesTitle}
+          initialBannerGroups={bannerGroups}
+          initialHomepageSections={homepageSections}
+        />
+      </HomePageWithModal>
+    );
+  }
 }

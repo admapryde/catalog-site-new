@@ -717,3 +717,31 @@ VALUES ('admin', 'admin@example.com', crypt('admin123', gen_salt('bf')), 'admin'
 ## Лицензия
 
 Этот проект лицензирован по лицензии MIT.
+
+## Дополнительно: Новые таблицы для блоков главной страницы
+
+В рамках улучшения архитектуры главной страницы были добавлены новые таблицы:
+
+### homepage_blocks
+Хранит информацию о блоках главной страницы:
+- `id` - UUID, первичный ключ
+- `type` - тип блока (categories_grid, banner_slider, homepage_sections и т.д.)
+- `position` - позиция блока на странице
+- `settings` - JSONB объект с настройками блока
+- `visible` - видимость блока
+- `enabled` - включен ли блок
+- `created_at`, `updated_at` - временные метки
+
+- `created_at`, `updated_at` - временные метки
+
+### Миграция данных
+Для создания таблиц и миграции существующих данных используйте скрипт:
+```bash
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url SUPABASE_SERVICE_ROLE_KEY=your_service_role_key ./run-homepage-blocks-migration.sh
+```
+
+### Обновление политик RLS
+Для обновления политик безопасности используйте скрипт:
+```bash
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url SUPABASE_SERVICE_ROLE_KEY=your_service_role_key ./update-homepage-blocks-rls-policies.sh
+```

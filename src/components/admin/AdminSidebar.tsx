@@ -79,6 +79,18 @@ export default function AdminSidebar({ username, role, children }: SidebarProps)
           </li>
           <li>
             <a
+              href="/admin/homepage-editor"
+              className={`block py-3 px-6 text-gray-700 hover:bg-blue-50 hover:text-blue-600 border-l-4 ${
+                isActive('/admin/homepage-editor')
+                  ? 'border-blue-600 bg-blue-50'
+                  : 'border-transparent'
+              }`}
+            >
+              Редактор главной
+            </a>
+          </li>
+          <li>
+            <a
               href="/admin/templates"
               className={`block py-3 px-6 text-gray-700 hover:bg-blue-50 hover:text-blue-600 border-l-4 ${
                 isActive('/admin/templates')

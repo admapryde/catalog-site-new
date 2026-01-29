@@ -6,7 +6,7 @@
 .categoriesGridContainer {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 1rem; /* px-4 equivalent */
+  padding: 0 0.5rem; /* Уменьшаем отступы по краям */
 }
 
 .categoriesGridTitle {
@@ -19,19 +19,29 @@
 
 .categoriesGridGrid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr)); /* grid-cols-2 */
-  gap: 1.5rem; /* gap-6 */
+  grid-template-columns: repeat(2, minmax(0, 1fr)); /* grid-cols-2 - 2 колонки для мобильных */
+  gap: 1.5rem; /* gap-6 - увеличиваем зазор для мобильных */
 }
+
 
 @media (min-width: 640px) {
   .categoriesGridGrid {
-    grid-template-columns: repeat(3, minmax(0, 1fr)); /* sm:grid-cols-3 */
+    grid-template-columns: repeat(4, minmax(0, 1fr)); /* sm:grid-cols-4 */
+    gap: 1.5rem; /* sm:gap-6 - увеличиваем зазор */
   }
 }
 
 @media (min-width: 768px) {
   .categoriesGridGrid {
     grid-template-columns: repeat(4, minmax(0, 1fr)); /* md:grid-cols-4 */
+    gap: 2rem; /* md:gap-8 - увеличиваем зазор */
+  }
+}
+
+@media (min-width: 1024px) {
+  .categoriesGridGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)); /* lg:grid-cols-4 - фиксируем 4 колонки */
+    gap: 2rem; /* lg:gap-8 - увеличиваем зазор */
   }
 }
 
@@ -42,6 +52,8 @@
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); /* shadow-md */
   overflow: hidden;
   transition: transform 300ms ease, box-shadow 300ms ease;
+  display: flex;
+  flex-direction: column;
 }
 
 .categoriesGridItem:hover {
@@ -53,6 +65,7 @@
   position: relative;
   aspect-ratio: 1/1; /* aspect-square */
   overflow: hidden;
+  flex-shrink: 0; /* предотвращаем сжатие изображения */
 }
 
 .categoriesGridItemImage {
@@ -67,8 +80,9 @@
 }
 
 .categoriesGridItemContent {
-  padding: 1rem; /* p-4 */
+  padding: 0.5rem 1rem; /* уменьшаем вертикальный отступ */
   text-align: center;
+  margin-top: auto; /* прижимаем контент вниз */
 }
 
 .categoriesGridItemTitle {
@@ -84,17 +98,32 @@
 .categoriesGridSkeleton {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1.5rem;
-  padding: 3rem 0;
+  gap: 1.5rem; /* gap-6 - увеличиваем зазор */
+  padding: 3rem 0 0 0; /* Убираем боковые отступы, оставляем только верхние */
 }
 
 @media (min-width: 640px) {
   .categoriesGridSkeleton {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.5rem; /* sm:gap-6 - увеличиваем зазор */
   }
 }
 
 @media (min-width: 768px) {
+  .categoriesGridSkeleton {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 2rem; /* md:gap-8 - увеличиваем зазор */
+  }
+}
+
+@media (min-width: 1024px) {
+  .categoriesGridSkeleton {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 2rem; /* lg:gap-8 - увеличиваем зазор */
+  }
+}
+
+@media (min-width: 1024px) {
   .categoriesGridSkeleton {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }

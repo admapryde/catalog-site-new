@@ -21,7 +21,21 @@ interface HomepageSection {
   }>;
 }
 
-export default function HomepageSections({ sections }: { sections: HomepageSection[] }) {
+interface ExtendedHomepageSectionsProps {
+  sections: HomepageSection[];
+  displayStyle?: 'grid' | 'list' | 'carousel';
+  columns?: number;
+  showPrices?: boolean;
+  showDescriptions?: boolean;
+}
+
+export default function HomepageSections({
+  sections,
+  displayStyle = 'grid',
+  columns = 4,
+  showPrices = true,
+  showDescriptions = false
+}: ExtendedHomepageSectionsProps) {
   const [loading, setLoading] = useState(true);
   const [localSections, setLocalSections] = useState<HomepageSection[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<any>(null); // Using any temporarily since we need to fetch full product details
@@ -69,8 +83,10 @@ export default function HomepageSections({ sections }: { sections: HomepageSecti
         return (
           <section key={section.id} className={`${styles.homepageSectionsSection} ${backgroundColorClass}`}>
             <div className={styles.homepageSectionsContainer}>
-              <h2 className={`${styles.homepageSectionCardTitle} text-center`}>{section.title}</h2>
-              <div className={styles.homepageSectionsGrid}>
+              <h2 className={styles.homepageSectionTitle}>{section.title}</h2>
+              <div
+                className={styles.homepageSectionsGrid}
+              >
                 {section.items.map((item) => {
                   const product = item.product;
                   const mainImage = product.images && Array.isArray(product.images)
@@ -80,17 +96,16 @@ export default function HomepageSections({ sections }: { sections: HomepageSecti
                   return (
                     <div
                       key={item.id}
-                      className={`${styles.homepageSectionCard} group`}
                       onClick={() => handleProductClick(product.id)}
-                      style={{ cursor: 'pointer' }}
+                      className="block group bg-white/85 rounded-lg shadow-md overflow-hidden transition-transform duration-300 hover:shadow-lg hover:-translate-y-1 cursor-pointer"
                     >
-                      <div className={styles.homepageSectionImageWrapper}>
+                      <div className="relative pb-[100%]"> {/* Квадратный аспект, как на странице каталога */}
                         {mainImage ? (
                           <OptimizedImage
                             src={mainImage.image_url}
                             alt={product.name}
                             fill
-                            className={styles.homepageSectionImage}
+                            className="absolute h-full w-full object-cover"
                             onError={(e) => {
                               const target = e.target as HTMLImageElement;
                               // Проверяем, не является ли уже изображением-заглушкой, чтобы избежать бесконечного цикла
@@ -107,13 +122,20 @@ export default function HomepageSections({ sections }: { sections: HomepageSecti
                           </div>
                         )}
                       </div>
-                      <div className={styles.homepageSectionContent}>
+                      <div className="p-4">
                         <ProductTitle
                           title={product.name}
                           className={`${styles.homepageSectionCardTitle} text-left`}
                         />
-                        <p className="text-xs text-gray-500 mb-1">Цена</p>
-                        <p className="text-xl font-bold text-gray-900">{product.price?.toLocaleString('ru-RU')} ₽</p>
+                        {showPrices && (
+                          <>
+                            <p className="text-xs text-gray-500 mb-1">Цена</p>
+                            <p className="text-xl font-bold text-gray-900">{product.price?.toLocaleString('ru-RU')} ₽</p>
+                          </>
+                        )}
+                        {showDescriptions && product.description && (
+                          <p className="text-sm text-gray-600 mt-1 line-clamp-2">{product.description}</p>
+                        )}
                       </div>
                     </div>
                   );

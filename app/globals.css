@@ -60,6 +60,39 @@ p {
   font-family: var(--font-pt-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
+/* Контейнер с полупрозрачным серым фоном и скругленными краями */
+.grey-background-container {
+  background-color: rgba(245, 245, 245, 0.85); /* Полупрозрачный светло-серый фон */
+  border-radius: 0.75rem; /* rounded-lg - скругленные края */
+  padding: 1rem 0.5rem; /* Уменьшенные внутренние отступы */
+  margin-bottom: 1rem; /* Уменьшенный внешний отступ снизу */
+  max-width: 1200px; /* Ограничиваем ширину, чтобы не занимал весь экран */
+  margin-left: auto;
+  margin-right: auto;
+  position: relative; /* Устанавливаем относительное позиционирование */
+  z-index: 10; /* Устанавливаем z-index выше, чем у фона */
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15); /* Более выраженная тень для лучшей видимости границ */
+}
+
+/* Расширяем ширину для десктопных устройств */
+@media (min-width: 768px) {
+  .grey-background-container {
+    max-width: calc(100% - 2rem); /* Убираем ограничение по ширине для десктопа, оставляя небольшие отступы по краям */
+  }
+}
+
+@media (min-width: 1024px) {
+  .grey-background-container {
+    max-width: calc(100% - 4rem); /* Еще больше расширяем на больших экранах */
+  }
+}
+
+@media (min-width: 1280px) {
+  .grey-background-container {
+    max-width: 100%; /* На очень больших экранах используем всю ширину */
+  }
+}
+
 /* Анимация масштабирования для модального окна продукта */
 @keyframes modal-scale {
   from {

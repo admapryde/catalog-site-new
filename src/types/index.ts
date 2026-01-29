@@ -178,6 +178,11 @@ export interface PageBlockLink {
   updated_at: string;
 }
 
+// Тип для связи категории и товара с порядком
+export interface CategoryProductOrder {
+  sort_order: number;
+}
+
 // Обновим интерфейс Product, чтобы включить изображения и характеристики
 export interface Product {
   id: string;
@@ -188,4 +193,5 @@ export interface Product {
   images?: ProductImage[];
   specs?: ProductSpec[];
   homepage_section_items?: Array<{ section_id: string }>;
+  category_product_order?: CategoryProductOrder;
 }

@@ -8,7 +8,9 @@ import { useNotification } from '@/hooks/useNotification';
 
 export default function BannerManager() {
   const [groups, setGroups] = useState<BannerGroup[]>([]);
+  const [originalGroups, setOriginalGroups] = useState<BannerGroup[]>([]); // Сохраняем оригинальный порядок
   const [banners, setBanners] = useState<Banner[]>([]);
+  const [originalBanners, setOriginalBanners] = useState<Banner[]>([]); // Сохраняем оригинальный порядок
   const [title, setTitle] = useState('');
   const [groupId, setGroupId] = useState('');
   const [image, setImage] = useState('');
@@ -18,6 +20,8 @@ export default function BannerManager() {
   const [editingBannerId, setEditingBannerId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'groups' | 'banners'>('groups');
   const [loading, setLoading] = useState(true);
+  const [hasGroupChanges, setHasGroupChanges] = useState(false); // Состояние для отслеживания изменений групп
+  const [hasBannerChanges, setHasBannerChanges] = useState(false); // Состояние для отслеживания изменений баннеров
 
   const { showNotification, renderNotification } = useNotification();
 
@@ -34,6 +38,7 @@ export default function BannerManager() {
         // Сортируем группы по position
         const sortedGroups = groupsData.sort((a, b) => a.position - b.position);
         setGroups(sortedGroups);
+        setOriginalGroups([...sortedGroups]); // Сохраняем оригинальный порядок
 
         // Загрузка баннеров
         const bannersResponse = await fetch('/api/admin/banners');
@@ -42,6 +47,7 @@ export default function BannerManager() {
         }
         const bannersData: Banner[] = await bannersResponse.json();
         setBanners(bannersData);
+        setOriginalBanners([...bannersData]); // Сохраняем оригинальный порядок
       } catch (error) {
         console.error('Ошибка загрузки данных:', error);
       } finally {
@@ -265,7 +271,7 @@ export default function BannerManager() {
     }
   };
 
-  const moveBannerUp = async (bannerId: string) => {
+  const moveBannerUp = (bannerId: string) => {
     const bannerToMove = banners.find(b => b.id === bannerId);
     if (!bannerToMove) return;
 
@@ -292,33 +298,11 @@ export default function BannerManager() {
       return updatedBanner || banner;
     });
 
-    // Обновляем порядок в базе данных
-    try {
-      await Promise.all(
-        reorderedBannersInGroup.map(banner =>
-          fetch('/api/admin/banners', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id: banner.id,
-              group_id: banner.group_id,
-              image_url: banner.image_url,
-              link_url: banner.link_url,
-              sort_order: banner.sort_order
-            })
-          })
-        )
-      );
-
-      // Обновляем состояние только после успешного сохранения
-      setBanners(updatedBanners);
-    } catch (error) {
-      console.error('Ошибка обновления порядка баннеров:', error);
-      // В случае ошибки не обновляем состояние
-    }
+    setBanners(updatedBanners);
+    setHasBannerChanges(true); // Устанавливаем флаг изменений
   };
 
-  const moveBannerDown = async (bannerId: string) => {
+  const moveBannerDown = (bannerId: string) => {
     const bannerToMove = banners.find(b => b.id === bannerId);
     if (!bannerToMove) return;
 
@@ -345,33 +329,11 @@ export default function BannerManager() {
       return updatedBanner || banner;
     });
 
-    // Обновляем порядок в базе данных
-    try {
-      await Promise.all(
-        reorderedBannersInGroup.map(banner =>
-          fetch('/api/admin/banners', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id: banner.id,
-              group_id: banner.group_id,
-              image_url: banner.image_url,
-              link_url: banner.link_url,
-              sort_order: banner.sort_order
-            })
-          })
-        )
-      );
-
-      // Обновляем состояние только после успешного сохранения
-      setBanners(updatedBanners);
-    } catch (error) {
-      console.error('Ошибка обновления порядка баннеров:', error);
-      // В случае ошибки не обновляем состояние
-    }
+    setBanners(updatedBanners);
+    setHasBannerChanges(true); // Устанавливаем флаг изменений
   };
 
-  const moveGroupUp = async (index: number) => {
+  const moveGroupUp = (index: number) => {
     if (index === 0) return; // Первая группа, нельзя двигать выше
 
     // Создаем новый массив с обновленным порядком
@@ -385,31 +347,11 @@ export default function BannerManager() {
       position: idx + 1  // Позиции начинаются с 1
     }));
 
-    // Обновляем порядок в базе данных
-    try {
-      await Promise.all(
-        reorderedGroups.map(group =>
-          fetch('/api/admin/banner-groups', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id: group.id,
-              title: group.title,
-              position: group.position
-            })
-          })
-        )
-      );
-
-      // Обновляем состояние только после успешного сохранения
-      setGroups(reorderedGroups);
-    } catch (error) {
-      console.error('Ошибка обновления порядка групп баннеров:', error);
-      // В случае ошибки не обновляем состояние
-    }
+    setGroups(reorderedGroups);
+    setHasGroupChanges(true); // Устанавливаем флаг изменений
   };
 
-  const moveGroupDown = async (index: number) => {
+  const moveGroupDown = (index: number) => {
     if (index === groups.length - 1) return; // Последняя группа, нельзя двигать ниже
 
     // Создаем новый массив с обновленным порядком
@@ -423,28 +365,83 @@ export default function BannerManager() {
       position: idx + 1  // Позиции начинаются с 1
     }));
 
-    // Обновляем порядок в базе данных
-    try {
-      await Promise.all(
-        reorderedGroups.map(group =>
-          fetch('/api/admin/banner-groups', {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              id: group.id,
-              title: group.title,
-              position: group.position
-            })
-          })
-        )
-      );
+    setGroups(reorderedGroups);
+    setHasGroupChanges(true); // Устанавливаем флаг изменений
+  };
 
-      // Обновляем состояние только после успешного сохранения
-      setGroups(reorderedGroups);
-    } catch (error) {
-      console.error('Ошибка обновления порядка групп баннеров:', error);
-      // В случае ошибки не обновляем состояние
+  // Функция для сохранения изменений порядка групп
+  const saveGroupOrderChanges = async () => {
+    try {
+      // Отправляем все изменения в одном запросе
+      const response = await fetch('/api/admin/banner-groups/update-order', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          groups: groups.map(group => ({
+            id: group.id,
+            position: group.position
+          }))
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Ошибка сохранения порядка групп баннеров');
+      }
+
+      showNotification('Порядок групп баннеров успешно сохранен!', 'success');
+      setHasGroupChanges(false); // Сбрасываем флаг изменений
+    } catch (error: any) {
+      console.error('Ошибка сохранения порядка групп баннеров:', error);
+      showNotification(error.message || 'Произошла ошибка при сохранении порядка групп баннеров', 'error');
+      // В случае ошибки восстанавливаем исходный порядок
+      setGroups([...originalGroups]);
+      setHasGroupChanges(false);
     }
+  };
+
+  // Функция для отмены изменений групп
+  const cancelGroupOrderChanges = () => {
+    setGroups([...originalGroups]); // Восстанавливаем исходный порядок
+    setHasGroupChanges(false); // Сбрасываем флаг изменений
+  };
+
+  // Функция для сохранения изменений порядка баннеров
+  const saveBannerOrderChanges = async () => {
+    try {
+      // Отправляем все изменения в одном запросе
+      const response = await fetch('/api/admin/banners/update-order', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          banners: banners.map(banner => ({
+            id: banner.id,
+            group_id: banner.group_id,
+            sort_order: banner.sort_order
+          }))
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Ошибка сохранения порядка баннеров');
+      }
+
+      showNotification('Порядок баннеров успешно сохранен!', 'success');
+      setHasBannerChanges(false); // Сбрасываем флаг изменений
+    } catch (error: any) {
+      console.error('Ошибка сохранения порядка баннеров:', error);
+      showNotification(error.message || 'Произошла ошибка при сохранении порядка баннеров', 'error');
+      // В случае ошибки восстанавливаем исходный порядок
+      setBanners([...originalBanners]);
+      setHasBannerChanges(false);
+    }
+  };
+
+  // Функция для отмены изменений баннеров
+  const cancelBannerOrderChanges = () => {
+    setBanners([...originalBanners]); // Восстанавливаем исходный порядок
+    setHasBannerChanges(false); // Сбрасываем флаг изменений
   };
 
   if (loading) {
@@ -522,6 +519,25 @@ export default function BannerManager() {
           </form>
 
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            {hasGroupChanges && (
+              <div className="bg-yellow-50 border-b border-yellow-200 p-4 flex justify-between">
+                <span className="text-yellow-700">Есть несохраненные изменения порядка групп</span>
+                <div className="space-x-2">
+                  <button
+                    onClick={saveGroupOrderChanges}
+                    className="bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-3 rounded text-sm"
+                  >
+                    Сохранить изменения
+                  </button>
+                  <button
+                    onClick={cancelGroupOrderChanges}
+                    className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-1 px-3 rounded text-sm"
+                  >
+                    Отменить
+                  </button>
+                </div>
+              </div>
+            )}
             <table className="min-w-full divide-y divide-gray-200">
               <thead className="bg-gray-50">
                 <tr>
@@ -677,6 +693,25 @@ export default function BannerManager() {
           </form>
 
           {/* Отображение отдельной таблицы для каждой группы баннеров */}
+          {hasBannerChanges && (
+            <div className="bg-yellow-50 border-b border-yellow-200 p-4 mb-4 flex justify-between">
+              <span className="text-yellow-700">Есть несохраненные изменения порядка баннеров</span>
+              <div className="space-x-2">
+                <button
+                  onClick={saveBannerOrderChanges}
+                  className="bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-3 rounded text-sm"
+                >
+                  Сохранить изменения
+                </button>
+                <button
+                  onClick={cancelBannerOrderChanges}
+                  className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-1 px-3 rounded text-sm"
+                >
+                  Отменить
+                </button>
+              </div>
+            </div>
+          )}
           {groups.map((group) => {
             const groupBanners = banners.filter(banner => banner.group_id === group.id);
 

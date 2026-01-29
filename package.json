@@ -16,7 +16,11 @@
     "db:seed-admin": "node -r tsx src/scripts/seed-admin-users.ts",
     "db:set-user-role": "node -r tsx scripts/set-user-role.ts",
     "db:set-user-role-email": "SET_BY_EMAIL=true node -r tsx scripts/set-user-role.ts",
-    "cache:clear": "node scripts/clear-cache.js"
+    "cache:clear": "node scripts/clear-cache.js",
+    "db:create-homepage-blocks": "bash create-homepage-blocks-tables.sql",
+    "db:migrate-homepage": "bash run-homepage-blocks-migration.sh",
+    "db:update-homepage-rls": "bash update-homepage-blocks-rls-policies.sh",
+    "db:update-category-product-order-rls": "bash update-category-product-order-rls-policies.sh"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
@@ -26,15 +30,22 @@
     "dotenv": "^17.2.3",
     "next": "16.1.1",
     "next-auth": "^5.0.0-beta.30",
+    "papaparse": "^5.5.3",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "react-dropzone": "^14.3.8",
+    "uuid": "^13.0.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20.19.28",
+    "@types/papaparse": "^5.5.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/uuid": "^10.0.0",
+    "@types/xlsx": "^0.0.35",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "tailwindcss": "^4",

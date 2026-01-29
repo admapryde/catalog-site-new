@@ -17,7 +17,13 @@ interface CategoriesGridProps {
   title?: string; // Добавляем опциональный заголовок
 }
 
-export default function CategoriesGrid({ categories, title = 'Категории' }: CategoriesGridProps) {
+interface ExtendedCategoriesGridProps extends CategoriesGridProps {
+  maxDisplayCount?: number;
+  showImages?: boolean;
+  columns?: number;
+}
+
+export default function CategoriesGrid({ categories, title = 'Категории', maxDisplayCount = 16, showImages = true, columns = 8 }: ExtendedCategoriesGridProps) {
   const [loading, setLoading] = useState(true);
   const [localCategories, setLocalCategories] = useState<Category[]>([]);
 
@@ -47,29 +53,31 @@ export default function CategoriesGrid({ categories, title = 'Категории
       <div className={styles.categoriesGridContainer}>
         <h2 className={`${styles.categoriesGridTitle} text-center`}>{title}</h2>
         <div className={styles.categoriesGridGrid}>
-          {sortedCategories.slice(0, 16).map((category) => (
+          {sortedCategories.slice(0, maxDisplayCount).map((category) => (
             <Link
               href={`/catalog/${category.id}`}
               key={category.id}
               className={styles.categoriesGridItem}
             >
-              <div className={styles.categoriesGridItemImageWrapper}>
-                <OptimizedImage
-                  src={category.image_url}
-                  alt={category.name}
-                  fill
-                  className={styles.categoriesGridItemImage}
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    // Проверяем, не является ли уже изображением-заглушкой, чтобы избежать бесконечного цикла
-                    if (!target.src.includes('placeholder-category.jpg')) {
-                      target.src = '/placeholder-category.jpg';
-                    }
-                  }}
-                  sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
-                  loading="lazy"
-                />
-              </div>
+              {showImages && (
+                <div className={styles.categoriesGridItemImageWrapper}>
+                  <OptimizedImage
+                    src={category.image_url}
+                    alt={category.name}
+                    fill
+                    className={styles.categoriesGridItemImage}
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      // Проверяем, не является ли уже изображением-заглушкой, чтобы избежать бесконечного цикла
+                      if (!target.src.includes('placeholder-category.jpg')) {
+                        target.src = '/placeholder-category.jpg';
+                      }
+                    }}
+                    sizes="(max-width: 768px) 50vw, (max-width: 1200px) 25vw, 20vw"
+                    loading="lazy"
+                  />
+                </div>
+              )}
               <div className={styles.categoriesGridItemContent}>
                 <h3 className={`${styles.categoriesGridItemTitle} text-center`}>{category.name}</h3>
               </div>

@@ -113,8 +113,8 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
   // Все изображения, кроме текущего, используются как миниатюры
   const thumbnailImages = allImages.filter((_, index) => index !== currentImageIndex);
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-0 md:p-4">
+  return typeof document !== 'undefined' ? createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-4">
       {/* Overlay - создает эффект затемнения фона */}
       <div
         className="fixed inset-0"
@@ -129,7 +129,7 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
       {/* Модальное окно */}
       <div
         ref={modalRef}
-        className={`relative z-50 w-full bg-white flex flex-col h-full max-h-screen md:max-h-[calc(100vh-2rem)] transition-opacity duration-150 ${
+        className={`relative z-[100] w-full bg-white flex flex-col h-full max-h-screen md:max-h-[calc(100vh-2rem)] transition-opacity duration-150 ${
           isClosing ? 'animate-modal-scale-out' : (isOpen ? 'opacity-100 animate-modal-scale-fast' : 'opacity-0')
         } md:max-w-6xl md:rounded-lg md:shadow-2xl`}
       >
@@ -146,7 +146,7 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
                   setEnlargedImageOpen(false);
                 }
               }}
-              className="fixed top-2 right-2 z-50 flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white border border-gray-300 hover:bg-gray-100 transition-all shadow-md md:absolute md:top-2 md:right-2"
+              className="fixed top-2 right-2 z-[101] flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white border border-gray-300 hover:bg-gray-100 transition-all shadow-md md:absolute md:top-2 md:right-2"
               aria-label="Закрыть"
             >
               <svg
@@ -381,6 +381,7 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
           document.body
         )
       }
-    </div>
-  );
+    </div>,
+    document.body
+  ) : null;
 }
