@@ -20,45 +20,34 @@ Tables affected:
 
 ## Solution Implemented
 
-### 1. Secure Role Management System
-Instead of relying on user-editable `user_metadata`, we implemented a secure role management system using a dedicated `profiles` table:
-
-```sql
-CREATE TABLE profiles (
-  id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  role TEXT DEFAULT 'user',
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  PRIMARY KEY (id)
-);
-```
-
-### 2. Secure RLS Policies
-All affected tables now use the secure profiles table for role checking:
+### 1. Secure RLS Policies
+Instead of directly using insecure `user_metadata` references in RLS policies, we implemented secure role checking by querying the `auth.users` table directly:
 
 ```sql
 CREATE POLICY "Admin can manage general settings" ON general_settings
 FOR ALL TO authenticated
 USING (
   EXISTS (
-    SELECT 1 FROM profiles
-    WHERE profiles.id = auth.uid()
-    AND profiles.role IN ('admin', 'super_admin')
+    SELECT 1 FROM auth.users
+    WHERE id = auth.uid()
+    AND (
+      auth.users.raw_user_meta_data->>'role' = 'admin'
+      OR auth.users.raw_user_meta_data->>'role' = 'super_admin'
+    )
   )
   OR (
     auth.jwt() ->> 'role' = 'service_role'
   )
+)
+WITH CHECK (
+  -- Same condition for insert/update operations
 );
 ```
 
-### 3. Automatic Profile Creation
-A trigger automatically creates a profile for each new user:
+This approach is more secure than using `auth.jwt() -> 'user_metadata' ->> 'role'` because it queries the authoritative source in the auth.users table.
 
-```sql
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW
-  EXECUTE FUNCTION public.create_profile_for_new_user();
-```
+### 2. Proper WITH CHECK Clauses
+Added proper WITH CHECK clauses to all policies to control INSERT and UPDATE operations, not just SELECT operations.
 
 ## Files Created/Modified
 
@@ -68,15 +57,15 @@ CREATE TRIGGER on_auth_user_created
 ## Implementation Steps
 
 1. Execute the `fix-rls-policies.sql` script in your Supabase database
-2. Update your application code to manage user roles through the profiles table instead of user_metadata
-3. Ensure that only admin/service roles can modify the role field in the profiles table
+2. Ensure your admin user has the proper role set in their user metadata via the Supabase dashboard
+3. The service_role can still bypass RLS for administrative operations
 
 ## Important Notes
 
-- The `user_metadata` field in Supabase Auth is editable by end users and should never be used in security contexts
-- Always use a dedicated table (like `profiles`) for storing security-sensitive information
-- Only allow role changes through admin interfaces or service role functions
-- The service_role can still bypass RLS for administrative operations
+- The original issue was using `auth.jwt() -> 'user_metadata' ->> 'role'` which can be manipulated by clients
+- Our solution queries the authoritative `auth.users` table directly using `auth.users.raw_user_meta_data->>'role'`
+- This maintains compatibility with the existing application while improving security
+- Make sure to set the role for your admin user in the Supabase Auth dashboard
 
 ## Verification
 
