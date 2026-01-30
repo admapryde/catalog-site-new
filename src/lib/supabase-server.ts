@@ -38,8 +38,11 @@ export async function createClient() {
         setAll: async (cookiesToSet) => {
           // В Next.js App Router куки можно устанавливать только в Server Actions или Route Handlers
           // В серверных компонентах можно только читать куки
-          // Поэтому просто выводим предупреждение об этом
-          console.warn('Попытка установки куки в серверном компоненте. Используйте Server Action или Route Handler.');
+          // В целях безопасности и соответствия лучшим практикам Next.js,
+          // мы не устанавливаем куки напрямую из серверных компонентов
+          if (process.env.NODE_ENV !== 'production') {
+            console.warn('Попытка установки куки в серверном компоненте. Используйте Server Action или Route Handler.');
+          }
         },
       },
     }

@@ -40,6 +40,7 @@ export default function ProductsManager() {
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
   const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [orderModeCategory, setOrderModeCategory] = useState<string | null>(null);
 
   const { showNotification, renderNotification } = useNotification();
@@ -95,24 +96,32 @@ export default function ProductsManager() {
 
   // Функция для массового удаления
   const handleBulkDelete = async () => {
-    try {
-      // Удаляем каждый выделенный товар
-      for (const productId of selectedProducts) {
-        const response = await fetch(`/api/admin/products?id=${productId}`, {
-          method: 'DELETE',
-          credentials: 'include' // Включаем куки для аутентификации
-        });
+    setIsBulkDeleting(true); // Устанавливаем состояние загрузки
 
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || `Ошибка удаления товара с ID: ${productId}`);
-        }
+    try {
+      // Сначала удаляем товары из локального состояния для немедленного обновления UI
+      setProducts(products.filter(prod => !selectedProducts.includes(prod.id)));
+
+      // Затем удаляем все выделенные товары с сервера за один запрос
+      const response = await fetch('/api/admin/products/bulk-delete', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include', // Включаем куки для аутентификации
+        body: JSON.stringify({ productIds: selectedProducts })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `Ошибка массового удаления товаров`);
       }
 
-      showNotification(`Успешно удалено ${selectedProducts.length} товаров`, 'success');
+      const result = await response.json();
+      showNotification(`Успешно удалено ${result.deletedCount} товаров`, 'success');
 
-      // Обновляем список товаров
-      updateProductsList();
+      // Обновляем список товаров для синхронизации с сервером (с обходом кэша)
+      updateProductsList(true);
 
       // Сбрасываем выделение
       setSelectedProducts([]);
@@ -122,14 +131,25 @@ export default function ProductsManager() {
     } catch (error: any) {
       console.error('Ошибка при массовом удалении:', error);
       showNotification(error.message || 'Произошла ошибка при массовом удалении', 'error');
+
+      // В случае ошибки восстановим товары в списке
+      updateProductsList();
+    } finally {
+      setIsBulkDeleting(false); // Сбрасываем состояние загрузки
     }
   };
 
   // Функция для обновления списка товаров
-  const updateProductsList = async () => {
+  const updateProductsList = async (bypassCache: boolean = false) => {
     try {
       // Загрузка товаров
-      const productsResponse = await fetch('/api/admin/products');
+      const url = bypassCache
+        ? `/api/admin/products?t=${Date.now()}`
+        : '/api/admin/products';
+
+      const productsResponse = await fetch(url, {
+        credentials: 'include' // Включаем куки для аутентификации
+      });
       if (!productsResponse.ok) {
         throw new Error(`Ошибка загрузки товаров: ${productsResponse.status} ${productsResponse.statusText}`);
       }
@@ -297,8 +317,8 @@ export default function ProductsManager() {
       showNotification(error.message || 'Произошла ошибка при сохранении товара', 'error');
     }
 
-    // Обновляем список товаров
-    updateProductsList();
+    // Обновляем список товаров (с обходом кэша)
+    updateProductsList(true);
   };
 
   // Обновление списка типов характеристик при изменении категории
@@ -405,8 +425,8 @@ export default function ProductsManager() {
 
         showNotification('Товар успешно удален!', 'success');
 
-        // Обновляем список товаров для синхронизации с сервером
-        updateProductsList();
+        // Обновляем список товаров для синхронизации с сервером (с обходом кэша)
+        updateProductsList(true);
       } catch (error: any) {
         console.error('Ошибка удаления товара:', error);
         showNotification(error.message || 'Произошла ошибка при удаления товара', 'error');
@@ -1115,6 +1135,7 @@ export default function ProductsManager() {
         onClose={() => setIsBulkDeleteModalOpen(false)}
         onDelete={handleBulkDelete}
         selectedProducts={products.filter(p => selectedProducts.includes(p.id))}
+        isLoading={isBulkDeleting}
       />
     </div>
   );

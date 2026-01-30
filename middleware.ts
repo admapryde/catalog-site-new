@@ -7,14 +7,14 @@ export async function middleware(request: NextRequest) {
     try {
       const supabase = await createClient();
 
-      // Получаем сессию пользователя из Supabase
+      // Получаем пользователя из Supabase (более безопасный метод)
       const {
-        data: { session },
+        data: { user },
         error,
-      } = await supabase.auth.getSession();
+      } = await supabase.auth.getUser();
 
-      if (error || !session) {
-        // Если нет сессии или произошла ошибка, перенаправляем на страницу входа
+      if (error || !user) {
+        // Если нет пользователя или произошла ошибка, перенаправляем на страницу входа
         const url = request.nextUrl.clone();
         url.pathname = '/login';
         url.search = `error=unauthorized&r=${encodeURIComponent(request.nextUrl.pathname)}`;
@@ -22,7 +22,7 @@ export async function middleware(request: NextRequest) {
       }
 
       // Проверяем, что пользователь является администратором
-      const userRole = session.user.user_metadata?.role || 'user';
+      const userRole = user.user_metadata?.role || 'user';
       if (userRole !== 'admin' && userRole !== 'super_admin') {
         // Если пользователь не администратор, перенаправляем на страницу входа
         const url = request.nextUrl.clone();

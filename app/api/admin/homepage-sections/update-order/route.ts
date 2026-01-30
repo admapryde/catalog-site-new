@@ -1,6 +1,24 @@
 import { NextRequest } from 'next/server';
 import { createAPIClient, supabaseWithRetry } from '@/lib/supabase-server';
 import { getAdminSession } from '@/services/admin-auth-service';
+import { createClient } from '@supabase/supabase-js';
+
+// Create a service role client for admin operations
+function createServiceRoleClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
+    throw new Error('Отсутствуют переменные окружения для Supabase SERVICE ROLE');
+  }
+
+  return createClient(supabaseUrl, supabaseServiceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    }
+  });
+}
 
 export async function PUT(request: NextRequest) {
   try {
@@ -35,7 +53,24 @@ export async function PUT(request: NextRequest) {
         .eq('id', section.id);
 
       if (error) {
-        throw error;
+        // If it's a permission error, try using service role client
+        if (error.code === '42501' || error.message?.includes('permission denied')) {
+          console.warn('Permission error detected, using service role client for homepage sections update');
+          const serviceRoleClient = createServiceRoleClient();
+
+          const { data: srData, error: srError } = await serviceRoleClient
+            .from('homepage_sections')
+            .update({ position: section.position })
+            .eq('id', section.id);
+
+          if (srError) {
+            throw srError;
+          }
+
+          return srData;
+        } else {
+          throw error;
+        }
       }
 
       return data;

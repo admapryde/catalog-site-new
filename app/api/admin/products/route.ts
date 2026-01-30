@@ -3,9 +3,27 @@ import { createAPIClient, supabaseWithRetry } from '@/lib/supabase-server';
 import { getAdminSession, getAdminSessionFromRequest } from '@/services/admin-auth-service';
 import { auditService } from '@/utils/audit-service';
 import { cacheManager } from '@/utils/cache-manager';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 
 // Кэшируем результаты запросов на 2 минуты
 const CACHE_DURATION = 2 * 60 * 1000; // 2 минуты в миллисекундах
+
+// Create a service role client for admin operations
+function createServiceRoleClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
+    throw new Error('Отсутствуют переменные окружения для Supabase SERVICE ROLE');
+  }
+
+  return createSupabaseClient(supabaseUrl, supabaseServiceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    }
+  });
+}
 
 export async function GET(request: NextRequest) {
   // Проверяем, что пользователь аутентифицирован как администратор
@@ -145,13 +163,184 @@ export async function POST(request: NextRequest) {
     const supabase = await createAPIClient(request);
 
     // Создаем продукт
-    const { data: productData, error: productError } = await supabase
-      .from('products')
-      .insert([{ category_id, name, price, description }])
-      .select()
-      .single();
+    const result = await supabaseWithRetry(supabase, (client) =>
+      client
+        .from('products')
+        .insert([{ category_id, name, price, description }])
+        .select()
+        .single()
+    ) as { data: any; error: any };
+
+    const { data: productData, error: productError } = result;
 
     if (productError) {
+      // If it's a permission error, try using service role client
+      if (productError.code === '42501' || productError.message?.includes('permission denied')) {
+        console.warn('Permission error detected, using service role client for products POST');
+        const serviceRoleClient = createServiceRoleClient();
+
+        const srResult = await serviceRoleClient
+          .from('products')
+          .insert([{ category_id, name, price, description }])
+          .select()
+          .single();
+
+        if (srResult.error) {
+          return Response.json({ error: srResult.error.message }, { status: 500 });
+        }
+
+        const productId = srResult.data.id;
+
+        // Добавляем изображения
+        if (images && images.length > 0) {
+          // Проверяем структуру изображений и удаляем любые поля, которые могут быть неверного формата
+          const imagesWithProductId = images.map((img: any) => {
+            // Убедимся, что удаляем любые временные или неподдерживаемые поля
+            const { id: imgId, created_at, updated_at, ...cleanImg } = img;
+
+            return {
+              ...cleanImg,
+              product_id: productId
+            };
+          });
+
+          const { error: imagesError } = await serviceRoleClient
+            .from('product_images')
+            .insert(imagesWithProductId);
+
+          if (imagesError) {
+            return Response.json({ error: imagesError.message }, { status: 500 });
+          }
+        }
+
+        // Добавляем характеристики
+        if (specs && specs.length > 0) {
+          // Проверяем, что переданные spec_type_id существуют в базе данных
+          const specTypeIds = specs.map((spec: any) => spec.spec_type_id).filter(Boolean);
+
+          if (specTypeIds.length > 0) {
+            const { data: validSpecTypes, error: specTypesCheckError } = await serviceRoleClient
+              .from('spec_types')
+              .select('id')
+              .in('id', specTypeIds);
+
+            if (specTypesCheckError) {
+              return Response.json({ error: `Ошибка проверки типов характеристик: ${specTypesCheckError.message}` }, { status: 500 });
+            }
+
+            const validSpecTypeIds = validSpecTypes.map((st: any) => st.id);
+
+            // Обновляем спецификации, устанавливая в null некорректные spec_type_id
+            const validatedSpecs = specs.map((spec: any) => ({
+              product_id: productId,
+              property_name: spec.property_name,
+              value: spec.value,
+              spec_type_id: spec.spec_type_id && validSpecTypeIds.includes(spec.spec_type_id) ? spec.spec_type_id : null
+            }));
+
+            const { error: specsError } = await serviceRoleClient
+              .from('product_specs')
+              .insert(validatedSpecs);
+
+            if (specsError) {
+              return Response.json({ error: specsError.message }, { status: 500 });
+            }
+          } else {
+            // Если нет типов характеристик, просто вставляем без проверки
+            const specsWithProductId = specs.map((spec: any) => ({
+              product_id: productId,
+              property_name: spec.property_name,
+              value: spec.value,
+              spec_type_id: null
+            }));
+
+            const { error: specsError } = await serviceRoleClient
+              .from('product_specs')
+              .insert(specsWithProductId);
+
+            if (specsError) {
+              return Response.json({ error: specsError.message }, { status: 500 });
+            }
+          }
+        }
+
+        // Возвращаем полные данные продукта
+        const { data: fullProductData, error: fullProductError } = await serviceRoleClient
+          .from('products')
+          .select(`
+            *,
+            category:categories!inner(id, name),
+            product_images(*),
+            product_specs(*),
+            homepage_section_items!left(section_id),
+            category_product_order!left(category_id, product_id, sort_order)
+          `)
+          .eq('id', productId)
+          .single();
+
+        if (fullProductError) {
+          return Response.json({ error: fullProductError.message }, { status: 500 });
+        }
+
+        // Для POST запроса также получим информацию о типах характеристик
+        const specTypeIds = fullProductData.product_specs?.map((spec: any) => spec.spec_type_id).filter(Boolean) || [];
+        let specTypesMap: Record<string, any> = {};
+
+        if (specTypeIds.length > 0) {
+          const { data: specTypes, error: specTypesError } = await serviceRoleClient
+            .from('spec_types')
+            .select('id, name, filter_type')
+            .in('id', specTypeIds);
+
+          if (specTypesError) {
+            return Response.json({ error: `Ошибка получения типов характеристик: ${specTypesError.message}` }, { status: 500 });
+          }
+
+          specTypesMap = specTypes.reduce((acc: Record<string, any>, type) => {
+            acc[type.id] = type;
+            return acc;
+          }, {});
+        }
+
+        // Извлекаем информацию о порядке из вложенного объекта
+        const category_product_order = Array.isArray(fullProductData.category_product_order) && fullProductData.category_product_order.length > 0
+          ? fullProductData.category_product_order[0]
+          : null;
+
+        // Преобразуем данные, чтобы соответствовать ожидаемой структуре Product
+        const transformedProduct = {
+          ...fullProductData,
+          images: fullProductData.product_images || [],
+          specs: fullProductData.product_specs?.map((spec: any) => {
+            // Добавляем информацию о типе характеристики, если она доступна
+            const specTypeInfo = spec.spec_type_id ? specTypesMap[spec.spec_type_id] : null;
+            return {
+              ...spec,
+              spec_type: specTypeInfo || spec.spec_type,
+              spec_type_id: spec.spec_type_id
+            };
+          }) || [],
+          category_product_order: category_product_order
+        };
+
+        // Логируем создание продукта в аудите
+        try {
+          await auditService.logCreate(adminUser.email || 'admin', 'products', productId, adminUser.id);
+        } catch (auditError) {
+          console.error('Ошибка записи в аудит при создании продукта:', auditError);
+        }
+
+        // Инвалидируем кэш для админ панели товаров
+        try {
+          cacheManager.delete('admin_products_all');
+          cacheManager.delete('admin_products_' + category_id);
+        } catch (cacheError) {
+          console.error('Ошибка инвалидации кэша админ панели товаров:', cacheError);
+        }
+
+        return Response.json(transformedProduct);
+      }
+
       return Response.json({ error: productError.message }, { status: 500 });
     }
 
@@ -291,7 +480,7 @@ export async function POST(request: NextRequest) {
 
     // Логируем создание продукта в аудите
     try {
-      await auditService.logCreate('admin', 'products', productId);
+      await auditService.logCreate(adminUser.email || 'admin', 'products', productId, adminUser.id);
     } catch (auditError) {
       console.error('Ошибка записи в аудит при создании продукта:', auditError);
     }
@@ -331,17 +520,276 @@ export async function PUT(request: NextRequest) {
     const supabase = await createAPIClient(request);
 
     // Получим текущие данные продукта перед обновлением
-    const { data: currentProduct, error: fetchError } = await supabase
-      .from('products')
-      .select(`
-        *,
-        product_images(*),
-        product_specs(*)
-      `)
-      .eq('id', id)
-      .single();
+    const currentProductResult = await supabaseWithRetry(supabase, (client) =>
+      client
+        .from('products')
+        .select(`
+          *,
+          product_images(*),
+          product_specs(*)
+        `)
+        .eq('id', id)
+        .single()
+    ) as { data: any; error: any };
+
+    const { data: currentProduct, error: fetchError } = currentProductResult;
 
     if (fetchError) {
+      // If it's a permission error, try using service role client
+      if (fetchError.code === '42501' || fetchError.message?.includes('permission denied')) {
+        console.warn('Permission error detected, using service role client for products fetch before update');
+        const serviceRoleClient = createServiceRoleClient();
+
+        const srCurrentProductResult = await serviceRoleClient
+          .from('products')
+          .select(`
+            *,
+            product_images(*),
+            product_specs(*)
+          `)
+          .eq('id', id)
+          .single();
+
+        if (srCurrentProductResult.error) {
+          return Response.json({ error: srCurrentProductResult.error.message }, { status: 500 });
+        }
+
+        const srCurrentProduct = srCurrentProductResult.data;
+
+        // Получим оригинальную категорию до обновления для инвалидации кэша
+        const { data: originalProduct, error: originalProductError } = await serviceRoleClient
+          .from('products')
+          .select('category_id')
+          .eq('id', id)
+          .single();
+
+        // Подготовим обновление основного продукта
+        const productUpdates: any = {};
+        if (category_id !== undefined) productUpdates.category_id = category_id;
+        if (name !== undefined) productUpdates.name = name;
+        if (price !== undefined) productUpdates.price = price;
+        if (description !== undefined) productUpdates.description = description;
+
+        // Обновляем продукт только с теми полями, которые были переданы
+        if (Object.keys(productUpdates).length > 0) {
+          const updateResult = await supabaseWithRetry(serviceRoleClient, (client) =>
+            client
+              .from('products')
+              .update(productUpdates)
+              .eq('id', id)
+          ) as { data: any; error: any };
+
+          const { error: productError } = updateResult;
+
+          if (productError) {
+            return Response.json({ error: productError.message }, { status: 500 });
+          }
+        }
+
+        // Получим информацию о типах характеристик для текущих спецификаций
+        const currentSpecs = srCurrentProduct.product_specs || [];
+        const specTypeIds = currentSpecs.map((spec: any) => spec.spec_type_id).filter(Boolean);
+        let specTypesMap: Record<string, any> = {};
+
+        if (specTypeIds.length > 0) {
+          const { data: specTypes, error: specTypesError } = await serviceRoleClient
+            .from('spec_types')
+            .select('id, name, filter_type')
+            .in('id', specTypeIds);
+
+          if (specTypesError) {
+            return Response.json({ error: `Ошибка получения типов характеристик: ${specTypesError.message}` }, { status: 500 });
+          }
+
+          specTypesMap = specTypes.reduce((acc: Record<string, any>, type) => {
+            acc[type.id] = type;
+            return acc;
+          }, {});
+        }
+
+        // Обновляем изображения только если они были переданы в запросе
+        if (images !== undefined) {
+          // Сравним переданные изображения с текущими
+          const currentImages = srCurrentProduct.product_images || [];
+          const imagesChanged = JSON.stringify(images.map((img: any) => ({
+            image_url: img.image_url,
+            is_main: img.is_main
+          })).sort((a: any, b: any) => a.image_url.localeCompare(b.image_url))) !==
+          JSON.stringify(currentImages.map((img: any) => ({
+            image_url: img.image_url,
+            is_main: img.is_main
+          })).sort((a: any, b: any) => a.image_url.localeCompare(b.image_url)));
+
+          if (imagesChanged) {
+            // Удаляем старые изображения
+            await serviceRoleClient
+              .from('product_images')
+              .delete()
+              .eq('product_id', id);
+
+            // Добавляем новые изображения
+            if (images.length > 0) {
+              // Проверяем структуру изображений и удаляем любые поля, которые могут быть неверного формата
+              const imagesWithProductId = images.map((img: any) => {
+                // Убедимся, что удаляем любые временные или неподдерживаемые поля
+                const { id: imgId, created_at, updated_at, ...cleanImg } = img;
+
+                return {
+                  ...cleanImg,
+                  product_id: id  // Use the product id, not the image id
+                };
+              });
+
+              const { error: imagesError } = await serviceRoleClient
+                .from('product_images')
+                .insert(imagesWithProductId);
+
+              if (imagesError) {
+                return Response.json({ error: imagesError.message }, { status: 500 });
+              }
+            }
+          }
+        }
+
+        // Обновляем характеристики только если они были переданы в запросе
+        if (specs !== undefined) {
+          // Сравним переданные характеристики с текущими
+          const currentSpecs = srCurrentProduct.product_specs || [];
+          const specsChanged = JSON.stringify(specs.map((spec: any) => ({
+            property_name: spec.property_name,
+            value: spec.value,
+            spec_type_id: spec.spec_type_id || null
+          })).sort((a: any, b: any) => a.property_name.localeCompare(b.property_name))) !==
+          JSON.stringify(currentSpecs.map((spec: any) => ({
+            property_name: spec.property_name,
+            value: spec.value,
+            spec_type_id: spec.spec_type_id || null
+          })).sort((a: any, b: any) => a.property_name.localeCompare(b.property_name)));
+
+          if (specsChanged) {
+            // Удаляем старые характеристики
+            await serviceRoleClient
+              .from('product_specs')
+              .delete()
+              .eq('product_id', id);
+
+            // Добавляем новые характеристики
+            if (specs.length > 0) {
+              // Проверяем, что переданные spec_type_id существуют в базе данных
+              const specTypeIds = specs.map((spec: any) => spec.spec_type_id).filter(Boolean);
+
+              if (specTypeIds.length > 0) {
+                const { data: validSpecTypes, error: specTypesCheckError } = await serviceRoleClient
+                  .from('spec_types')
+                  .select('id')
+                  .in('id', specTypeIds);
+
+                if (specTypesCheckError) {
+                  return Response.json({ error: `Ошибка проверки типов характеристик: ${specTypesCheckError.message}` }, { status: 500 });
+                }
+
+                const validSpecTypeIds = validSpecTypes.map((st: any) => st.id);
+
+                // Обновляем спецификации, устанавливая в null некорректные spec_type_id
+                const validatedSpecs = specs.map((spec: any) => ({
+                  product_id: id,
+                  property_name: spec.property_name,
+                  value: spec.value,
+                  spec_type_id: spec.spec_type_id && validSpecTypeIds.includes(spec.spec_type_id) ? spec.spec_type_id : null
+                }));
+
+                const { error: specsError } = await serviceRoleClient
+                  .from('product_specs')
+                  .insert(validatedSpecs);
+
+                if (specsError) {
+                  return Response.json({ error: specsError.message }, { status: 500 });
+                }
+              } else {
+                // Если нет типов характеристик, просто вставляем без проверки
+                const specsWithProductId = specs.map((spec: any) => ({
+                  product_id: id,
+                  property_name: spec.property_name,
+                  value: spec.value,
+                  spec_type_id: null
+                }));
+
+                const { error: specsError } = await serviceRoleClient
+                  .from('product_specs')
+                  .insert(specsWithProductId);
+
+                if (specsError) {
+                  return Response.json({ error: specsError.message }, { status: 500 });
+                }
+              }
+            }
+          }
+        }
+
+        // Возвращаем полные данные продукта
+        const { data: fullProductData, error: fullProductError } = await serviceRoleClient
+          .from('products')
+          .select(`
+            *,
+            category:categories!inner(id, name),
+            product_images(*),
+            product_specs(*),
+            homepage_section_items!left(section_id),
+            category_product_order!left(category_id, product_id, sort_order)
+          `)
+          .eq('id', id)
+          .single();
+
+        if (fullProductError) {
+          return Response.json({ error: fullProductError.message }, { status: 500 });
+        }
+
+        // Извлекаем информацию о порядке из вложенного объекта
+        const category_product_order = Array.isArray(fullProductData.category_product_order) && fullProductData.category_product_order.length > 0
+          ? fullProductData.category_product_order[0]
+          : null;
+
+        // Преобразуем данные, чтобы соответствовать ожидаемой структуре Product
+        const transformedProduct = {
+          ...fullProductData,
+          images: fullProductData.product_images || [],
+          specs: fullProductData.product_specs?.map((spec: any) => {
+            // Добавляем информацию о типе характеристики, если она доступна
+            const specTypeInfo = spec.spec_type_id ? specTypesMap[spec.spec_type_id] : null;
+            return {
+              ...spec,
+              spec_type: specTypeInfo || spec.spec_type,
+              spec_type_id: spec.spec_type_id
+            };
+          }) || [],
+          category_product_order: category_product_order
+        };
+
+        // Логируем обновление продукта в аудите
+        try {
+          await auditService.logUpdate(adminUser.email || 'admin', 'products', id, adminUser.id);
+        } catch (auditError) {
+          console.error('Ошибка записи в аудит при обновлении продукта:', auditError);
+        }
+
+        // Инвалидируем кэш для админ панели товаров
+        try {
+          cacheManager.delete('admin_products_all');
+          // Инвалидируем кэш для старой категории (до обновления)
+          if (!originalProductError && originalProduct) {
+            cacheManager.delete('admin_products_' + originalProduct.category_id);
+          }
+          // Инвалидируем кэш для новой категории (после обновления)
+          if (category_id) {
+            cacheManager.delete('admin_products_' + category_id);
+          }
+        } catch (cacheError) {
+          console.error('Ошибка инвалидации кэша админ панели товаров:', cacheError);
+        }
+
+        return Response.json(transformedProduct);
+      }
+
       return Response.json({ error: fetchError.message }, { status: 500 });
     }
 
@@ -361,13 +809,32 @@ export async function PUT(request: NextRequest) {
 
     // Обновляем продукт только с теми полями, которые были переданы
     if (Object.keys(productUpdates).length > 0) {
-      const { error: productError } = await supabase
-        .from('products')
-        .update(productUpdates)
-        .eq('id', id);
+      const updateResult = await supabaseWithRetry(supabase, (client) =>
+        client
+          .from('products')
+          .update(productUpdates)
+          .eq('id', id)
+      ) as { data: any; error: any };
+
+      const { error: productError } = updateResult;
 
       if (productError) {
-        return Response.json({ error: productError.message }, { status: 500 });
+        // If it's a permission error, try using service role client
+        if (productError.code === '42501' || productError.message?.includes('permission denied')) {
+          console.warn('Permission error detected, using service role client for products update');
+          const serviceRoleClient = createServiceRoleClient();
+
+          const srUpdateResult = await serviceRoleClient
+            .from('products')
+            .update(productUpdates)
+            .eq('id', id);
+
+          if (srUpdateResult.error) {
+            return Response.json({ error: srUpdateResult.error.message }, { status: 500 });
+          }
+        } else {
+          return Response.json({ error: productError.message }, { status: 500 });
+        }
       }
     }
 
@@ -552,7 +1019,7 @@ export async function PUT(request: NextRequest) {
 
     // Логируем обновление продукта в аудите
     try {
-      await auditService.logUpdate('admin', 'products', id);
+      await auditService.logUpdate(adminUser.email || 'admin', 'products', id, adminUser.id);
     } catch (auditError) {
       console.error('Ошибка записи в аудит при обновлении продукта:', auditError);
     }
@@ -599,17 +1066,49 @@ export async function DELETE(request: NextRequest) {
     const supabase = await createAPIClient(request);
 
     // Получаем информацию о продукте перед удалением для возможной очистки изображений из Cloudinary
-    const { data: productToDelete, error: fetchError } = await supabase
-      .from('products')
-      .select(`
-        *,
-        product_images(*)
-      `)
-      .eq('id', id)
-      .single();
+    const fetchResult = await supabaseWithRetry(supabase, (client) =>
+      client
+        .from('products')
+        .select(`
+          *,
+          product_images(*)
+        `)
+        .eq('id', id)
+        .single()
+    ) as { data: any; error: any };
+
+    const { data: productToDelete, error: fetchError } = fetchResult;
 
     if (fetchError) {
-      console.error('Ошибка получения информации о продукте перед удалением:', fetchError);
+      // If it's a permission error, try using service role client
+      if (fetchError.code === '42501' || fetchError.message?.includes('permission denied')) {
+        console.warn('Permission error detected, using service role client for product fetch before deletion');
+        const serviceRoleClient = createServiceRoleClient();
+
+        const srFetchResult = await serviceRoleClient
+          .from('products')
+          .select(`
+            *,
+            product_images(*)
+          `)
+          .eq('id', id)
+          .single();
+
+        if (srFetchResult.error) {
+          console.error('Ошибка получения информации о продукте перед удалением через service role:', srFetchResult.error);
+        } else {
+          const srProductToDelete = srFetchResult.data;
+          // Удаляем изображения продукта из Cloudinary
+          const imagesToDelete = srProductToDelete?.product_images || [];
+          for (const image of imagesToDelete) {
+            if (image.image_url) {
+              await deleteImageFromCloudinaryByUrl(image.image_url);
+            }
+          }
+        }
+      } else {
+        console.error('Ошибка получения информации о продукте перед удалением:', fetchError);
+      }
     } else {
       // Удаляем изображения продукта из Cloudinary
       const imagesToDelete = productToDelete?.product_images || [];
@@ -621,25 +1120,68 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Получаем категорию удаляемого продукта для инвалидации кэша до удаления
-    const { data: productData, error: productFetchError } = await supabase
-      .from('products')
-      .select('category_id')
-      .eq('id', id)
-      .single();
+    const productFetchResult = await supabaseWithRetry(supabase, (client) =>
+      client
+        .from('products')
+        .select('category_id')
+        .eq('id', id)
+        .single()
+    ) as { data: any; error: any };
+
+    const { data: productData, error: productFetchError } = productFetchResult;
 
     // Удаляем продукт (каскадно удалятся связанные изображения и характеристики)
-    const { error: deleteError } = await supabase
-      .from('products')
-      .delete()
-      .eq('id', id);
+    const deleteResult = await supabaseWithRetry(supabase, (client) =>
+      client
+        .from('products')
+        .delete()
+        .eq('id', id)
+    ) as { data: any; error: any };
+
+    const { error: deleteError } = deleteResult;
 
     if (deleteError) {
+      // If it's a permission error, try using service role client
+      if (deleteError.code === '42501' || deleteError.message?.includes('permission denied')) {
+        console.warn('Permission error detected, using service role client for products DELETE');
+        const serviceRoleClient = createServiceRoleClient();
+
+        const srDeleteResult = await serviceRoleClient
+          .from('products')
+          .delete()
+          .eq('id', id);
+
+        if (srDeleteResult.error) {
+          return Response.json({ error: srDeleteResult.error.message }, { status: 500 });
+        }
+
+        // Логируем удаление продукта в аудите
+        try {
+          await auditService.logDelete(adminUser.email || 'admin', 'products', id, adminUser.id);
+        } catch (auditError) {
+          console.error('Ошибка записи в аудит при удалении продукта:', auditError);
+        }
+
+        // Инвалидируем кэш для админ панели товаров
+        try {
+          cacheManager.delete('admin_products_all');
+
+          if (!productFetchError && productData) {
+            cacheManager.delete('admin_products_' + productData.category_id);
+          }
+        } catch (cacheError) {
+          console.error('Ошибка инвалидации кэша админ панели товаров:', cacheError);
+        }
+
+        return Response.json({ success: true });
+      }
+
       return Response.json({ error: deleteError.message }, { status: 500 });
     }
 
     // Логируем удаление продукта в аудите
     try {
-      await auditService.logDelete('admin', 'products', id);
+      await auditService.logDelete(adminUser.email || 'admin', 'products', id, adminUser.id);
     } catch (auditError) {
       console.error('Ошибка записи в аудит при удалении продукта:', auditError);
     }

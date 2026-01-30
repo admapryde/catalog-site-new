@@ -16,6 +16,27 @@ export default function AdminSidebar({ username, role, children }: SidebarProps)
     return pathname === path;
   };
 
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('/api/logout', {
+        method: 'POST',
+      });
+
+      const data = await response.json();
+
+      if (data.ok) {
+        // Перенаправляем на страницу логина
+        window.location.href = data.url;
+      } else {
+        console.error('Ошибка при выходе:', data.error);
+        alert('Произошла ошибка при выходе из системы');
+      }
+    } catch (error) {
+      console.error('Ошибка при выходе:', error);
+      alert('Произошла ошибка при выходе из системы');
+    }
+  };
+
   return (
     <aside className="w-64 bg-white shadow-md min-h-screen">
       <div className="p-6">
@@ -160,6 +181,14 @@ export default function AdminSidebar({ username, role, children }: SidebarProps)
             >
               Настройки
             </a>
+          </li>
+          <li>
+            <button
+              onClick={handleLogout}
+              className="w-full text-left py-3 px-6 text-red-600 hover:bg-red-50 hover:text-red-700 border-l-4 border-transparent cursor-pointer"
+            >
+              Выход
+            </button>
           </li>
         </ul>
       </nav>

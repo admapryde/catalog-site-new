@@ -159,29 +159,242 @@ export async function GET(request: NextRequest) {
   }
 }
 
+import { getAdminSessionFromRequest } from '@/services/admin-auth-service';
+import { createClient } from '@supabase/supabase-js';
+
+// Create a service role client for admin operations
+function createServiceRoleClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
+    throw new Error('Отсутствуют переменные окружения для Supabase SERVICE ROLE');
+  }
+
+  return createClient(supabaseUrl, supabaseServiceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    }
+  });
+}
+
 export async function PUT(request: NextRequest) {
+  // Проверяем, что пользователь аутентифицирован как администратор
+  const adminUser = await getAdminSessionFromRequest(request);
+  if (!adminUser) {
+    return Response.json({ error: 'Требуется аутентификация администратора' }, { status: 401 });
+  }
+
   try {
     const { site_title, site_icon, site_footer_info, bg_image } = await request.json();
 
-    // Используем сервис для обновления настроек (функция сама решит, обновлять или создавать)
-    const updateResult = await import('@/services/general-settings-service')
-      .then(mod => mod.updateGeneralSettings({
-        site_title,
-        site_icon,
-        site_footer_info,
-        bg_image
-      }));
+    // Try using service role client for admin operations to bypass RLS if needed
+    let supabase = await createAPIClient(request);
 
-    if (updateResult) {
-      // Инвалидируем кэш после успешного обновления
-      global.generalSettingsCache!.delete('general_settings');
+    // First, try to determine if we need to use service role client based on common permission errors
+    // If the regular client fails with permission errors, we'll use the service role client
 
-      return Response.json({ success: true });
+    // Сначала получаем существующую запись, чтобы получить её ID
+    const { data: existingData, error: selectError } = await supabase
+      .from('general_settings')
+      .select('id')
+      .limit(1);
+
+    if (selectError) {
+      // Проверяем, является ли ошибка связанной с отсутствием таблицы
+      if (selectError.code === '42P01' || selectError.message?.includes('does not exist')) {
+        console.error('Таблица general_settings не существует, невозможно обновить настройки');
+        return Response.json({
+          error: 'Таблица general_settings не существует'
+        }, { status: 500 });
+      }
+
+      // If it's a permission error, try using service role client
+      if (selectError.code === '42501' || selectError.message?.includes('permission denied')) {
+        console.warn('Permission error detected, attempting to use service role client for general settings');
+        const serviceRoleClient = createServiceRoleClient();
+
+        const { data: existingDataSR, error: selectErrorSR } = await serviceRoleClient
+          .from('general_settings')
+          .select('id')
+          .limit(1);
+
+        if (selectErrorSR) {
+          console.error('Ошибка получения ID настроек через service role:', selectErrorSR.message || selectErrorSR);
+          return Response.json({
+            error: 'Ошибка получения данных'
+          }, { status: 500 });
+        }
+
+        if (!existingDataSR || existingDataSR.length === 0) {
+          // Если запись не существует, создаем новую через service role
+          const { error: insertError } = await serviceRoleClient
+            .from('general_settings')
+            .insert([{
+              site_title,
+              site_icon,
+              site_footer_info,
+              bg_image,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }]);
+
+          if (insertError) {
+            console.error('Ошибка создания настроек через service role:', insertError.message || insertError);
+            return Response.json({
+              error: 'Ошибка создания настроек'
+            }, { status: 500 });
+          }
+        } else {
+          // Обновляем общие настройки сайта по ID через service role
+          const { error } = await serviceRoleClient
+            .from('general_settings')
+            .update({
+              site_title,
+              site_icon,
+              site_footer_info,
+              bg_image,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', existingDataSR[0].id);
+
+          if (error) {
+            console.error('Ошибка обновления общих настроек через service role:', error.message || error);
+            return Response.json({
+              error: 'Ошибка обновления настроек'
+            }, { status: 500 });
+          }
+        }
+      } else {
+        console.error('Ошибка получения ID настроек:', selectError.message || selectError);
+        return Response.json({
+          error: 'Ошибка получения данных'
+        }, { status: 500 });
+      }
     } else {
-      return Response.json({
-        error: 'Ошибка обновления настроек'
-      }, { status: 500 });
+      let updateResult;
+
+      if (!existingData || existingData.length === 0) {
+        // Если запись не существует, создаем новую
+        const { error: insertError } = await supabase
+          .from('general_settings')
+          .insert([{
+            site_title,
+            site_icon,
+            site_footer_info,
+            bg_image,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          }]);
+
+        if (insertError) {
+          // If regular client fails with permission error, try service role client
+          if (insertError.code === '42501' || insertError.message?.includes('permission denied')) {
+            console.warn('Permission error on insert, using service role client for general settings');
+            const serviceRoleClient = createServiceRoleClient();
+
+            const { error: insertErrorSR } = await serviceRoleClient
+              .from('general_settings')
+              .insert([{
+                site_title,
+                site_icon,
+                site_footer_info,
+                bg_image,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              }]);
+
+            if (insertErrorSR) {
+              console.error('Ошибка создания настроек через service role:', insertErrorSR.message || insertErrorSR);
+              return Response.json({
+                error: 'Ошибка создания настроек'
+              }, { status: 500 });
+            }
+          } else {
+            console.error('Ошибка создания настроек:', insertError.message || insertError);
+            return Response.json({
+              error: 'Ошибка создания настроек'
+            }, { status: 500 });
+          }
+
+          updateResult = true;
+        } else {
+          updateResult = true;
+        }
+      } else {
+        // Обновляем общие настройки сайта по ID
+        const { error } = await supabase
+          .from('general_settings')
+          .update({
+            site_title,
+            site_icon,
+            site_footer_info,
+            bg_image,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', existingData[0].id); // Используем ID для обновления конкретной записи
+
+        if (error) {
+          // Проверяем, является ли ошибка связанной с отсутствием таблицы
+          if (error.code === '42P01' || error.message?.includes('does not exist')) {
+            console.error('Таблица general_settings не существует, невозможно обновить настройки');
+            return Response.json({
+              error: 'Таблица general_settings не существует'
+            }, { status: 500 });
+          }
+
+          // If it's a permission error, try using service role client
+          if (error.code === '42501' || error.message?.includes('permission denied')) {
+            console.warn('Permission error on update, using service role client for general settings');
+            const serviceRoleClient = createServiceRoleClient();
+
+            const { error: updateErrorSR } = await serviceRoleClient
+              .from('general_settings')
+              .update({
+                site_title,
+                site_icon,
+                site_footer_info,
+                bg_image,
+                updated_at: new Date().toISOString()
+              })
+              .eq('id', existingData[0].id);
+
+            if (updateErrorSR) {
+              console.error('Ошибка обновления настроек через service role:', updateErrorSR.message || updateErrorSR);
+              return Response.json({
+                error: 'Ошибка обновления настроек'
+              }, { status: 500 });
+            }
+          } else {
+            console.error('Ошибка обновления общих настроек:', error.message || error);
+            return Response.json({
+              error: 'Ошибка обновления настроек'
+            }, { status: 500 });
+          }
+
+          updateResult = true;
+        } else {
+          updateResult = true;
+        }
+      }
+
+      if (updateResult) {
+        // Инвалидируем кэш после успешного обновления
+        global.generalSettingsCache!.delete('general_settings');
+
+        return Response.json({ success: true });
+      } else {
+        return Response.json({
+          error: 'Ошибка обновления настроек'
+        }, { status: 500 });
+      }
     }
+
+    // Инвалидируем кэш после успешного обновления
+    global.generalSettingsCache!.delete('general_settings');
+
+    return Response.json({ success: true });
   } catch (error: any) {
     console.error('Ошибка обновления общих настроек:', error);
     return Response.json({

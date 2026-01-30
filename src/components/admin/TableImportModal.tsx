@@ -411,30 +411,28 @@ export default function TableImportModal({ isOpen, onClose, onImportComplete }: 
 
             const uploadData = await uploadResponse.json();
 
-            // Обновим продукт, добавив к нему изображение напрямую через API продуктов
-            const updatedProduct = {
-              ...createdProduct,
-              images: [
-                ...(createdProduct.images || []),
-                {
-                  product_id: createdProduct.id,
-                  image_url: uploadData.url,
-                  is_main: index === 0 // Первое изображение - главное
-                }
-              ]
+            // Подготовим изображение для добавления
+            const imageToAdd = {
+              product_id: createdProduct.id,
+              image_url: uploadData.url,
+              is_main: index === 0 // Первое изображение - главное
             };
 
-            // Отправим обновленный продукт обратно в API
-            const updateResponse = await fetch('/api/admin/products', {
-              method: 'PUT',
+            // Отправим изображение на сервер через специальный маршрут
+            const updateResponse = await fetch('/api/admin/products/add-images', {
+              method: 'POST',
               headers: {
                 'Content-Type': 'application/json'
               },
-              body: JSON.stringify(updatedProduct)
+              credentials: 'include', // Включаем куки для аутентификации
+              body: JSON.stringify({
+                productId: createdProduct.id,
+                images: [imageToAdd]
+              })
             });
 
             if (!updateResponse.ok) {
-              console.error(`Ошибка при обновлении продукта с изображением для продукта ${createdProduct.id}:`, await updateResponse.text());
+              console.error(`Ошибка при добавлении изображения к продукту ${createdProduct.id}:`, await updateResponse.text());
             }
           } catch (error) {
             console.error(`Ошибка при обработке изображения ${imageUrl}:`, error);

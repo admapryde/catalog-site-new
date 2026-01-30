@@ -19,25 +19,25 @@ export async function getAdminSession(): Promise<AdminUser | null> {
 
   try {
     const result = await retryOnRateLimit(async () => {
-      return await supabase.auth.getSession();
+      return await supabase.auth.getUser();
     });
 
     const {
-      data: { session },
+      data: { user },
       error,
     } = result;
 
     if (error) {
-      console.error('Ошибка при получении сессии:', error);
+      console.error('Ошибка при получении пользователя:', error);
       return null;
     }
 
-    if (!session) {
+    if (!user) {
       return null;
     }
 
     // Проверяем, что пользователь является администратором
-    const userRole = session.user.user_metadata?.role || 'user';
+    const userRole = user.user_metadata?.role || 'user';
     if (userRole !== 'admin' && userRole !== 'super_admin') {
       return null;
     }
@@ -46,12 +46,12 @@ export async function getAdminSession(): Promise<AdminUser | null> {
     // Время жизни сессии проверяется в middleware/proxy
 
     return {
-      id: session.user.id,
-      email: session.user.email || '',
+      id: user.id,
+      email: user.email || '',
       role: userRole
     };
   } catch (error) {
-    console.error('Ошибка при получении сессии:', error);
+    console.error('Ошибка при получении пользователя:', error);
     return null;
   }
 }
@@ -66,25 +66,25 @@ export async function getAdminSessionFromRequest(request: NextRequest): Promise<
 
   try {
     const result = await retryOnRateLimit(async () => {
-      return await supabase.auth.getSession();
+      return await supabase.auth.getUser();
     });
 
     const {
-      data: { session },
+      data: { user },
       error,
     } = result;
 
     if (error) {
-      console.error('Ошибка при получении сессии из запроса:', error);
+      console.error('Ошибка при получении пользователя из запроса:', error);
       return null;
     }
 
-    if (!session) {
+    if (!user) {
       return null;
     }
 
     // Проверяем, что пользователь является администратором
-    const userRole = session.user.user_metadata?.role || 'user';
+    const userRole = user.user_metadata?.role || 'user';
     if (userRole !== 'admin' && userRole !== 'super_admin') {
       return null;
     }
@@ -93,12 +93,12 @@ export async function getAdminSessionFromRequest(request: NextRequest): Promise<
     // Время жизни сессии проверяется в middleware/proxy
 
     return {
-      id: session.user.id,
-      email: session.user.email || '',
+      id: user.id,
+      email: user.email || '',
       role: userRole
     };
   } catch (error) {
-    console.error('Ошибка при получении сессии из запроса:', error);
+    console.error('Ошибка при получении пользователя из запроса:', error);
     return null;
   }
 }
@@ -176,13 +176,25 @@ export async function authenticateAdmin(email: string, password: string): Promis
       return null;
     }
 
-    if (!data.user) {
-      console.log('Пользователь не найден');
+    if (!data.session) {
+      console.log('Сессия не создана');
+      return null;
+    }
+
+    // После успешного входа получаем информацию о пользователе через более безопасный метод
+    const userResult = await retryOnRateLimit(async () => {
+      return await supabase.auth.getUser();
+    });
+
+    const { data: userData, error: userError } = userResult;
+
+    if (userError || !userData.user) {
+      console.error('Ошибка при получении информации о пользователе после входа:', userError);
       return null;
     }
 
     // Проверяем, что пользователь является администратором
-    const userRole = data.user.user_metadata?.role || 'user';
+    const userRole = userData.user.user_metadata?.role || 'user';
     if (userRole !== 'admin' && userRole !== 'super_admin') {
       console.log('Пользователь не является администратором');
       return null;
@@ -191,8 +203,8 @@ export async function authenticateAdmin(email: string, password: string): Promis
     console.log('Аутентификация успешна');
 
     return {
-      id: data.user.id,
-      email: data.user.email || '',
+      id: userData.user.id,
+      email: userData.user.email || '',
       role: userRole
     };
   } catch (error) {

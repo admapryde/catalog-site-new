@@ -5,9 +5,10 @@ interface BulkDeleteModalProps {
   onClose: () => void;
   onDelete: () => void;
   selectedProducts: Product[];
+  isLoading: boolean;
 }
 
-export default function BulkDeleteModal({ isOpen, onClose, onDelete, selectedProducts }: BulkDeleteModalProps) {
+export default function BulkDeleteModal({ isOpen, onClose, onDelete, selectedProducts, isLoading }: BulkDeleteModalProps) {
   if (!isOpen) return null;
 
   return (
@@ -16,22 +17,24 @@ export default function BulkDeleteModal({ isOpen, onClose, onDelete, selectedPro
         <div className="p-6">
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-bold text-gray-800">Подтвердите удаление</h2>
-            <button
-              onClick={onClose}
-              className="text-gray-500 hover:text-gray-700"
-            >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-              </svg>
-            </button>
+            {!isLoading && (
+              <button
+                onClick={onClose}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+              </button>
+            )}
           </div>
 
           <div className="mb-6">
             <p className="text-gray-700 mb-4">
-              Вы собираетесь удалить <strong>{selectedProducts.length}</strong> товар(ов). 
+              Вы собираетесь удалить <strong>{selectedProducts.length}</strong> товар(ов).
               Это действие нельзя отменить.
             </p>
-            
+
             <div className="bg-gray-50 p-4 rounded-md max-h-60 overflow-y-auto">
               <h3 className="font-medium text-gray-700 mb-2">Список товаров для удаления:</h3>
               <ul className="space-y-1">
@@ -46,17 +49,31 @@ export default function BulkDeleteModal({ isOpen, onClose, onDelete, selectedPro
           </div>
 
           <div className="flex justify-end space-x-3">
-            <button
-              onClick={onClose}
-              className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded"
-            >
-              Отмена
-            </button>
+            {!isLoading && (
+              <button
+                onClick={onClose}
+                className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-2 px-4 rounded disabled:opacity-50"
+                disabled={isLoading}
+              >
+                Отмена
+              </button>
+            )}
             <button
               onClick={onDelete}
-              className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded"
+              className="bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded flex items-center disabled:opacity-50"
+              disabled={isLoading}
             >
-              Удалить
+              {isLoading ? (
+                <>
+                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Удаление...
+                </>
+              ) : (
+                'Удалить'
+              )}
             </button>
           </div>
         </div>

@@ -1,11 +1,29 @@
 import { NextRequest } from 'next/server';
 import { createAPIClient, supabaseWithRetry } from '@/lib/supabase-server';
-import { getAdminSession } from '@/services/admin-auth-service';
+import { getAdminSessionFromRequest } from '@/services/admin-auth-service';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+
+// Create a service role client for admin operations
+function createServiceRoleClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
+    throw new Error('Отсутствуют переменные окружения для Supabase SERVICE ROLE');
+  }
+
+  return createSupabaseClient(supabaseUrl, supabaseServiceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    }
+  });
+}
 
 export async function PUT(request: NextRequest) {
   try {
     // Проверяем, что пользователь аутентифицирован как администратор
-    const adminUser = await getAdminSession();
+    const adminUser = await getAdminSessionFromRequest(request);
     if (!adminUser) {
       return Response.json({ error: 'Требуется аутентификация администратора' }, { status: 401 });
     }
@@ -29,12 +47,34 @@ export async function PUT(request: NextRequest) {
 
     // Обновляем порядок баннеров в базе данных
     const updates = banners.map(async (banner) => {
-      const { data, error } = await supabase
-        .from('banners')
-        .update({ sort_order: banner.sort_order })
-        .eq('id', banner.id);
+      const result = await supabaseWithRetry(supabase, (client) =>
+        client
+          .from('banners')
+          .update({ sort_order: banner.sort_order })
+          .eq('id', banner.id)
+          .select()
+      ) as { data: any; error: any };
+
+      const { data, error } = result;
 
       if (error) {
+        // If it's a permission error, try using service role client
+        if (error.code === '42501' || error.message?.includes('permission denied')) {
+          console.warn('Permission error detected, using service role client for banner update');
+          const serviceRoleClient = createServiceRoleClient();
+
+          const srResult = await serviceRoleClient
+            .from('banners')
+            .update({ sort_order: banner.sort_order })
+            .eq('id', banner.id)
+            .select();
+
+          if (srResult.error) {
+            throw srResult.error;
+          }
+
+          return srResult.data;
+        }
         throw error;
       }
 

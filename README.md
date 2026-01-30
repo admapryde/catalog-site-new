@@ -190,11 +190,14 @@ Create a `.env.local` file in the root of your project and add your Supabase and
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key  # Required for admin operations with RLS
 AUTH_SECRET=your_auth_secret
 CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
 CLOUDINARY_API_KEY=your_cloudinary_api_key
 CLOUDINARY_API_SECRET=your_cloudinary_api_secret
 ```
+
+> **Note**: The `SUPABASE_SERVICE_ROLE_KEY` is required to handle Row Level Security (RLS) permission issues in admin operations. This key allows the application to perform administrative operations when regular authentication encounters permission restrictions.
 
 ### Running the Development Server
 

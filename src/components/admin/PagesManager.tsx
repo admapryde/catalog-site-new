@@ -9,6 +9,7 @@ import { useNotification } from '@/hooks/useNotification';
 export default function PagesManager() {
   const [pages, setPages] = useState<Page[]>([]);
   const [blocks, setBlocks] = useState<PageBlock[]>([]);
+  const [originalBlocks, setOriginalBlocks] = useState<PageBlock[]>([]); // Сохраняем оригинальный порядок
   const [images, setImages] = useState<PageBlockImage[]>([]);
   const [links, setLinks] = useState<PageBlockLink[]>([]);
   const [title, setTitle] = useState('');
@@ -26,6 +27,7 @@ export default function PagesManager() {
   const [linkUrl, setLinkUrl] = useState('');
   const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [hasUnsavedBlockChanges, setHasUnsavedBlockChanges] = useState(false); // Состояние для отслеживания изменений порядка блоков
 
   const { showNotification, renderNotification } = useNotification();
 
@@ -53,6 +55,7 @@ export default function PagesManager() {
 
         setPages(allPages);
         setBlocks(allBlocks);
+        setOriginalBlocks([...allBlocks]); // Сохраняем оригинальный порядок
         setImages(allImages);
         setLinks(allLinks);
       } catch (error) {
@@ -392,23 +395,21 @@ export default function PagesManager() {
     }
   };
 
-  const moveBlockUp = async (blockId: string) => {
+  const moveBlockUp = (blockId: string) => {
     const blockToMove = blocks.find(b => b.id === blockId);
     if (!blockToMove || !selectedPageId) return;
 
-    // Получаем все блоки на той же странице
-    const blocksInPage = blocks.filter(b => b.page_id === selectedPageId);
+    // Получаем все блоки на той же странице и сортируем их по sort_order
+    const blocksInPage = [...blocks.filter(b => b.page_id === selectedPageId)].sort((a, b) => a.sort_order - b.sort_order);
     const currentIndex = blocksInPage.findIndex(b => b.id === blockId);
 
     if (currentIndex === 0) return; // Уже первый в странице
 
-    // Создаем новый массив с обновленным порядком
-    const newBlocksInPage = [...blocksInPage];
-    const movedBlock = newBlocksInPage.splice(currentIndex, 1)[0];
-    newBlocksInPage.splice(currentIndex - 1, 0, movedBlock);
+    // Меняем местами текущий блок с предыдущим
+    [blocksInPage[currentIndex], blocksInPage[currentIndex - 1]] = [blocksInPage[currentIndex - 1], blocksInPage[currentIndex]];
 
     // Обновляем sort_order для блоков в странице
-    const reorderedBlocksInPage = newBlocksInPage.map((block, idx) => ({
+    const reorderedBlocksInPage = blocksInPage.map((block, idx) => ({
       ...block,
       sort_order: idx
     }));
@@ -419,53 +420,26 @@ export default function PagesManager() {
       return updatedBlock || block;
     });
 
-    // Обновляем порядок в базе данных с помощью массового обновления
-    try {
-      const updates = reorderedBlocksInPage.map(block => ({
-        id: block.id,
-        page_id: block.page_id,
-        block_type: block.block_type,
-        title: block.title,
-        content: block.content,
-        sort_order: block.sort_order
-      }));
-
-      const response = await fetch('/api/admin/page-blocks', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates)
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Ошибка обновления порядка блоков: ${response.status} ${response.statusText}. ${errorText}`);
-      }
-
-      // Обновляем состояние только после успешного сохранения
-      setBlocks(updatedBlocks);
-    } catch (error) {
-      console.error('Ошибка обновления порядка блоков:', error);
-      showNotification('Ошибка обновления порядка блоков', 'error');
-    }
+    // Обновляем состояние
+    setBlocks(updatedBlocks);
+    setHasUnsavedBlockChanges(true); // Устанавливаем флаг изменений
   };
 
-  const moveBlockDown = async (blockId: string) => {
+  const moveBlockDown = (blockId: string) => {
     const blockToMove = blocks.find(b => b.id === blockId);
     if (!blockToMove || !selectedPageId) return;
 
-    // Получаем все блоки на той же странице
-    const blocksInPage = blocks.filter(b => b.page_id === selectedPageId);
+    // Получаем все блоки на той же странице и сортируем их по sort_order
+    const blocksInPage = [...blocks.filter(b => b.page_id === selectedPageId)].sort((a, b) => a.sort_order - b.sort_order);
     const currentIndex = blocksInPage.findIndex(b => b.id === blockId);
 
     if (currentIndex === blocksInPage.length - 1) return; // Уже последний в странице
 
-    // Создаем новый массив с обновленным порядком
-    const newBlocksInPage = [...blocksInPage];
-    const movedBlock = newBlocksInPage.splice(currentIndex, 1)[0];
-    newBlocksInPage.splice(currentIndex + 1, 0, movedBlock);
+    // Меняем местами текущий блок со следующим
+    [blocksInPage[currentIndex], blocksInPage[currentIndex + 1]] = [blocksInPage[currentIndex + 1], blocksInPage[currentIndex]];
 
     // Обновляем sort_order для блоков в странице
-    const reorderedBlocksInPage = newBlocksInPage.map((block, idx) => ({
+    const reorderedBlocksInPage = blocksInPage.map((block, idx) => ({
       ...block,
       sort_order: idx
     }));
@@ -476,34 +450,9 @@ export default function PagesManager() {
       return updatedBlock || block;
     });
 
-    // Обновляем порядок в базе данных с помощью массового обновления
-    try {
-      const updates = reorderedBlocksInPage.map(block => ({
-        id: block.id,
-        page_id: block.page_id,
-        block_type: block.block_type,
-        title: block.title,
-        content: block.content,
-        sort_order: block.sort_order
-      }));
-
-      const response = await fetch('/api/admin/page-blocks', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates)
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Ошибка обновления порядка блоков: ${response.status} ${response.statusText}. ${errorText}`);
-      }
-
-      // Обновляем состояние только после успешного сохранения
-      setBlocks(updatedBlocks);
-    } catch (error) {
-      console.error('Ошибка обновления порядка блоков:', error);
-      showNotification('Ошибка обновления порядка блоков', 'error');
-    }
+    // Обновляем состояние
+    setBlocks(updatedBlocks);
+    setHasUnsavedBlockChanges(true); // Устанавливаем флаг изменений
   };
 
   const handleImageUpload = async (urls: string[], blockId: string, layoutType?: 'simple' | 'image_text_side' | 'banner' | 'horizontal_pair' | 'horizontal_triple' | 'grid_four', textContent?: string) => {
@@ -822,6 +771,55 @@ export default function PagesManager() {
       console.error('Ошибка обновления порядка ссылок:', error);
       showNotification('Ошибка обновления порядка ссылок', 'error');
     }
+  };
+
+  // Функция для сохранения изменений порядка блоков
+  const saveBlockOrderChanges = async () => {
+    if (!selectedPageId) return;
+
+    try {
+      // Получаем все блоки для текущей страницы с обновленным порядком
+      const blocksInPage = blocks.filter(b => b.page_id === selectedPageId);
+
+      // Отправляем все изменения в одном запросе
+      const response = await fetch('/api/admin/page-blocks', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(
+          blocksInPage.map(block => ({
+            id: block.id,
+            page_id: block.page_id,
+            block_type: block.block_type,
+            title: block.title,
+            content: block.content,
+            sort_order: block.sort_order
+          }))
+        )
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Ошибка сохранения порядка блоков');
+      }
+
+      showNotification('Порядок блоков успешно сохранен!', 'success');
+      setHasUnsavedBlockChanges(false); // Сбрасываем флаг изменений
+
+      // Обновляем оригинальные блоки
+      setOriginalBlocks([...blocks]);
+    } catch (error: any) {
+      console.error('Ошибка сохранения порядка блоков:', error);
+      showNotification(error.message || 'Произошла ошибка при сохранении порядка блоков', 'error');
+      // В случае ошибки восстанавливаем исходный порядок
+      setBlocks([...originalBlocks]);
+      setHasUnsavedBlockChanges(false);
+    }
+  };
+
+  // Функция для отмены изменений порядка блоков
+  const cancelBlockOrderChanges = () => {
+    setBlocks([...originalBlocks]); // Восстанавливаем исходный порядок
+    setHasUnsavedBlockChanges(false); // Сбрасываем флаг изменений
   };
 
   const handleDeleteImage = async (imageId: string, imageUrl: string) => {
@@ -1192,6 +1190,25 @@ export default function PagesManager() {
                 <div className="mb-8">
                   <h3 className="text-lg font-semibold text-gray-800 mb-4">Блоки страницы</h3>
                   <div className="bg-white rounded-lg shadow-md overflow-hidden">
+                    {hasUnsavedBlockChanges && (
+                      <div className="bg-yellow-50 border-b border-yellow-200 p-4 flex justify-between">
+                        <span className="text-yellow-700">Есть несохраненные изменения порядка блоков</span>
+                        <div className="space-x-2">
+                          <button
+                            onClick={saveBlockOrderChanges}
+                            className="bg-green-600 hover:bg-green-700 text-white font-medium py-1 px-3 rounded text-sm"
+                          >
+                            Сохранить изменения
+                          </button>
+                          <button
+                            onClick={cancelBlockOrderChanges}
+                            className="bg-gray-500 hover:bg-gray-600 text-white font-medium py-1 px-3 rounded text-sm"
+                          >
+                            Отменить
+                          </button>
+                        </div>
+                      </div>
+                    )}
                     <table className="min-w-full divide-y divide-gray-200">
                       <thead className="bg-gray-50">
                         <tr>
