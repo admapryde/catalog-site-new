@@ -51,6 +51,16 @@ USING (
   OR (
     auth.jwt() ->> 'role' = 'service_role'
   )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM profiles
+    WHERE profiles.id = auth.uid()
+    AND profiles.role IN ('admin', 'super_admin')
+  )
+  OR (
+    auth.jwt() ->> 'role' = 'service_role'
+  )
 );
 
 -- Fix pages table RLS policy - use profiles table instead of user_metadata
@@ -58,6 +68,16 @@ DROP POLICY IF EXISTS "Admin can manage pages" ON pages;
 CREATE POLICY "Admin can manage pages" ON pages
 FOR ALL TO authenticated
 USING (
+  EXISTS (
+    SELECT 1 FROM profiles
+    WHERE profiles.id = auth.uid()
+    AND profiles.role IN ('admin', 'super_admin')
+  )
+  OR (
+    auth.jwt() ->> 'role' = 'service_role'
+  )
+)
+WITH CHECK (
   EXISTS (
     SELECT 1 FROM profiles
     WHERE profiles.id = auth.uid()
@@ -81,6 +101,16 @@ USING (
   OR (
     auth.jwt() ->> 'role' = 'service_role'
   )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM profiles
+    WHERE profiles.id = auth.uid()
+    AND profiles.role IN ('admin', 'super_admin')
+  )
+  OR (
+    auth.jwt() ->> 'role' = 'service_role'
+  )
 );
 
 -- Fix page_block_images table RLS policy - use profiles table instead of user_metadata
@@ -88,6 +118,16 @@ DROP POLICY IF EXISTS "Admin can manage page block images" ON page_block_images;
 CREATE POLICY "Admin can manage page block images" ON page_block_images
 FOR ALL TO authenticated
 USING (
+  EXISTS (
+    SELECT 1 FROM profiles
+    WHERE profiles.id = auth.uid()
+    AND profiles.role IN ('admin', 'super_admin')
+  )
+  OR (
+    auth.jwt() ->> 'role' = 'service_role'
+  )
+)
+WITH CHECK (
   EXISTS (
     SELECT 1 FROM profiles
     WHERE profiles.id = auth.uid()
@@ -111,6 +151,16 @@ USING (
   OR (
     auth.jwt() ->> 'role' = 'service_role'
   )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM profiles
+    WHERE profiles.id = auth.uid()
+    AND profiles.role IN ('admin', 'super_admin')
+  )
+  OR (
+    auth.jwt() ->> 'role' = 'service_role'
+  )
 );
 
 -- Fix homepage_blocks table RLS policy - use profiles table instead of user_metadata
@@ -126,6 +176,16 @@ USING (
   OR (
     auth.jwt() ->> 'role' = 'service_role'
   )
+)
+WITH CHECK (
+  EXISTS (
+    SELECT 1 FROM profiles
+    WHERE profiles.id = auth.uid()
+    AND profiles.role IN ('admin', 'super_admin')
+  )
+  OR (
+    auth.jwt() ->> 'role' = 'service_role'
+  )
 );
 
 -- Fix homepage_layouts table RLS policy - use profiles table instead of user_metadata
@@ -133,6 +193,16 @@ DROP POLICY IF EXISTS "Admin can manage homepage layouts" ON homepage_layouts;
 CREATE POLICY "Admin can manage homepage layouts" ON homepage_layouts
 FOR ALL TO authenticated
 USING (
+  EXISTS (
+    SELECT 1 FROM profiles
+    WHERE profiles.id = auth.uid()
+    AND profiles.role IN ('admin', 'super_admin')
+  )
+  OR (
+    auth.jwt() ->> 'role' = 'service_role'
+  )
+)
+WITH CHECK (
   EXISTS (
     SELECT 1 FROM profiles
     WHERE profiles.id = auth.uid()
@@ -183,3 +253,22 @@ $$;
 GRANT USAGE ON SCHEMA public TO authenticated;
 GRANT ALL ON profiles TO authenticated;
 GRANT EXECUTE ON FUNCTION public.is_admin() TO authenticated;
+
+-- Function to initialize general settings using service role (should be run manually with service role)
+CREATE OR REPLACE FUNCTION public.initialize_general_settings_if_not_exists()
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+BEGIN
+  -- Check if any records exist in general_settings
+  IF NOT EXISTS (SELECT 1 FROM general_settings LIMIT 1) THEN
+    INSERT INTO general_settings (site_title, site_icon, site_footer_info)
+    VALUES ('Каталог', '/favicon.png', '© 2026 Каталог. Все права защищены.');
+  END IF;
+END;
+$$;
+
+-- Grant execute permission on the initialization function
+GRANT EXECUTE ON FUNCTION public.initialize_general_settings_if_not_exists() TO service_role;
