@@ -20,12 +20,10 @@ export default function Header({ settings }: { settings: HeaderSettings }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult>({ products: [], categories: [] });
   const [showDropdown, setShowDropdown] = useState(false);
-  const [showMobileMenu, setShowMobileMenu] = useState(false);
   const [showMobileSearch, setShowMobileSearch] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<any>(null); // Using any temporarily since we need to fetch full product details
   const [isModalOpen, setIsModalOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,16 +70,10 @@ export default function Header({ settings }: { settings: HeaderSettings }) {
     }
   };
 
-  // Обработчик клика вне компонента для закрытия выпадающего списка и мобильного меню
+  // Обработчик клика вне компонента для закрытия выпадающего списка
   const handleClickOutside = (event: MouseEvent) => {
     if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
       setShowDropdown(false);
-    }
-
-    // Закрываем мобильное меню, если клик был вне его области
-    if (mobileMenuButtonRef.current && !mobileMenuButtonRef.current.contains(event.target as Node) &&
-        !(event.target as HTMLElement).closest('.mobile-menu-container')) {
-      setShowMobileMenu(false);
     }
   };
 
@@ -92,6 +84,15 @@ export default function Header({ settings }: { settings: HeaderSettings }) {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
+  // Обновляем класс body при изменении состояния showMobileSearch
+  useEffect(() => {
+    if (showMobileSearch) {
+      document.body.classList.add('mobile-search-open');
+    } else {
+      document.body.classList.remove('mobile-search-open');
+    }
+  }, [showMobileSearch]);
 
   // Функция для открытия модального окна с деталями продукта
   const handleProductClick = async (productId: string) => {
@@ -115,67 +116,8 @@ export default function Header({ settings }: { settings: HeaderSettings }) {
   };
 
   return (
-    <header className="bg-white shadow-md sticky top-0 z-50 h-16"> {/* Фиксированная высота шапки */}
+    <header className={`bg-white shadow-md sticky top-0 ${showMobileSearch ? 'z-[100001]' : 'z-50'} h-16`}> {/* Фиксированная высота шапки */}
       <div className="container mx-auto px-2 h-full flex items-center justify-between relative md:justify-start">
-        {/* Бургер-меню для мобильных устройств - теперь слева и более заметное */}
-        <div className="md:hidden mr-4 z-20">
-          <button
-            ref={mobileMenuButtonRef}
-            onClick={() => setShowMobileMenu(!showMobileMenu)}
-            className="text-gray-900 hover:text-gray-700 focus:outline-none p-2 rounded-md bg-gray-100 hover:bg-gray-200 text-gray-700 shadow-lg"
-            aria-label="Открыть меню"
-          >
-            <svg
-              className="w-6 h-6"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              {showMobileMenu ? (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-              )}
-            </svg>
-          </button>
-
-          {/* Мобильное меню */}
-          {showMobileMenu && (
-            <div className="mobile-menu-container absolute top-full left-0 right-0 bg-white shadow-lg z-50 py-4">
-              <nav className="flex flex-col space-y-4 px-4">
-                <Link
-                  href="/"
-                  className="text-gray-600 hover:text-gray-900 py-2"
-                  onClick={() => setShowMobileMenu(false)}
-                >
-                  {settings.nav_home}
-                </Link>
-                <Link
-                  href="/catalog"
-                  className="text-gray-600 hover:text-gray-900 py-2"
-                  onClick={() => setShowMobileMenu(false)}
-                >
-                  {settings.nav_catalog}
-                </Link>
-                <Link
-                  href="/about"
-                  className="text-gray-600 hover:text-gray-900 py-2"
-                  onClick={() => setShowMobileMenu(false)}
-                >
-                  {settings.nav_about}
-                </Link>
-                <Link
-                  href="/contacts"
-                  className="text-gray-600 hover:text-gray-900 py-2"
-                  onClick={() => setShowMobileMenu(false)}
-                >
-                  {settings.nav_contacts}
-                </Link>
-              </nav>
-            </div>
-          )}
-        </div>
 
         {/* Логотип слева */}
         <div className="mr-6 z-20">
@@ -221,24 +163,144 @@ export default function Header({ settings }: { settings: HeaderSettings }) {
 
           {/* Кнопка поиска для мобильных устройств */}
           <div className="md:hidden mr-2">
-            {!showMobileSearch ? (
-              <button
-                onClick={() => setShowMobileSearch(true)}
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 focus:outline-none"
-                aria-label="Поиск"
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
-              </button>
-            ) : null}
+            <button
+              onClick={() => {
+                setShowMobileSearch(true);
+                // Устанавливаем фокус на поле ввода после небольшой задержки, чтобы дать время для рендера
+                setTimeout(() => {
+                  const mobileSearchInput = document.getElementById('mobile-search-input');
+                  if (mobileSearchInput) {
+                    mobileSearchInput.focus();
+                  }
+                }, 100);
+              }}
+              className="flex items-center justify-center w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 focus:outline-none"
+              aria-label="Поиск"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
           </div>
 
-          {/* Поисковая строка - теперь справа */}
-          <div
-            className={`${showMobileSearch ? 'flex animate-in fade-in zoom-in-95 duration-300' : 'hidden'} md:flex flex-grow max-w-md transition-all duration-300 ease-in-out`}
-            ref={dropdownRef}
-          >
+          {/* Мобильный модальный поиск */}
+          {showMobileSearch && (
+            <div className="fixed inset-0 z-[100002] md:hidden">
+              {/* Overlay - создает эффект затемнения фона */}
+              <div
+                className="fixed inset-0"
+                style={{ backgroundColor: 'rgba(0, 0, 0, 0.25)' }}
+                onClick={() => {
+                  setShowMobileSearch(false);
+                  setSearchQuery(''); // Очищаем поле поиска при закрытии
+                  setShowDropdown(false); // Закрываем выпадающий список
+                }}
+              ></div>
+
+              <div className="relative z-[100003] pt-20 flex items-start justify-center min-h-screen">
+                {/* Контейнер для строки поиска */}
+                <div className="w-full max-w-md mx-4 mt-4 bg-white rounded-lg border border-gray-200 shadow-lg">
+                  <div className="p-4">
+                    <div className="flex items-center">
+                      <form onSubmit={(e) => {
+                        handleSearch(e);
+                        setShowMobileSearch(false);
+                      }} className="flex-grow">
+                        <div className="relative">
+                          <input
+                            id="mobile-search-input"
+                            type="text"
+                            value={searchQuery}
+                            onChange={handleInputChange}
+                            onFocus={() => (searchResults.products.length > 0 || searchResults.categories.length > 0) && setShowDropdown(true)}
+                            placeholder="Поиск"
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-gray-600 placeholder-gray-500"
+                          />
+                          <button
+                            type="submit"
+                            className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-700 hover:text-black"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                            </svg>
+                          </button>
+                        </div>
+                      </form>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowMobileSearch(false);
+                          setSearchQuery(''); // Очищаем поле поиска при закрытии
+                          setShowDropdown(false); // Закрываем выпадающий список
+                        }}
+                        className="ml-2 text-gray-500 hover:text-gray-700"
+                        aria-label="Закрыть поиск"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Выпадающий список результатов поиска */}
+                  {(showDropdown && (searchResults.products.length > 0 || searchResults.categories.length > 0)) && (
+                    <div className="bg-white border-t border-gray-200 rounded-b-lg overflow-y-auto max-h-[calc(100vh-200px)] z-[100005]">
+                      {/* Результаты по категориям */}
+                      {searchResults.categories.length > 0 && (
+                        <div>
+                          <div className="px-4 py-2 bg-gray-50 text-gray-500 text-sm font-medium">Категории</div>
+                          <ul>
+                            {searchResults.categories.map((category) => (
+                              <li key={`cat-${category.id}`}>
+                                <Link
+                                  href={`/catalog/${category.id}`}
+                                  className="block px-4 py-2 hover:bg-gray-100 text-gray-800 truncate"
+                                  onClick={() => {
+                                    setSearchQuery(category.name);
+                                    setShowDropdown(false);
+                                    setShowMobileSearch(false); // Закрываем поле поиска на мобильном после выбора
+                                  }}
+                                >
+                                  {category.name}
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Результаты по товарам */}
+                      {searchResults.products.length > 0 && (
+                        <div>
+                          <div className="px-4 py-2 bg-gray-50 text-gray-500 text-sm font-medium">Товары</div>
+                          <ul>
+                            {searchResults.products.map((product) => (
+                              <li key={`prod-${product.id}`}>
+                                <div
+                                  className="block px-4 py-2 hover:bg-gray-100 text-gray-800 truncate cursor-pointer"
+                                  onClick={() => {
+                                    setSearchQuery(product.name);
+                                    handleProductClick(product.id);
+                                    setShowMobileSearch(false); // Закрываем поле поиска на мобильном после выбора
+                                  }}
+                                >
+                                  {product.name}
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Поисковая строка для десктопа - без изменений */}
+          <div className="hidden md:flex flex-grow max-w-md">
             <form onSubmit={handleSearch}>
               <div className="relative">
                 <input
@@ -248,7 +310,6 @@ export default function Header({ settings }: { settings: HeaderSettings }) {
                   onFocus={() => (searchResults.products.length > 0 || searchResults.categories.length > 0) && setShowDropdown(true)}
                   placeholder="Поиск"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-black text-gray-600 placeholder-gray-500"
-                  autoFocus={showMobileSearch} // Автофокус при появлении на мобильных устройствах
                 />
                 <button
                   type="submit"
@@ -259,25 +320,9 @@ export default function Header({ settings }: { settings: HeaderSettings }) {
                   </svg>
                 </button>
 
-                {/* Кнопка закрытия для мобильных устройств */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowMobileSearch(false);
-                    setSearchQuery(''); // Очищаем поле поиска при закрытии
-                    setShowDropdown(false); // Закрываем выпадающий список
-                  }}
-                  className="absolute right-10 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700 md:hidden"
-                  aria-label="Закрыть поиск"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-
-                {/* Выпадающий список результатов поиска */}
+                {/* Выпадающий список результатов поиска для десктопа */}
                 {showDropdown && (searchResults.products.length > 0 || searchResults.categories.length > 0) && (
-                  <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-80 overflow-y-auto">
+                  <div className="absolute left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-[100004] max-h-80 overflow-y-auto">
                     {/* Результаты по категориям */}
                     {searchResults.categories.length > 0 && (
                       <div>
@@ -291,7 +336,6 @@ export default function Header({ settings }: { settings: HeaderSettings }) {
                                 onClick={() => {
                                   setSearchQuery(category.name);
                                   setShowDropdown(false);
-                                  setShowMobileSearch(false); // Закрываем поле поиска на мобильном после выбора
                                 }}
                               >
                                 {category.name}
@@ -314,7 +358,6 @@ export default function Header({ settings }: { settings: HeaderSettings }) {
                                 onClick={() => {
                                   setSearchQuery(product.name);
                                   handleProductClick(product.id);
-                                  setShowMobileSearch(false); // Закрываем поле поиска на мобильном после выбора
                                 }}
                               >
                                 {product.name}

@@ -114,7 +114,7 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
   const thumbnailImages = allImages.filter((_, index) => index !== currentImageIndex);
 
   return typeof document !== 'undefined' ? createPortal(
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-0 md:p-4">
+    <div className={`fixed inset-0 ${document.querySelector('.mobile-search-open') ? 'z-[100006]' : 'z-[100]'} flex items-center justify-center p-0 md:p-4`}>
       {/* Overlay - создает эффект затемнения фона */}
       <div
         className="fixed inset-0"
@@ -129,7 +129,7 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
       {/* Модальное окно */}
       <div
         ref={modalRef}
-        className={`relative z-[100] w-full bg-white flex flex-col h-full max-h-screen md:max-h-[calc(100vh-2rem)] transition-opacity duration-150 ${
+        className={`relative ${document.querySelector('.mobile-search-open') ? 'z-[100007]' : 'z-[100]'} w-full bg-white flex flex-col h-full max-h-screen md:max-h-[calc(100vh-2rem)] transition-opacity duration-150 ${
           isClosing ? 'animate-modal-scale-out' : (isOpen ? 'opacity-100 animate-modal-scale-fast' : 'opacity-0')
         } md:max-w-6xl md:rounded-lg md:shadow-2xl`}
       >
@@ -146,7 +146,7 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
                   setEnlargedImageOpen(false);
                 }
               }}
-              className="fixed top-2 right-2 z-[101] flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white border border-gray-300 hover:bg-gray-100 transition-all shadow-md md:absolute md:top-2 md:right-2"
+              className={`fixed top-2 right-2 ${document.querySelector('.mobile-search-open') ? 'z-[100008]' : 'z-[101]'} flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-white border border-gray-300 hover:bg-gray-100 transition-all shadow-md md:absolute md:top-2 md:right-2`}
               aria-label="Закрыть"
             >
               <svg
@@ -195,7 +195,7 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
                       onClick={(e) => { e.stopPropagation(); setCurrentImageIndex((prevIndex) =>
                         prevIndex === 0 ? allImages.length - 1 : prevIndex - 1
                       );}}
-                      className="absolute left-2 top-1/2 transform -translate-y-1/2 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-white/70 hover:bg-white/90 transition-all shadow-md"
+                      className={`absolute left-2 top-1/2 transform -translate-y-1/2 ${document.querySelector('.mobile-search-open') ? 'z-[100011]' : 'z-10'} flex items-center justify-center w-10 h-10 rounded-full bg-white/70 hover:bg-white/90 transition-all shadow-md`}
                       aria-label="Предыдущее изображение"
                     >
                       <svg
@@ -216,7 +216,7 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
                       onClick={(e) => { e.stopPropagation(); setCurrentImageIndex((prevIndex) =>
                         prevIndex === allImages.length - 1 ? 0 : prevIndex + 1
                       );}}
-                      className="absolute right-2 top-1/2 transform -translate-y-1/2 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-white/70 hover:bg-white/90 transition-all shadow-md"
+                      className={`absolute right-2 top-1/2 transform -translate-y-1/2 ${document.querySelector('.mobile-search-open') ? 'z-[100011]' : 'z-10'} flex items-center justify-center w-10 h-10 rounded-full bg-white/70 hover:bg-white/90 transition-all shadow-md`}
                       aria-label="Следующее изображение"
                     >
                       <svg
@@ -300,7 +300,7 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
       {typeof document !== 'undefined' && enlargedImageOpen && currentImage &&
         createPortal(
           <div
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/90"
+            className={`fixed inset-0 ${document.querySelector('.mobile-search-open') ? 'z-[100009]' : 'z-[100]'} flex items-center justify-center p-4 bg-black/90`}
             onClick={() => handleCloseEnlargedImage()}
           >
             <div
@@ -312,7 +312,7 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
               {/* Кнопка закрытия увеличенного изображения */}
               <button
                 onClick={(e) => { e.stopPropagation(); handleCloseEnlargedImage(); }}
-                className="absolute top-2 right-2 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-white/70 hover:bg-white/90 transition-all shadow-md"
+                className={`absolute top-2 right-2 ${document.querySelector('.mobile-search-open') ? 'z-[100010]' : 'z-10'} flex items-center justify-center w-10 h-10 rounded-full bg-white/70 hover:bg-white/90 transition-all shadow-md`}
                 aria-label="Закрыть"
               >
                 <svg
@@ -341,7 +341,7 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
                   onClick={(e) => { e.stopPropagation(); setCurrentImageIndex((prevIndex) =>
                     prevIndex === 0 ? allImages.length - 1 : prevIndex - 1
                   );}}
-                  className="absolute left-2 top-1/2 transform -translate-y-1/2 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-white/70 hover:bg-white/90 transition-all shadow-md"
+                  className={`absolute left-2 top-1/2 transform -translate-y-1/2 ${document.querySelector('.mobile-search-open') ? 'z-[100011]' : 'z-10'} flex items-center justify-center w-10 h-10 rounded-full bg-white/70 hover:bg-white/90 transition-all shadow-md`}
                   aria-label="Предыдущее изображение"
                 >
                   <svg
@@ -362,7 +362,7 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
                   onClick={(e) => { e.stopPropagation(); setCurrentImageIndex((prevIndex) =>
                     prevIndex === allImages.length - 1 ? 0 : prevIndex + 1
                   );}}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 z-10 flex items-center justify-center w-10 h-10 rounded-full bg-white/70 hover:bg-white/90 transition-all shadow-md"
+                  className={`absolute right-2 top-1/2 transform -translate-y-1/2 ${document.querySelector('.mobile-search-open') ? 'z-[100011]' : 'z-10'} flex items-center justify-center w-10 h-10 rounded-full bg-white/70 hover:bg-white/90 transition-all shadow-md`}
                   aria-label="Следующее изображение"
                 >
                   <svg
