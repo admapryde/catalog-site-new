@@ -121,3 +121,6 @@ Thumbs.db
 *.sh
 filters-fix-summary.js
 test-filters-fix.js
+
+# Ignore docs directory
+docs/
