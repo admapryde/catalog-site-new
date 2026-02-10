@@ -1,6 +1,25 @@
 import { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { createAPIClient } from '@/lib/supabase-server';
 import { revalidateTag } from 'next/cache';
+import { getAdminSessionFromRequest } from '@/services/admin-auth-service';
+
+// Create a service role client for admin operations
+function createServiceRoleClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
+    throw new Error('Отсутствуют переменные окружения для Supabase SERVICE ROLE');
+  }
+
+  return createClient(supabaseUrl, supabaseServiceRoleKey, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    }
+  });
+}
 
 export interface FooterSettings {
   footer_catalog_title: string;
@@ -135,4 +154,314 @@ export async function POST(request: NextRequest) {
   revalidateTag('footer_settings', 'max');
 
   return Response.json({ success: true });
+}
+
+export async function PUT(request: NextRequest) {
+  // Проверяем, что пользователь аутентифицирован как администратор
+  const adminUser = await getAdminSessionFromRequest(request);
+  if (!adminUser) {
+    return Response.json({ error: 'Требуется аутентификация администратора' }, { status: 401 });
+  }
+
+  try {
+    const {
+      footer_catalog_title,
+      footer_catalog_desc,
+      footer_contacts_title,
+      footer_quick_links_title,
+      contacts,
+      quick_links
+    } = await request.json();
+
+    // Try using service role client for admin operations to bypass RLS if needed
+    // First, try with the regular client using the request object
+    const supabase = await createAPIClient(request);
+
+    // Обновляем общие настройки
+    // Сначала удаляем старые общие настройки
+    const { error: deleteGeneralError } = await supabase
+      .from('footer_settings')
+      .delete()
+      .eq('setting_type', 'general');
+
+    if (deleteGeneralError) {
+      console.error('Ошибка удаления старых общих настроек футера:', deleteGeneralError.message || deleteGeneralError);
+
+      // Если это ошибка доступа, пробуем использовать service role клиента
+      if (deleteGeneralError.code === '42501' || deleteGeneralError.message?.includes('permission denied')) {
+        console.warn('Обнаружена ошибка доступа, используем service role клиента для общих настроек футера');
+
+        try {
+          const serviceRoleClient = createServiceRoleClient();
+
+          const { error: deleteGeneralErrorSR } = await serviceRoleClient
+            .from('footer_settings')
+            .delete()
+            .eq('setting_type', 'general');
+
+          if (deleteGeneralErrorSR) {
+            console.error('Ошибка удаления общих настроек футера через service role:', deleteGeneralErrorSR.message || deleteGeneralErrorSR);
+            return Response.json({
+              error: 'Ошибка обновления настроек'
+            }, { status: 500 });
+          }
+        } catch (serviceRoleError) {
+          console.error('Ошибка при создании service role клиента:', serviceRoleError);
+          return Response.json({
+            error: 'Ошибка обновления настроек'
+          }, { status: 500 });
+        }
+      } else {
+        return Response.json({
+          error: 'Ошибка обновления настроек'
+        }, { status: 500 });
+      }
+    }
+
+    // Добавляем новые общие настройки
+    const generalSettings = [
+      { setting_key: 'footer_catalog_title', setting_value: footer_catalog_title, setting_type: 'general' },
+      { setting_key: 'footer_catalog_desc', setting_value: footer_catalog_desc, setting_type: 'general' },
+      { setting_key: 'footer_contacts_title', setting_value: footer_contacts_title, setting_type: 'general' },
+      { setting_key: 'footer_quick_links_title', setting_value: footer_quick_links_title, setting_type: 'general' }
+    ];
+
+    const { error: insertGeneralError } = await supabase
+      .from('footer_settings')
+      .insert(generalSettings);
+
+    if (insertGeneralError) {
+      console.error('Ошибка добавления общих настроек футера:', insertGeneralError.message || insertGeneralError);
+
+      // Если это ошибка доступа, пробуем использовать service role клиента
+      if (insertGeneralError.code === '42501' || insertGeneralError.message?.includes('permission denied')) {
+        console.warn('Обнаружена ошибка доступа, используем service role клиента для общих настроек футера');
+
+        try {
+          const serviceRoleClient = createServiceRoleClient();
+
+          const { error: insertGeneralErrorSR } = await serviceRoleClient
+            .from('footer_settings')
+            .insert(generalSettings);
+
+          if (insertGeneralErrorSR) {
+            console.error('Ошибка добавления общих настроек футера через service role:', insertGeneralErrorSR.message || insertGeneralErrorSR);
+            return Response.json({
+              error: 'Ошибка обновления настроек'
+            }, { status: 500 });
+          }
+        } catch (serviceRoleError) {
+          console.error('Ошибка при создании service role клиента:', serviceRoleError);
+          return Response.json({
+            error: 'Ошибка обновления настроек'
+          }, { status: 500 });
+        }
+      } else {
+        return Response.json({
+          error: 'Ошибка обновления настроек'
+        }, { status: 500 });
+      }
+    }
+
+    // Обрабатываем контактные данные
+    // Сначала удаляем старые контактные данные
+    const { error: deleteContactsError } = await supabase
+      .from('footer_settings')
+      .delete()
+      .eq('setting_type', 'contact');
+
+    if (deleteContactsError) {
+      console.error('Ошибка удаления старых контактных данных:', deleteContactsError.message || deleteContactsError);
+
+      // Если это ошибка доступа, пробуем использовать service role клиента
+      if (deleteContactsError.code === '42501' || deleteContactsError.message?.includes('permission denied')) {
+        console.warn('Обнаружена ошибка доступа, используем service role клиента для контактных данных футера');
+
+        try {
+          const serviceRoleClient = createServiceRoleClient();
+
+          const { error: deleteContactsErrorSR } = await serviceRoleClient
+            .from('footer_settings')
+            .delete()
+            .eq('setting_type', 'contact');
+
+          if (deleteContactsErrorSR) {
+            console.error('Ошибка удаления контактных данных через service role:', deleteContactsErrorSR.message || deleteContactsErrorSR);
+            return Response.json({
+              error: 'Ошибка обновления настроек'
+            }, { status: 500 });
+          }
+        } catch (serviceRoleError) {
+          console.error('Ошибка при создании service role клиента:', serviceRoleError);
+          return Response.json({
+            error: 'Ошибка обновления настроек'
+          }, { status: 500 });
+        }
+      } else {
+        return Response.json({
+          error: 'Ошибка обновления настроек'
+        }, { status: 500 });
+      }
+    }
+
+    // Добавляем новые контактные данные
+    for (let i = 0; i < contacts.length; i++) {
+      const contact = contacts[i];
+      if (contact.value && contact.value.trim() !== '') {
+        const { error: insertContactError } = await supabase
+          .from('footer_settings')
+          .insert({
+            setting_key: `contact_${i}`,
+            setting_value: contact.value,
+            setting_type: 'contact',
+            position: i
+          });
+
+        if (insertContactError) {
+          console.error('Ошибка добавления контактной информации:', insertContactError.message || insertContactError);
+
+          // Если это ошибка доступа, пробуем использовать service role клиента
+          if (insertContactError.code === '42501' || insertContactError.message?.includes('permission denied')) {
+            console.warn('Обнаружена ошибка доступа, используем service role клиента для контактных данных футера');
+
+            try {
+              const serviceRoleClient = createServiceRoleClient();
+
+              const { error: insertContactErrorSR } = await serviceRoleClient
+                .from('footer_settings')
+                .insert({
+                  setting_key: `contact_${i}`,
+                  setting_value: contact.value,
+                  setting_type: 'contact',
+                  position: i
+                });
+
+              if (insertContactErrorSR) {
+                console.error('Ошибка добавления контактной информации через service role:', insertContactErrorSR.message || insertContactErrorSR);
+                return Response.json({
+                  error: 'Ошибка обновления настроек'
+                }, { status: 500 });
+              }
+            } catch (serviceRoleError) {
+              console.error('Ошибка при создании service role клиента:', serviceRoleError);
+              return Response.json({
+                error: 'Ошибка обновления настроек'
+              }, { status: 500 });
+            }
+          } else {
+            return Response.json({
+              error: 'Ошибка обновления настроек'
+            }, { status: 500 });
+          }
+        }
+      }
+    }
+
+    // Обрабатываем быстрые ссылки
+    // Сначала удаляем старые быстрые ссылки
+    const { error: deleteLinksError } = await supabase
+      .from('footer_settings')
+      .delete()
+      .eq('setting_type', 'quick_link');
+
+    if (deleteLinksError) {
+      console.error('Ошибка удаления старых быстрых ссылок:', deleteLinksError.message || deleteLinksError);
+
+      // Если это ошибка доступа, пробуем использовать service role клиента
+      if (deleteLinksError.code === '42501' || deleteLinksError.message?.includes('permission denied')) {
+        console.warn('Обнаружена ошибка доступа, используем service role клиента для быстрых ссылок футера');
+
+        try {
+          const serviceRoleClient = createServiceRoleClient();
+
+          const { error: deleteLinksErrorSR } = await serviceRoleClient
+            .from('footer_settings')
+            .delete()
+            .eq('setting_type', 'quick_link');
+
+          if (deleteLinksErrorSR) {
+            console.error('Ошибка удаления быстрых ссылок через service role:', deleteLinksErrorSR.message || deleteLinksErrorSR);
+            return Response.json({
+              error: 'Ошибка обновления настроек'
+            }, { status: 500 });
+          }
+        } catch (serviceRoleError) {
+          console.error('Ошибка при создании service role клиента:', serviceRoleError);
+          return Response.json({
+            error: 'Ошибка обновления настроек'
+          }, { status: 500 });
+        }
+      } else {
+        return Response.json({
+          error: 'Ошибка обновления настроек'
+        }, { status: 500 });
+      }
+    }
+
+    // Добавляем новые быстрые ссылки
+    for (let i = 0; i < quick_links.length; i++) {
+      const link = quick_links[i];
+
+      if (link.label && link.label.trim() !== '' && link.url && link.url.trim() !== '') {
+        const linkData = JSON.stringify({ label: link.label, url: link.url });
+
+        const { error: insertLinkError } = await supabase
+          .from('footer_settings')
+          .insert({
+            setting_key: `quick_link_${i}`,
+            setting_value: linkData,
+            setting_type: 'quick_link',
+            position: i
+          });
+
+        if (insertLinkError) {
+          console.error('Ошибка добавления быстрой ссылки:', insertLinkError.message || insertLinkError);
+
+          // Если это ошибка доступа, пробуем использовать service role клиента
+          if (insertLinkError.code === '42501' || insertLinkError.message?.includes('permission denied')) {
+            console.warn('Обнаружена ошибка доступа, используем service role клиента для быстрых ссылок футера');
+
+            try {
+              const serviceRoleClient = createServiceRoleClient();
+
+              const { error: insertLinkErrorSR } = await serviceRoleClient
+                .from('footer_settings')
+                .insert({
+                  setting_key: `quick_link_${i}`,
+                  setting_value: linkData,
+                  setting_type: 'quick_link',
+                  position: i
+                });
+
+              if (insertLinkErrorSR) {
+                console.error('Ошибка добавления быстрой ссылки через service role:', insertLinkErrorSR.message || insertLinkErrorSR);
+                return Response.json({
+                  error: 'Ошибка обновления настроек'
+                }, { status: 500 });
+              }
+            } catch (serviceRoleError) {
+              console.error('Ошибка при создании service role клиента:', serviceRoleError);
+              return Response.json({
+                error: 'Ошибка обновления настроек'
+              }, { status: 500 });
+            }
+          } else {
+            return Response.json({
+              error: 'Ошибка обновления настроек'
+            }, { status: 500 });
+          }
+        }
+      }
+    }
+
+    // Инвалидируем кэш для настроек футера
+    revalidateTag('footer_settings', 'max');
+
+    return Response.json({ success: true });
+  } catch (error: any) {
+    console.error('Ошибка обновления настроек футера:', error);
+    return Response.json({
+      error: error.message || 'Ошибка обновления настроек'
+    }, { status: 500 });
+  }
 }

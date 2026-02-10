@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase-server';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import FooterSettingsForm from '@/components/admin/FooterSettingsForm';
 import ClientOnlyAdminPageWrapper from '@/components/admin/ClientOnlyAdminPageWrapper';
+import { cookies } from 'next/headers';
 
 interface FooterSettings {
   footer_catalog_title: string;
@@ -123,140 +124,84 @@ async function updateFooterSettings(formData: FormData) {
   await requireAdminSession();
 
   try {
-    const supabase = await createClient();
-
-    // Обновляем общие настройки
+    // Подготовим данные для отправки
     const footer_catalog_title = formData.get('footer_catalog_title') as string;
     const footer_catalog_desc = formData.get('footer_catalog_desc') as string;
     const footer_contacts_title = formData.get('footer_contacts_title') as string;
     const footer_quick_links_title = formData.get('footer_quick_links_title') as string;
 
-    // Сначала удаляем старые общие настройки
-    const { error: deleteGeneralError } = await supabase
-      .from('footer_settings')
-      .delete()
-      .eq('setting_type', 'general');
-
-    if (deleteGeneralError) {
-      console.error('Ошибка удаления старых общих настроек футера:', deleteGeneralError.message || deleteGeneralError);
-      throw deleteGeneralError;
-    }
-
-    // Добавляем новые общие настройки
-    const generalSettings = [
-      { setting_key: 'footer_catalog_title', setting_value: footer_catalog_title, setting_type: 'general' },
-      { setting_key: 'footer_catalog_desc', setting_value: footer_catalog_desc, setting_type: 'general' },
-      { setting_key: 'footer_contacts_title', setting_value: footer_contacts_title, setting_type: 'general' },
-      { setting_key: 'footer_quick_links_title', setting_value: footer_quick_links_title, setting_type: 'general' }
-    ];
-
-    const { error: insertGeneralError } = await supabase
-      .from('footer_settings')
-      .insert(generalSettings);
-
-    if (insertGeneralError) {
-      console.error('Ошибка добавления общих настроек футера:', insertGeneralError.message || insertGeneralError);
-      throw insertGeneralError;
-    }
-
-    // Обрабатываем контактные данные
-    // Сначала удаляем старые контактные данные
-    const { error: deleteContactsError } = await supabase
-      .from('footer_settings')
-      .delete()
-      .eq('setting_type', 'contact');
-
-    if (deleteContactsError) {
-      console.error('Ошибка удаления старых контактных данных:', deleteContactsError.message || deleteContactsError);
-      throw deleteContactsError;
-    }
-
-    // Добавляем новые контактные данные
+    // Подготовим контактные данные
+    const contacts = [];
     for (let i = 0; i < 8; i++) {
       const contactValue = formData.get(`contact_${i}`) as string;
       if (contactValue && contactValue.trim() !== '') {
-        const { error: insertContactError } = await supabase
-          .from('footer_settings')
-          .insert({
-            setting_key: `contact_${i}`,
-            setting_value: contactValue,
-            setting_type: 'contact',
-            position: i
-          });
-
-        if (insertContactError) {
-          console.error('Ошибка добавления контактной информации:', insertContactError.message || insertContactError);
-          throw insertContactError;
-        }
+        contacts.push({ id: `contact_${i}`, value: contactValue });
       }
     }
 
-    // Обрабатываем быстрые ссылки
-    // Сначала удаляем старые быстрые ссылки
-    const { error: deleteLinksError } = await supabase
-      .from('footer_settings')
-      .delete()
-      .eq('setting_type', 'quick_link');
-
-    if (deleteLinksError) {
-      console.error('Ошибка удаления старых быстрых ссылок:', deleteLinksError.message || deleteLinksError);
-      throw deleteLinksError;
-    }
-
-    // Добавляем новые быстрые ссылки
+    // Подготовим быстрые ссылки
+    const quick_links = [];
     for (let i = 0; i < 8; i++) {
       const linkLabel = formData.get(`quick_link_label_${i}`) as string;
       const linkUrl = formData.get(`quick_link_url_${i}`) as string;
 
       if (linkLabel && linkLabel.trim() !== '' && linkUrl && linkUrl.trim() !== '') {
-        const linkData = JSON.stringify({ label: linkLabel, url: linkUrl });
-
-        const { error: insertLinkError } = await supabase
-          .from('footer_settings')
-          .insert({
-            setting_key: `quick_link_${i}`,
-            setting_value: linkData,
-            setting_type: 'quick_link',
-            position: i
-          });
-
-        if (insertLinkError) {
-          console.error('Ошибка добавления быстрой ссылки:', insertLinkError.message || insertLinkError);
-          throw insertLinkError;
-        }
+        quick_links.push({ id: `quick_link_${i}`, label: linkLabel, url: linkUrl });
       }
+    }
+
+    // Получаем куки для передачи аутентификационных данных
+    const cookieStore = await cookies();
+
+    // Получаем все Supabase куки
+    const supabaseCookies = [];
+    const allCookies = cookieStore.getAll();
+    for (const cookie of allCookies) {
+      if (cookie.name.startsWith('sb-')) {
+        supabaseCookies.push(`${cookie.name}=${cookie.value}`);
+      }
+    }
+
+    const cookieHeader = supabaseCookies.join('; ');
+
+    // Отправляем PUT-запрос к API маршруту для обновления настроек
+    const headersList = await headers();
+    const referer = headersList.get('referer');
+    let baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+
+    if (referer) {
+      try {
+        const refererUrl = new URL(referer);
+        baseUrl = `${refererUrl.protocol}//${refererUrl.host}`;
+      } catch (e) {
+        console.warn('Could not parse referer URL, using default base URL');
+      }
+    }
+
+    const response = await fetch(`${baseUrl}/api/footer-settings`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': cookieHeader, // Передаем аутентификационные куки
+      },
+      body: JSON.stringify({
+        footer_catalog_title,
+        footer_catalog_desc,
+        footer_contacts_title,
+        footer_quick_links_title,
+        contacts,
+        quick_links
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Ошибка обновления настроек футера:', errorData);
+      throw new Error(errorData.error || 'Ошибка обновления настроек');
     }
 
     // Инвалидируем кэш для настроек футера
     revalidateTag('footer_settings', 'max');
-
-    // Вызываем POST-запрос к API для дополнительной инвалидации кэша
-    try {
-      // Получаем текущий URL из заголовков
-      const headersList = await headers();
-      const referer = headersList.get('referer');
-      let baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-
-      if (referer) {
-        try {
-          const refererUrl = new URL(referer);
-          baseUrl = `${refererUrl.protocol}//${refererUrl.host}`;
-        } catch (e) {
-          console.warn('Could not parse referer URL, using default base URL');
-        }
-      }
-
-      await fetch(`${baseUrl}/api/footer-settings`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-    } catch (apiError) {
-      console.error('Ошибка при инвалидации кэша через API:', apiError);
-    }
-
-    console.log('Настройки футера успешно обновлены');
   } catch (error) {
     console.error('Ошибка обновления настроек футера:', error);
     // Не выбрасываем ошибку дальше, чтобы форма не ломалась
@@ -272,11 +217,10 @@ export default async function FooterSettingsPage() {
 
   return (
     <ClientOnlyAdminPageWrapper>
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">Подвал</h1>
+      <h1 className="text-3xl font-bold text-gray-800 mb-8">Настройки подвала</h1>
 
-      <div className="bg-white rounded-lg shadow-md p-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-6">Настройки футера</h2>
-
+      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Основные параметры</h2>
         <FooterSettingsForm initialSettings={settings} updateAction={updateFooterSettings} />
       </div>
     </ClientOnlyAdminPageWrapper>

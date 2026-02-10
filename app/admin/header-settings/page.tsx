@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase-server';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import HeaderSettingsForm from '@/components/admin/HeaderSettingsForm';
 import ClientOnlyAdminPageWrapper from '@/components/admin/ClientOnlyAdminPageWrapper';
-import { headers } from 'next/headers';
+import { headers, cookies } from 'next/headers';
 
 interface HeaderSettings {
   header_title: string;
@@ -80,8 +80,6 @@ async function updateHeaderSettings(formData: FormData) {
   await requireAdminSession();
 
   try {
-    const supabase = await createClient();
-
     const header_title = formData.get('header_title') as string;
     const nav_home = formData.get('nav_home') as string;
     const nav_catalog = formData.get('nav_catalog') as string;
@@ -90,56 +88,59 @@ async function updateHeaderSettings(formData: FormData) {
     const contact = formData.get('contact') as string;
     const logo_image_url = formData.get('logo_image_url') as string;
 
-    // Обновляем или создаем настройки в базе данных
-    const settings = [
-      { setting_key: 'header_title', setting_value: header_title },
-      { setting_key: 'nav_home', setting_value: nav_home },
-      { setting_key: 'nav_catalog', setting_value: nav_catalog },
-      { setting_key: 'nav_about', setting_value: nav_about },
-      { setting_key: 'nav_contacts', setting_value: nav_contacts },
-      { setting_key: 'contact', setting_value: contact },
-      { setting_key: 'logo_image_url', setting_value: logo_image_url }
-    ];
+    // Получаем куки для передачи аутентификационных данных
+    const cookieStore = await cookies();
 
-    for (const setting of settings) {
-      const { error } = await supabase
-        .from('site_settings')
-        .upsert(setting, { onConflict: 'setting_key' });
-
-      if (error) {
-        console.error('Ошибка обновления настройки:', error.message || error);
-        throw error;
+    // Получаем все Supabase куки
+    const supabaseCookies = [];
+    const allCookies = cookieStore.getAll();
+    for (const cookie of allCookies) {
+      if (cookie.name.startsWith('sb-')) {
+        supabaseCookies.push(`${cookie.name}=${cookie.value}`);
       }
+    }
+
+    const cookieHeader = supabaseCookies.join('; ');
+
+    // Отправляем PUT-запрос к API маршруту для обновления настроек
+    const headersList = await headers();
+    const referer = headersList.get('referer');
+    let baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+
+    if (referer) {
+      try {
+        const refererUrl = new URL(referer);
+        baseUrl = `${refererUrl.protocol}//${refererUrl.host}`;
+      } catch (e) {
+        console.warn('Could not parse referer URL, using default base URL');
+      }
+    }
+
+    const response = await fetch(`${baseUrl}/api/header-settings`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Cookie': cookieHeader, // Передаем аутентификационные куки
+      },
+      body: JSON.stringify({
+        header_title,
+        nav_home,
+        nav_catalog,
+        nav_about,
+        nav_contacts,
+        contact,
+        logo_image_url
+      }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Ошибка обновления настроек шапки:', errorData);
+      throw new Error(errorData.error || 'Ошибка обновления настроек');
     }
 
     // Инвалидируем кэш для настроек шапки сайта
     revalidateTag('header_settings', 'max');
-
-    // Вызываем POST-запрос к API для дополнительной инвалидации кэша
-    try {
-      // Получаем текущий URL из заголовков
-      const headersList = await headers();
-      const referer = headersList.get('referer');
-      let baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-
-      if (referer) {
-        try {
-          const refererUrl = new URL(referer);
-          baseUrl = `${refererUrl.protocol}//${refererUrl.host}`;
-        } catch (e) {
-          console.warn('Could not parse referer URL, using default base URL');
-        }
-      }
-
-      await fetch(`${baseUrl}/api/header-settings`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-    } catch (apiError) {
-      console.error('Ошибка при инвалидации кэша через API:', apiError);
-    }
   } catch (error) {
     console.error('Ошибка обновления настроек шапки:', error);
     // Не выбрасываем ошибку дальше, чтобы форма не ломалась
@@ -155,9 +156,12 @@ export default async function HeaderSettingsPage() {
 
   return (
     <ClientOnlyAdminPageWrapper>
-      <h1 className="text-3xl font-bold text-gray-800 mb-8">Шапка сайта</h1>
+      <h1 className="text-3xl font-bold text-gray-800 mb-8">Настройки шапки сайта</h1>
 
-      <HeaderSettingsForm initialSettings={settings} updateAction={updateHeaderSettings} />
+      <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Основные параметры</h2>
+        <HeaderSettingsForm initialSettings={settings} updateAction={updateHeaderSettings} />
+      </div>
     </ClientOnlyAdminPageWrapper>
   );
 }
