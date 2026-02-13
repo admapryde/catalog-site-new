@@ -25,6 +25,7 @@ export default function BannerManager() {
 
   const { showNotification, renderNotification } = useNotification();
 
+
   // Получение данных из API
   useEffect(() => {
     const fetchData = async () => {
@@ -669,12 +670,14 @@ export default function BannerManager() {
               />
             </div>
             <div className="flex items-center justify-between">
-              <button
-                type="submit"
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-              >
-                {editingBannerId ? 'Обновить' : 'Создать'}
-              </button>
+              <div className="space-x-2">
+                <button
+                  type="submit"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                >
+                  {editingBannerId ? 'Обновить' : 'Создать'}
+                </button>
+              </div>
               {editingBannerId && (
                 <button
                   type="button"
@@ -801,6 +804,7 @@ export default function BannerManager() {
           })}
         </div>
       )}
+      
     </div>
   );
 }

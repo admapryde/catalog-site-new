@@ -27,6 +27,7 @@ export default function HomepageSectionsManager() {
   const [hasSectionChanges, setHasSectionChanges] = useState(false); // Состояние для отслеживания изменений разделов
   const [hasItemChanges, setHasItemChanges] = useState(false); // Состояние для отслеживания изменений элементов
 
+
   // Получение данных из API
   useEffect(() => {
     const fetchData = async () => {
@@ -617,12 +618,14 @@ export default function HomepageSectionsManager() {
               <p className="text-sm text-gray-500 mt-1">Оставьте пустым для обычного раздела, используйте 'categories_grid' для заголовка сетки категорий</p>
             </div>
             <div className="flex items-center justify-between">
-              <button
-                type="submit"
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-              >
-                {editingSectionId ? 'Обновить' : 'Создать'}
-              </button>
+              <div className="space-x-2">
+                <button
+                  type="submit"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                >
+                  {editingSectionId ? 'Обновить' : 'Создать'}
+                </button>
+              </div>
               {editingSectionId && (
                 <button
                   type="button"
@@ -952,6 +955,7 @@ export default function HomepageSectionsManager() {
           })}
         </div>
       )}
+      
     </div>
   );
 }

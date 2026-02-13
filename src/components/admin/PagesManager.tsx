@@ -27,9 +27,10 @@ export default function PagesManager() {
   const [linkUrl, setLinkUrl] = useState('');
   const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [hasUnsavedBlockChanges, setHasUnsavedBlockChanges] = useState(false); // Состояние для отслеживания изменений порядка блоков
+  const [hasUnsavedBlockChanges, setHasUnsavedBlockChanges] = useState(false); // Состояние для отслеживания изменений порядок блоков
 
   const { showNotification, renderNotification } = useNotification();
+
 
   // Загрузка данных
   useEffect(() => {
@@ -926,12 +927,14 @@ export default function PagesManager() {
               />
             </div>
             <div className="flex items-center justify-between">
-              <button
-                type="submit"
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-              >
-                {editingPageId ? 'Обновить' : 'Создать'}
-              </button>
+              <div className="space-x-2">
+                <button
+                  type="submit"
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                >
+                  {editingPageId ? 'Обновить' : 'Создать'}
+                </button>
+              </div>
               {editingPageId && (
                 <button
                   type="button"
@@ -1161,12 +1164,14 @@ export default function PagesManager() {
                 )}
 
                 <div className="flex items-center justify-between">
-                  <button
-                    type="submit"
-                    className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-                  >
-                    {editingBlockId ? 'Обновить' : 'Создать'}
-                  </button>
+                  <div className="space-x-2">
+                    <button
+                      type="submit"
+                      className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                    >
+                      {editingBlockId ? 'Обновить' : 'Создать'}
+                    </button>
+                  </div>
                   {editingBlockId && (
                     <button
                       type="button"
@@ -1438,6 +1443,8 @@ export default function PagesManager() {
           )}
         </div>
       )}
+      
     </div>
   );
 }
+

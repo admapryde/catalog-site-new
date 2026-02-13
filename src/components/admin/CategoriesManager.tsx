@@ -17,6 +17,7 @@ export default function CategoriesManager() {
 
   const { showNotification, renderNotification } = useNotification();
 
+
   // Получение категорий из API
   useEffect(() => {
     const fetchCategories = async () => {
@@ -258,12 +259,14 @@ export default function CategoriesManager() {
           />
         </div>
         <div className="flex items-center justify-between">
-          <button
-            type="submit"
-            className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
-          >
-            {editingId ? 'Обновить' : 'Создать'}
-          </button>
+          <div className="space-x-2">
+            <button
+              type="submit"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+            >
+              {editingId ? 'Обновить' : 'Создать'}
+            </button>
+          </div>
           {editingId && (
             <button
               type="button"
@@ -497,6 +500,7 @@ export default function CategoriesManager() {
           </table>
         </div>
       </div>
+      
     </div>
   );
 }
