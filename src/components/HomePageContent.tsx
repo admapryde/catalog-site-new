@@ -19,7 +19,7 @@ const CategoriesGrid = dynamic(() => import('@/components/CategoriesGrid'), {
 });
 
 const BannerSlider = dynamic(() => import('@/components/BannerSlider'), {
-  ssr: false,
+  ssr: true,
   loading: () => (
     <div className="py-4 animate-pulse">
       <div className="h-64 bg-gray-200 rounded w-full"></div>

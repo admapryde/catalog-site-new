@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export interface AuditLogEntry {
   id: number;
@@ -27,11 +27,11 @@ const AuditHistoryDashboard = () => {
   const fetchAuditLogs = async () => {
     setLoading(true);
     setError(null);
-    
+
     try {
       const response = await fetch('/api/admin/audit-history?limit=10');
       const result = await response.json();
-      
+
       if (result.success) {
         setLogs(result.data || []);
       } else {
@@ -93,7 +93,7 @@ const AuditHistoryDashboard = () => {
         <div className="overflow-y-auto flex-grow min-h-0">
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50 sticky top-0 z-10">
+              <thead className="bg-gray-50 sticky top-0 z-10 hidden md:table-header-group">
                 <tr>
                   <th scope="col" className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[120px]">
                     Время
@@ -109,25 +109,64 @@ const AuditHistoryDashboard = () => {
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-gray-200 md:table-row-group">
                 {logs.length > 0 ? (
                   logs.map((log) => (
-                    <tr key={log.id}>
-                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500">
-                        {formatDate(log.created_at)}
-                      </td>
-                      <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 max-w-xs truncate" title={log.user_name}>
-                        {log.user_name}
-                      </td>
-                      <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate" title={`${log.object_type} ${log.object_id ? `(#${log.object_id})` : ''}`}>
-                        {log.object_type} {log.object_id ? `(#${log.object_id})` : ''}
-                      </td>
-                      <td className="px-3 py-2 whitespace-nowrap">
-                        <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getActionColor(log.action)}`}>
-                          {log.action}
-                        </span>
-                      </td>
-                    </tr>
+                    <React.Fragment key={log.id}>
+                      <tr className="md:table-row">
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 md:table-cell">
+                          {formatDate(log.created_at)}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm font-medium text-gray-900 max-w-xs truncate md:table-cell" title={log.user_name}>
+                          {log.user_name}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-500 max-w-xs truncate md:table-cell" title={`${log.object_type} ${log.object_id ? `(#${log.object_id})` : ''}`}>
+                          {log.object_type} {log.object_id ? `(#${log.object_id})` : ''}
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap md:table-cell">
+                          <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getActionColor(log.action)}`}>
+                            {log.action}
+                          </span>
+                        </td>
+
+                        {/* Адаптивная версия для мобильных устройств */}
+                        <td className="px-3 py-2 sm:hidden table-cell">
+                          <div className="flex justify-end">
+                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getActionColor(log.action)}`}>
+                              {log.action}
+                            </span>
+                          </div>
+                        </td>
+                      </tr>
+
+                      {/* Адаптивная карточка для мобильных устройств */}
+                      <tr className="sm:table-row block md:hidden">
+                        <td colSpan={4} className="block p-3 border-b">
+                          <div className="space-y-1">
+                            <div className="flex justify-between">
+                              <span className="text-xs text-gray-500">Время</span>
+                              <span className="text-sm text-gray-500">{formatDate(log.created_at)}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-xs text-gray-500">Пользователь</span>
+                              <span className="text-sm font-medium text-gray-900 truncate max-w-[150px]" title={log.user_name}>{log.user_name}</span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-xs text-gray-500">Объект</span>
+                              <span className="text-sm text-gray-500 truncate max-w-[150px]" title={`${log.object_type} ${log.object_id ? `(#${log.object_id})` : ''}`}>
+                                {log.object_type} {log.object_id ? `(#${log.object_id})` : ''}
+                              </span>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-xs text-gray-500">Действие</span>
+                              <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getActionColor(log.action)}`}>
+                                {log.action}
+                              </span>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    </React.Fragment>
                   ))
                 ) : (
                   <tr>

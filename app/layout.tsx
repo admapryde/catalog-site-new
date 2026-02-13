@@ -69,6 +69,9 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/favicon.png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        {/* Preload critical fonts to reduce CLS */}
+        <link rel="preload" href="https://fonts.gstatic.com/s/jost/v15/92zQtBicdsYWYUlDBAYzT2ZL.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
+        <link rel="preload" href="https://fonts.gstatic.com/s/ptsans/v17/jizaRExUiTo99u79P0qNp9t4.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Jost:ital,wght@0,100..900;1,100..900&family=PT+Sans:ital,wght@0,400;0,700;1,400;1,700&display=swap" rel="stylesheet" />
       </head>
       <body className="antialiased">

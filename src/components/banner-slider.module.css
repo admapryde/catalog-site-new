@@ -32,12 +32,14 @@
   border-radius: 0.5rem; /* rounded-lg */
   width: 100%;
   aspect-ratio: 16/9; /* aspect-video */
+  min-height: 250px; /* Минимальная высота для предотвращения сдвига макета */
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Добавляем тень для лучшей видимости границ */
 }
 
 @media (min-width: 768px) {
   .bannerSliderGroup {
     aspect-ratio: 21/9; /* md:aspect-[21/9] */
+    min-height: 300px; /* Увеличиваем минимальную высоту для планшетов */
   }
 }
 
@@ -45,6 +47,7 @@
   .bannerSliderGroup {
     aspect-ratio: 16/6; /* lg:aspect-[16/6] */
     width: 100%; /* Занимаем всю ширину контейнера */
+    min-height: 400px; /* Увеличиваем минимальную высоту для десктопа */
   }
 }
 
@@ -63,11 +66,15 @@
   transition: opacity 500ms ease-in-out;
   border-radius: 0.5rem; /* Сохраняем скругление для соответствия родительскому контейнеру */
   overflow: hidden; /* Обеспечиваем, чтобы содержимое не выходило за границы */
+  will-change: opacity; /* Оптимизация для браузера */
+  backface-visibility: hidden; /* Предотвращение проблем с GPU */
+  perspective: 1000px; /* Для оптимизации GPU */
 }
 
 @media (min-width: 1024px) {
   .bannerSliderSlide {
     border-radius: 0.5rem; /* Сохраняем скругление для соответствия родительскому контейнеру */
+    backface-visibility: hidden; /* Предотвращение проблем с GPU */
   }
 }
 
@@ -75,6 +82,9 @@
   opacity: 1;
   pointer-events: auto;
   z-index: 10;
+  will-change: opacity; /* Оптимизация для браузера */
+  backface-visibility: hidden; /* Предотвращение проблем с GPU */
+  perspective: 1000px; /* Для оптимизации GPU */
 }
 
 .bannerSliderImageWrapper {
@@ -82,6 +92,7 @@
   width: 100%;
   height: 100%;
   padding: 0; /* Убираем все отступы */
+  min-height: 250px; /* Обеспечиваем минимальную высоту для предотвращения сдвига макета */
 }
 
 .bannerSliderImage {
@@ -89,6 +100,22 @@
   height: 100%;
   object-fit: cover;
   border-radius: 0; /* Убираем скругление для максимального заполнения */
+}
+
+.bannerSliderImageSkeleton {
+  z-index: 1;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 @media (min-width: 1024px) {

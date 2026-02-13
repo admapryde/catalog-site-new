@@ -3,6 +3,8 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   // Включаем экспериментальные возможности для улучшения производительности
   typedRoutes: true,
+  // Включаем Turbopack конфигурацию для Next.js 16
+  turbopack: {},
   images: {
     // Настройки для оптимизации изображений
     remotePatterns: [

@@ -101,22 +101,22 @@ export default async function AdminPage() {
     <AdminGuard userRole={userRole}>
       <ClientOnlyAdminPageWrapper username={adminInfo.username} role={adminInfo.role}>
         <h1 className="text-3xl font-bold text-gray-800 mb-6">Дашборд</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-medium text-gray-700 mb-2">Всего товаров</h3>
-            <p className="text-3xl font-bold text-blue-600">{stats.products}</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
+            <h3 className="text-base sm:text-lg font-medium text-gray-700 mb-2">Всего товаров</h3>
+            <p className="text-2xl sm:text-3xl font-bold text-blue-600">{stats.products}</p>
           </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-medium text-gray-700 mb-2">Всего разделов</h3>
-            <p className="text-3xl font-bold text-green-600">{stats.categories}</p>
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
+            <h3 className="text-base sm:text-lg font-medium text-gray-700 mb-2">Всего разделов</h3>
+            <p className="text-2xl sm:text-3xl font-bold text-green-600">{stats.categories}</p>
           </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-medium text-gray-700 mb-2">Групп баннеров</h3>
-            <p className="text-3xl font-bold text-purple-600">{stats.bannerGroups}</p>
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
+            <h3 className="text-base sm:text-lg font-medium text-gray-700 mb-2">Групп баннеров</h3>
+            <p className="text-2xl sm:text-3xl font-bold text-purple-600">{stats.bannerGroups}</p>
           </div>
-          <div className="bg-white p-6 rounded-lg shadow">
-            <h3 className="text-lg font-medium text-gray-700 mb-2">Разделов ГС</h3>
-            <p className="text-3xl font-bold text-orange-600">{stats.homepageSections}</p>
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow">
+            <h3 className="text-base sm:text-lg font-medium text-gray-700 mb-2">Разделов ГС</h3>
+            <p className="text-2xl sm:text-3xl font-bold text-orange-600">{stats.homepageSections}</p>
           </div>
         </div>
 

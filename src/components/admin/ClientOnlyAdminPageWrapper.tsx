@@ -40,7 +40,7 @@ export default function ClientOnlyAdminPageWrapper({ children, username, role }:
   return (
     <div className="flex">
       <AdminSidebar username={username} role={role} />
-      <main className="flex-1 p-8">
+      <main className="flex-1 p-4 md:p-8">
         <div className="max-w-6xl mx-auto">
           {children}
         </div>

@@ -150,8 +150,9 @@ export default function BannerSlider({
                           target.src = '/placeholder-banner.jpg';
                         }
                       }}
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
-                      loading="lazy"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 1200px"
+                      loading={index === 0 ? 'eager' : 'lazy'}
+                      fetchPriority={index === 0 ? 'high' : undefined}
                     />
                   </div>
                 </div>
@@ -173,8 +174,9 @@ export default function BannerSlider({
                           target.src = '/placeholder-banner.jpg';
                         }
                       }}
-                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 100vw"
-                      loading="lazy"
+                      sizes="(max-width: 768px) 100vw, (max-width: 1200px) 100vw, 1200px"
+                      loading={index === 0 ? 'eager' : 'lazy'}
+                      fetchPriority={index === 0 ? 'high' : undefined}
                     />
                   </div>
                 </div>

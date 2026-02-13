@@ -13,6 +13,7 @@ interface OptimizedImageProps {
   className?: string;
   sizes?: string;
   loading?: 'lazy' | 'eager';
+  fetchPriority?: 'high' | 'low' | 'auto';
   style?: React.CSSProperties;
   onError?: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
   placeholder?: 'blur' | 'empty';
@@ -66,6 +67,7 @@ export default function OptimizedImage({
   className = '',
   sizes,
   loading = 'lazy',
+  fetchPriority,
   style,
   onError,
   placeholder,
@@ -91,6 +93,7 @@ export default function OptimizedImage({
         className={className}
         sizes={sizes}
         loading={loading}
+        fetchPriority={fetchPriority}
         style={style}
         onError={onError}
         placeholder={placeholder}
@@ -141,6 +144,7 @@ export default function OptimizedImage({
         className={className}
         sizes={sizes}
         loading={loading}
+        fetchPriority={fetchPriority}
         style={style}
         onError={onError}
         {...placeholderProps}
@@ -159,6 +163,7 @@ export default function OptimizedImage({
         alt={alt}
         className={combinedClassName}
         loading={loading}
+        fetchPriority={fetchPriority}
         style={style}
         onError={onError}
       />
@@ -173,6 +178,7 @@ export default function OptimizedImage({
         height={height}
         className={className}
         loading={loading}
+        fetchPriority={fetchPriority}
         style={style}
         onError={onError}
       />

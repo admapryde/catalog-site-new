@@ -282,8 +282,8 @@ export default function CategoriesManager() {
 
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         {hasUnsavedChanges && (
-          <div className="bg-yellow-50 border-b border-yellow-200 p-4 flex justify-between">
-            <span className="text-yellow-700">Есть несохраненные изменения порядка категорий</span>
+          <div className="bg-yellow-50 border-b border-yellow-200 p-4 flex flex-col sm:flex-row justify-between items-center">
+            <span className="text-yellow-700 mb-2 sm:mb-0">Есть несохраненные изменения порядка категорий</span>
             <div className="space-x-2">
               <button
                 onClick={saveOrderChanges}
@@ -300,80 +300,202 @@ export default function CategoriesManager() {
             </div>
           </div>
         )}
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Изображение
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Название
-              </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Перемещение
-              </th>
-              <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Действия
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {categories.map((category, index) => (
-              <tr key={category.id}>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <OptimizedImage
-                    src={category.image_url}
-                    alt={category.name}
-                    width={48}
-                    height={48}
-                    className="h-12 w-12 object-cover rounded"
-                  />
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">{category.name}</div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={() => moveCategoryUp(index)}
-                      disabled={index === 0}
-                      className={`p-1 rounded ${index === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:text-blue-600'}`}
-                      title="Переместить вверх"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
-                      </svg>
-                    </button>
-                    <button
-                      onClick={() => moveCategoryDown(index)}
-                      disabled={index === categories.length - 1}
-                      className={`p-1 rounded ${index === categories.length - 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:text-blue-600'}`}
-                      title="Переместить вниз"
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
-                      </svg>
-                    </button>
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <button
-                    onClick={() => handleEdit(category)}
-                    className="text-indigo-600 hover:text-indigo-900 mr-4"
-                  >
-                    Редактировать
-                  </button>
-                  <button
-                    onClick={() => handleDelete(category.id)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    Удалить
-                  </button>
-                </td>
+        
+        {/* Адаптивная таблица для мобильных устройств */}
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50 hidden md:table-header-group">
+              <tr>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Изображение
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Название
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Перемещение
+                </th>
+                <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Действия
+                </th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200 md:table-row-group">
+              {categories.map((category, index) => (
+                <tr key={category.id} className="md:table-row">
+                  {/* Изображение */}
+                  <td className="px-6 py-4 whitespace-nowrap md:table-cell">
+                    <OptimizedImage
+                      src={category.image_url}
+                      alt={category.name}
+                      width={48}
+                      height={48}
+                      className="h-12 w-12 object-cover rounded"
+                    />
+                  </td>
+                  
+                  {/* Название */}
+                  <td className="px-6 py-4 whitespace-nowrap md:table-cell">
+                    <div className="text-sm font-medium text-gray-900">{category.name}</div>
+                  </td>
+                  
+                  {/* Перемещение */}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 md:table-cell">
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => moveCategoryUp(index)}
+                        disabled={index === 0}
+                        className={`p-1 rounded ${index === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:text-blue-600'}`}
+                        title="Переместить вверх"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={() => moveCategoryDown(index)}
+                        disabled={index === categories.length - 1}
+                        className={`p-1 rounded ${index === categories.length - 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:text-blue-600'}`}
+                        title="Переместить вниз"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                        </svg>
+                      </button>
+                    </div>
+                  </td>
+                  
+                  {/* Действия */}
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium md:table-cell">
+                    <button
+                      onClick={() => handleEdit(category)}
+                      className="text-indigo-600 hover:text-indigo-900 mr-4"
+                    >
+                      Редактировать
+                    </button>
+                    <button
+                      onClick={() => handleDelete(category.id)}
+                      className="text-red-600 hover:text-red-900"
+                    >
+                      Удалить
+                    </button>
+                  </td>
+
+                  {/* Адаптивная версия для мобильных устройств - скрыта на десктопе */}
+                  <td className="px-6 py-4 sm:hidden table-cell">
+                    <div className="flex flex-col items-end">
+                      <div className="flex items-center space-x-4">
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => moveCategoryUp(index)}
+                            disabled={index === 0}
+                            className={`p-1 rounded ${index === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:text-blue-600'}`}
+                            title="Переместить вверх"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                          <button
+                            onClick={() => moveCategoryDown(index)}
+                            disabled={index === categories.length - 1}
+                            className={`p-1 rounded ${index === categories.length - 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:text-blue-600'}`}
+                            title="Переместить вниз"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                              <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                        </div>
+
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => handleEdit(category)}
+                            className="text-indigo-600 hover:text-indigo-900"
+                          >
+                            Редактировать
+                          </button>
+                          <button
+                            onClick={() => handleDelete(category.id)}
+                            className="text-red-600 hover:text-red-900"
+                          >
+                            Удалить
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Адаптивная карточка для мобильных устройств - отдельная таблица */}
+        <div className="overflow-x-auto md:hidden mt-6">
+          <table className="min-w-full divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-200">
+              {categories.map((category, index) => (
+                <tr key={`${category.id}-mobile`} className="block">
+                  <td className="block p-4 border-b">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <OptimizedImage
+                          src={category.image_url}
+                          alt={category.name}
+                          width={48}
+                          height={48}
+                          className="h-12 w-12 object-cover rounded mr-4"
+                        />
+                        <div>
+                          <div className="text-sm font-medium text-gray-900">{category.name}</div>
+                        </div>
+                      </div>
+
+                      <div className="flex space-x-2">
+                        <button
+                          onClick={() => moveCategoryUp(index)}
+                          disabled={index === 0}
+                          className={`p-1 rounded ${index === 0 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:text-blue-600'}`}
+                          title="Переместить вверх"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => moveCategoryDown(index)}
+                          disabled={index === categories.length - 1}
+                          className={`p-1 rounded ${index === categories.length - 1 ? 'text-gray-300 cursor-not-allowed' : 'text-gray-600 hover:text-blue-600'}`}
+                          title="Переместить вниз"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="mt-3 flex justify-end space-x-2">
+                      <button
+                        onClick={() => handleEdit(category)}
+                        className="text-indigo-600 hover:text-indigo-900"
+                      >
+                        Редактировать
+                      </button>
+                      <button
+                        onClick={() => handleDelete(category.id)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        Удалить
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

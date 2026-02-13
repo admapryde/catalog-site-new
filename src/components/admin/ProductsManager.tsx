@@ -580,7 +580,7 @@ export default function ProductsManager() {
           </div>
 
           <form onSubmit={handleSubmit} className="mb-8 p-4 bg-white rounded-lg shadow-md">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-1 gap-4 mb-4">
               <div>
                 <label className="block text-gray-700 text-sm font-bold mb-2" htmlFor="name">
                   Название
@@ -868,10 +868,10 @@ export default function ProductsManager() {
               </div>
             )}
 
-            <div className="flex items-center justify-between pt-4">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-2 pt-4">
               <button
                 type="submit"
-                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full sm:w-auto"
               >
                 {editingId ? 'Обновить' : 'Создать'}
               </button>
@@ -889,7 +889,7 @@ export default function ProductsManager() {
                     setOriginalImages([]);
                     setOriginalSpecs([]);
                   }}
-                  className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
+                  className="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full sm:w-auto"
                 >
                   Отмена
                 </button>
@@ -983,50 +983,52 @@ export default function ProductsManager() {
                         </button>
                       )}
                     </div>
-                    <table className="min-w-full divide-y divide-gray-200">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
-                            <input
-                              type="checkbox"
-                              checked={categoryProducts.length > 0 && categoryProducts.every(p => selectedProducts.includes(p.id))}
-                              onChange={() => toggleCategorySelection(categoryProducts)}
-                              className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                            />
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            <button
-                              onClick={() => handleSort(category.id, 'name')}
-                              className="flex items-center focus:outline-none"
-                            >
-                              Название
-                              {getSortIcon(category.id, 'name')}
-                            </button>
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            <button
-                              onClick={() => handleSort(category.id, 'price')}
-                              className="flex items-center focus:outline-none"
-                            >
-                              Цена
-                              {getSortIcon(category.id, 'price')}
-                            </button>
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            <button
-                              onClick={() => handleSort(category.id, 'created_at')}
-                              className="flex items-center focus:outline-none"
-                            >
-                              Дата создания
-                              {getSortIcon(category.id, 'created_at')}
-                            </button>
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Действия
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
+                    {/* Адаптивная таблица для мобильных устройств */}
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50 hidden md:table-header-group">
+                          <tr>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
+                              <input
+                                type="checkbox"
+                                checked={categoryProducts.length > 0 && categoryProducts.every(p => selectedProducts.includes(p.id))}
+                                onChange={() => toggleCategorySelection(categoryProducts)}
+                                className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                              />
+                            </th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              <button
+                                onClick={() => handleSort(category.id, 'name')}
+                                className="flex items-center focus:outline-none"
+                              >
+                                Название
+                                {getSortIcon(category.id, 'name')}
+                              </button>
+                            </th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              <button
+                                onClick={() => handleSort(category.id, 'price')}
+                                className="flex items-center focus:outline-none"
+                              >
+                                Цена
+                                {getSortIcon(category.id, 'price')}
+                              </button>
+                            </th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              <button
+                                onClick={() => handleSort(category.id, 'created_at')}
+                                className="flex items-center focus:outline-none"
+                              >
+                                Дата создания
+                                {getSortIcon(category.id, 'created_at')}
+                              </button>
+                            </th>
+                            <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Действия
+                            </th>
+                          </tr>
+                        </thead>
+                      <tbody className="bg-white divide-y divide-gray-200 md:table-row-group">
                         {(() => {
                           // Сортируем товары в зависимости от конфигурации сортировки для этой категории
                           const sortedProducts = [...categoryProducts];
@@ -1066,9 +1068,9 @@ export default function ProductsManager() {
                           return sortedProducts.map((product) => (
                             <tr
                               key={product.id}
-                              className={selectedProducts.includes(product.id) ? 'bg-blue-50' : ''}
+                              className={`md:table-row ${selectedProducts.includes(product.id) ? 'bg-blue-50' : ''}`}
                             >
-                              <td className="px-6 py-4 whitespace-nowrap">
+                              <td className="px-6 py-4 whitespace-nowrap md:table-cell">
                                 <input
                                   type="checkbox"
                                   checked={selectedProducts.includes(product.id)}
@@ -1076,16 +1078,16 @@ export default function ProductsManager() {
                                   className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
                                 />
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap">
+                              <td className="px-6 py-4 whitespace-nowrap md:table-cell">
                                 <div className="text-sm font-medium text-gray-900">{product.name}</div>
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 md:table-cell">
                                 {product.price.toLocaleString('ru-RU')} ₽
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 md:table-cell">
                                 {new Date(product.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })}
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                              <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium md:table-cell">
                                 <button
                                   onClick={() => handleEdit(product)}
                                   className="text-indigo-600 hover:text-indigo-900 mr-4"
@@ -1099,11 +1101,111 @@ export default function ProductsManager() {
                                   Удалить
                                 </button>
                               </td>
+                              
+                              {/* Адаптивная версия для мобильных устройств - скрыта на десктопе */}
+                              <td className="px-6 py-4 sm:hidden table-cell">
+                                <div className="flex justify-end space-x-2">
+                                  <button
+                                    onClick={() => handleEdit(product)}
+                                    className="text-indigo-600 hover:text-indigo-900"
+                                  >
+                                    Редактировать
+                                  </button>
+                                  <button
+                                    onClick={() => handleDelete(product.id)}
+                                    className="text-red-600 hover:text-red-900"
+                                  >
+                                    Удалить
+                                  </button>
+                                </div>
+                              </td>
                             </tr>
                           ));
                         })()}
                       </tbody>
                     </table>
+                  </div>
+
+                  {/* Адаптивная карточка для мобильных устройств - отдельная таблица */}
+                  <div className="overflow-x-auto md:hidden mt-6">
+                    <table className="min-w-full divide-y divide-gray-200">
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {(() => {
+                          // Сортируем товары в зависимости от конфигурации сортировки для этой категории
+                          const sortedProducts = [...categoryProducts];
+                          const categorySortConfig = sortConfig[category.id];
+
+                          if (categorySortConfig) {
+                            sortedProducts.sort((a, b) => {
+                              let aValue, bValue;
+
+                              switch (categorySortConfig.key) {
+                                case 'name':
+                                  aValue = a.name.toLowerCase();
+                                  bValue = b.name.toLowerCase();
+                                  break;
+                                case 'price':
+                                  aValue = a.price;
+                                  bValue = b.price;
+                                  break;
+                                case 'created_at':
+                                  aValue = new Date(a.created_at).getTime();
+                                  bValue = new Date(b.created_at).getTime();
+                                  break;
+                                default:
+                                  aValue = 0;
+                                  bValue = 0;
+                              }
+
+                              // Сравниваем значения в зависимости от направления сортировки
+                              if (categorySortConfig.direction === 'asc') {
+                                return aValue > bValue ? 1 : -1;
+                              } else {
+                                return aValue < bValue ? 1 : -1;
+                              }
+                            });
+                          }
+
+                          return sortedProducts.map((product) => (
+                            <tr key={`${product.id}-mobile`} className="block">
+                              <td className="block p-4 border-b">
+                                <div className="flex items-start justify-between">
+                                  <div className="flex items-start">
+                                    <input
+                                      type="checkbox"
+                                      checked={selectedProducts.includes(product.id)}
+                                      onChange={() => toggleProductSelection(product.id)}
+                                      className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 mt-1 mr-3"
+                                    />
+                                    <div>
+                                      <div className="text-sm font-medium text-gray-900">{product.name}</div>
+                                      <div className="text-sm text-gray-500">{product.price.toLocaleString('ru-RU')} ₽</div>
+                                      <div className="text-xs text-gray-400">{new Date(product.created_at).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex space-x-2">
+                                    <button
+                                      onClick={() => handleEdit(product)}
+                                      className="text-indigo-600 hover:text-indigo-900"
+                                    >
+                                      Редактировать
+                                    </button>
+                                    <button
+                                      onClick={() => handleDelete(product.id)}
+                                      className="text-red-600 hover:text-red-900"
+                                    >
+                                      Удалить
+                                    </button>
+                                  </div>
+                                </div>
+                              </td>
+                            </tr>
+                          ));
+                        })()}
+                      </tbody>
+                    </table>
+                  </div>
                   </div>
                 )}
 
