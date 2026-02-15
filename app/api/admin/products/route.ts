@@ -516,289 +516,34 @@ export async function PUT(request: NextRequest) {
       return Response.json({ error: `Invalid product ID format: ${id}` }, { status: 400 });
     }
 
-    // Используем реальный Supabase клиент для API маршрутов
-    const supabase = await createAPIClient(request);
+    // Используем service role client сразу для административных операций, чтобы избежать проблем с RLS
+    const serviceRoleClient = createServiceRoleClient();
 
     // Получим текущие данные продукта перед обновлением
-    const currentProductResult = await supabaseWithRetry(supabase, (client) =>
-      client
-        .from('products')
-        .select(`
-          *,
-          product_images(*),
-          product_specs(*)
-        `)
-        .eq('id', id)
-        .single()
-    ) as { data: any; error: any };
+    const currentProductResult = await serviceRoleClient
+      .from('products')
+      .select(`
+        *,
+        product_images(*),
+        product_specs(*)
+      `)
+      .eq('id', id)
+      .single();
 
-    const { data: currentProduct, error: fetchError } = currentProductResult;
-
-    if (fetchError) {
-      // If it's a permission error, try using service role client
-      if (fetchError.code === '42501' || fetchError.message?.includes('permission denied')) {
-        console.warn('Permission error detected, using service role client for products fetch before update');
-        const serviceRoleClient = createServiceRoleClient();
-
-        const srCurrentProductResult = await serviceRoleClient
-          .from('products')
-          .select(`
-            *,
-            product_images(*),
-            product_specs(*)
-          `)
-          .eq('id', id)
-          .single();
-
-        if (srCurrentProductResult.error) {
-          return Response.json({ error: srCurrentProductResult.error.message }, { status: 500 });
-        }
-
-        const srCurrentProduct = srCurrentProductResult.data;
-
-        // Получим оригинальную категорию до обновления для инвалидации кэша
-        const { data: originalProduct, error: originalProductError } = await serviceRoleClient
-          .from('products')
-          .select('category_id')
-          .eq('id', id)
-          .single();
-
-        // Подготовим обновление основного продукта
-        const productUpdates: any = {};
-        if (category_id !== undefined) productUpdates.category_id = category_id;
-        if (name !== undefined) productUpdates.name = name;
-        if (price !== undefined) productUpdates.price = price;
-        if (description !== undefined) productUpdates.description = description;
-
-        // Обновляем продукт только с теми полями, которые были переданы
-        if (Object.keys(productUpdates).length > 0) {
-          const updateResult = await supabaseWithRetry(serviceRoleClient, (client) =>
-            client
-              .from('products')
-              .update(productUpdates)
-              .eq('id', id)
-          ) as { data: any; error: any };
-
-          const { error: productError } = updateResult;
-
-          if (productError) {
-            return Response.json({ error: productError.message }, { status: 500 });
-          }
-        }
-
-        // Получим информацию о типах характеристик для текущих спецификаций
-        const currentSpecs = srCurrentProduct.product_specs || [];
-        const specTypeIds = currentSpecs.map((spec: any) => spec.spec_type_id).filter(Boolean);
-        let specTypesMap: Record<string, any> = {};
-
-        if (specTypeIds.length > 0) {
-          const { data: specTypes, error: specTypesError } = await serviceRoleClient
-            .from('spec_types')
-            .select('id, name, filter_type')
-            .in('id', specTypeIds);
-
-          if (specTypesError) {
-            return Response.json({ error: `Ошибка получения типов характеристик: ${specTypesError.message}` }, { status: 500 });
-          }
-
-          specTypesMap = specTypes.reduce((acc: Record<string, any>, type) => {
-            acc[type.id] = type;
-            return acc;
-          }, {});
-        }
-
-        // Обновляем изображения только если они были переданы в запросе
-        if (images !== undefined) {
-          // Сравним переданные изображения с текущими
-          const currentImages = srCurrentProduct.product_images || [];
-          const imagesChanged = JSON.stringify(images.map((img: any) => ({
-            image_url: img.image_url,
-            is_main: img.is_main
-          })).sort((a: any, b: any) => a.image_url.localeCompare(b.image_url))) !==
-          JSON.stringify(currentImages.map((img: any) => ({
-            image_url: img.image_url,
-            is_main: img.is_main
-          })).sort((a: any, b: any) => a.image_url.localeCompare(b.image_url)));
-
-          if (imagesChanged) {
-            // Удаляем старые изображения
-            await serviceRoleClient
-              .from('product_images')
-              .delete()
-              .eq('product_id', id);
-
-            // Добавляем новые изображения
-            if (images.length > 0) {
-              // Проверяем структуру изображений и удаляем любые поля, которые могут быть неверного формата
-              const imagesWithProductId = images.map((img: any) => {
-                // Убедимся, что удаляем любые временные или неподдерживаемые поля
-                const { id: imgId, created_at, updated_at, ...cleanImg } = img;
-
-                return {
-                  ...cleanImg,
-                  product_id: id  // Use the product id, not the image id
-                };
-              });
-
-              const { error: imagesError } = await serviceRoleClient
-                .from('product_images')
-                .insert(imagesWithProductId);
-
-              if (imagesError) {
-                return Response.json({ error: imagesError.message }, { status: 500 });
-              }
-            }
-          }
-        }
-
-        // Обновляем характеристики только если они были переданы в запросе
-        if (specs !== undefined) {
-          // Сравним переданные характеристики с текущими
-          const currentSpecs = srCurrentProduct.product_specs || [];
-          const specsChanged = JSON.stringify(specs.map((spec: any) => ({
-            property_name: spec.property_name,
-            value: spec.value,
-            spec_type_id: spec.spec_type_id || null
-          })).sort((a: any, b: any) => a.property_name.localeCompare(b.property_name))) !==
-          JSON.stringify(currentSpecs.map((spec: any) => ({
-            property_name: spec.property_name,
-            value: spec.value,
-            spec_type_id: spec.spec_type_id || null
-          })).sort((a: any, b: any) => a.property_name.localeCompare(b.property_name)));
-
-          if (specsChanged) {
-            // Удаляем старые характеристики
-            await serviceRoleClient
-              .from('product_specs')
-              .delete()
-              .eq('product_id', id);
-
-            // Добавляем новые характеристики
-            if (specs.length > 0) {
-              // Проверяем, что переданные spec_type_id существуют в базе данных
-              const specTypeIds = specs.map((spec: any) => spec.spec_type_id).filter(Boolean);
-
-              if (specTypeIds.length > 0) {
-                const { data: validSpecTypes, error: specTypesCheckError } = await serviceRoleClient
-                  .from('spec_types')
-                  .select('id')
-                  .in('id', specTypeIds);
-
-                if (specTypesCheckError) {
-                  return Response.json({ error: `Ошибка проверки типов характеристик: ${specTypesCheckError.message}` }, { status: 500 });
-                }
-
-                const validSpecTypeIds = validSpecTypes.map((st: any) => st.id);
-
-                // Обновляем спецификации, устанавливая в null некорректные spec_type_id
-                const validatedSpecs = specs.map((spec: any) => ({
-                  product_id: id,
-                  property_name: spec.property_name,
-                  value: spec.value,
-                  spec_type_id: spec.spec_type_id && validSpecTypeIds.includes(spec.spec_type_id) ? spec.spec_type_id : null
-                }));
-
-                const { error: specsError } = await serviceRoleClient
-                  .from('product_specs')
-                  .insert(validatedSpecs);
-
-                if (specsError) {
-                  return Response.json({ error: specsError.message }, { status: 500 });
-                }
-              } else {
-                // Если нет типов характеристик, просто вставляем без проверки
-                const specsWithProductId = specs.map((spec: any) => ({
-                  product_id: id,
-                  property_name: spec.property_name,
-                  value: spec.value,
-                  spec_type_id: null
-                }));
-
-                const { error: specsError } = await serviceRoleClient
-                  .from('product_specs')
-                  .insert(specsWithProductId);
-
-                if (specsError) {
-                  return Response.json({ error: specsError.message }, { status: 500 });
-                }
-              }
-            }
-          }
-        }
-
-        // Возвращаем полные данные продукта
-        const { data: fullProductData, error: fullProductError } = await serviceRoleClient
-          .from('products')
-          .select(`
-            *,
-            category:categories!inner(id, name),
-            product_images(*),
-            product_specs(*),
-            homepage_section_items!left(section_id),
-            category_product_order!left(category_id, product_id, sort_order)
-          `)
-          .eq('id', id)
-          .single();
-
-        if (fullProductError) {
-          return Response.json({ error: fullProductError.message }, { status: 500 });
-        }
-
-        // Извлекаем информацию о порядке из вложенного объекта
-        const category_product_order = Array.isArray(fullProductData.category_product_order) && fullProductData.category_product_order.length > 0
-          ? fullProductData.category_product_order[0]
-          : null;
-
-        // Преобразуем данные, чтобы соответствовать ожидаемой структуре Product
-        const transformedProduct = {
-          ...fullProductData,
-          images: fullProductData.product_images || [],
-          specs: fullProductData.product_specs?.map((spec: any) => {
-            // Добавляем информацию о типе характеристики, если она доступна
-            const specTypeInfo = spec.spec_type_id ? specTypesMap[spec.spec_type_id] : null;
-            return {
-              ...spec,
-              spec_type: specTypeInfo || spec.spec_type,
-              spec_type_id: spec.spec_type_id
-            };
-          }) || [],
-          category_product_order: category_product_order
-        };
-
-        // Логируем обновление продукта в аудите
-        try {
-          await auditService.logUpdate(adminUser.email || 'admin', 'products', id, adminUser.id);
-        } catch (auditError) {
-          console.error('Ошибка записи в аудит при обновлении продукта:', auditError);
-        }
-
-        // Инвалидируем кэш для админ панели товаров
-        try {
-          cacheManager.delete('admin_products_all');
-          // Инвалидируем кэш для старой категории (до обновления)
-          if (!originalProductError && originalProduct) {
-            cacheManager.delete('admin_products_' + originalProduct.category_id);
-          }
-          // Инвалидируем кэш для новой категории (после обновления)
-          if (category_id) {
-            cacheManager.delete('admin_products_' + category_id);
-          }
-        } catch (cacheError) {
-          console.error('Ошибка инвалидации кэша админ панели товаров:', cacheError);
-        }
-
-        return Response.json(transformedProduct);
-      }
-
-      return Response.json({ error: fetchError.message }, { status: 500 });
+    if (currentProductResult.error) {
+      return Response.json({ error: currentProductResult.error.message }, { status: 500 });
     }
 
+    const currentProduct = currentProductResult.data;
+
     // Получим оригинальную категорию до обновления для инвалидации кэша
-    const { data: originalProduct, error: originalProductError } = await supabase
+    const originalProductResult = await serviceRoleClient
       .from('products')
       .select('category_id')
       .eq('id', id)
       .single();
+
+    const { data: originalProduct, error: originalProductError } = originalProductResult;
 
     // Подготовим обновление основного продукта
     const productUpdates: any = {};
@@ -809,32 +554,13 @@ export async function PUT(request: NextRequest) {
 
     // Обновляем продукт только с теми полями, которые были переданы
     if (Object.keys(productUpdates).length > 0) {
-      const updateResult = await supabaseWithRetry(supabase, (client) =>
-        client
-          .from('products')
-          .update(productUpdates)
-          .eq('id', id)
-      ) as { data: any; error: any };
+      const updateResult = await serviceRoleClient
+        .from('products')
+        .update(productUpdates)
+        .eq('id', id);
 
-      const { error: productError } = updateResult;
-
-      if (productError) {
-        // If it's a permission error, try using service role client
-        if (productError.code === '42501' || productError.message?.includes('permission denied')) {
-          console.warn('Permission error detected, using service role client for products update');
-          const serviceRoleClient = createServiceRoleClient();
-
-          const srUpdateResult = await serviceRoleClient
-            .from('products')
-            .update(productUpdates)
-            .eq('id', id);
-
-          if (srUpdateResult.error) {
-            return Response.json({ error: srUpdateResult.error.message }, { status: 500 });
-          }
-        } else {
-          return Response.json({ error: productError.message }, { status: 500 });
-        }
+      if (updateResult.error) {
+        return Response.json({ error: updateResult.error.message }, { status: 500 });
       }
     }
 
@@ -844,16 +570,16 @@ export async function PUT(request: NextRequest) {
     let specTypesMap: Record<string, any> = {};
 
     if (specTypeIds.length > 0) {
-      const { data: specTypes, error: specTypesError } = await supabase
+      const specTypesResult = await serviceRoleClient
         .from('spec_types')
         .select('id, name, filter_type')
         .in('id', specTypeIds);
 
-      if (specTypesError) {
-        return Response.json({ error: `Ошибка получения типов характеристик: ${specTypesError.message}` }, { status: 500 });
+      if (specTypesResult.error) {
+        return Response.json({ error: `Ошибка получения типов характеристик: ${specTypesResult.error.message}` }, { status: 500 });
       }
 
-      specTypesMap = specTypes.reduce((acc: Record<string, any>, type) => {
+      specTypesMap = specTypesResult.data.reduce((acc: Record<string, any>, type) => {
         acc[type.id] = type;
         return acc;
       }, {});
@@ -874,7 +600,7 @@ export async function PUT(request: NextRequest) {
 
       if (imagesChanged) {
         // Удаляем старые изображения
-        await supabase
+        await serviceRoleClient
           .from('product_images')
           .delete()
           .eq('product_id', id);
@@ -892,12 +618,12 @@ export async function PUT(request: NextRequest) {
             };
           });
 
-          const { error: imagesError } = await supabase
+          const imagesResult = await serviceRoleClient
             .from('product_images')
             .insert(imagesWithProductId);
 
-          if (imagesError) {
-            return Response.json({ error: imagesError.message }, { status: 500 });
+          if (imagesResult.error) {
+            return Response.json({ error: imagesResult.error.message }, { status: 500 });
           }
         }
       }
@@ -920,7 +646,7 @@ export async function PUT(request: NextRequest) {
 
       if (specsChanged) {
         // Удаляем старые характеристики
-        await supabase
+        await serviceRoleClient
           .from('product_specs')
           .delete()
           .eq('product_id', id);
@@ -931,16 +657,16 @@ export async function PUT(request: NextRequest) {
           const specTypeIds = specs.map((spec: any) => spec.spec_type_id).filter(Boolean);
 
           if (specTypeIds.length > 0) {
-            const { data: validSpecTypes, error: specTypesCheckError } = await supabase
+            const validSpecTypesResult = await serviceRoleClient
               .from('spec_types')
               .select('id')
               .in('id', specTypeIds);
 
-            if (specTypesCheckError) {
-              return Response.json({ error: `Ошибка проверки типов характеристик: ${specTypesCheckError.message}` }, { status: 500 });
+            if (validSpecTypesResult.error) {
+              return Response.json({ error: `Ошибка проверки типов характеристик: ${validSpecTypesResult.error.message}` }, { status: 500 });
             }
 
-            const validSpecTypeIds = validSpecTypes.map((st: any) => st.id);
+            const validSpecTypeIds = validSpecTypesResult.data.map((st: any) => st.id);
 
             // Обновляем спецификации, устанавливая в null некорректные spec_type_id
             const validatedSpecs = specs.map((spec: any) => ({
@@ -950,12 +676,12 @@ export async function PUT(request: NextRequest) {
               spec_type_id: spec.spec_type_id && validSpecTypeIds.includes(spec.spec_type_id) ? spec.spec_type_id : null
             }));
 
-            const { error: specsError } = await supabase
+            const specsResult = await serviceRoleClient
               .from('product_specs')
               .insert(validatedSpecs);
 
-            if (specsError) {
-              return Response.json({ error: specsError.message }, { status: 500 });
+            if (specsResult.error) {
+              return Response.json({ error: specsResult.error.message }, { status: 500 });
             }
           } else {
             // Если нет типов характеристик, просто вставляем без проверки
@@ -966,12 +692,12 @@ export async function PUT(request: NextRequest) {
               spec_type_id: null
             }));
 
-            const { error: specsError } = await supabase
+            const specsResult = await serviceRoleClient
               .from('product_specs')
               .insert(specsWithProductId);
 
-            if (specsError) {
-              return Response.json({ error: specsError.message }, { status: 500 });
+            if (specsResult.error) {
+              return Response.json({ error: specsResult.error.message }, { status: 500 });
             }
           }
         }
@@ -979,7 +705,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Возвращаем полные данные продукта
-    const { data: fullProductData, error: fullProductError } = await supabase
+    const fullProductResult = await serviceRoleClient
       .from('products')
       .select(`
         *,
@@ -992,9 +718,11 @@ export async function PUT(request: NextRequest) {
       .eq('id', id)
       .single();
 
-    if (fullProductError) {
-      return Response.json({ error: fullProductError.message }, { status: 500 });
+    if (fullProductResult.error) {
+      return Response.json({ error: fullProductResult.error.message }, { status: 500 });
     }
+
+    const fullProductData = fullProductResult.data;
 
     // Извлекаем информацию о порядке из вложенного объекта
     const category_product_order = Array.isArray(fullProductData.category_product_order) && fullProductData.category_product_order.length > 0

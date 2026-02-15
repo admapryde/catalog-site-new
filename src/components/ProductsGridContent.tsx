@@ -224,7 +224,8 @@ export default function ProductsGridContent({ categoryId, search }: ProductsGrid
                     src={mainImage.image_url}
                     alt={product.name}
                     fill
-                    className="absolute h-full w-full object-cover"
+                    objectFit="contain"
+                    className="absolute h-full w-full"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
                       // Проверяем, не является ли уже изображением-заглушкой, чтобы избежать бесконечного цикла

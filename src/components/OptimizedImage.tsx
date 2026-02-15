@@ -18,6 +18,7 @@ interface OptimizedImageProps {
   onError?: (e: React.SyntheticEvent<HTMLImageElement, Event>) => void;
   placeholder?: 'blur' | 'empty';
   blurDataURL?: string;
+  objectFit?: 'cover' | 'contain' | 'fill' | 'none' | 'scale-down';
 }
 
 // Функция для определения, является ли изображение из Cloudinary
@@ -71,7 +72,8 @@ export default function OptimizedImage({
   style,
   onError,
   placeholder,
-  blurDataURL
+  blurDataURL,
+  objectFit = 'cover'
 }: OptimizedImageProps) {
   // Проверяем, является ли изображение локальным
   const isLocalImage = src.startsWith('/') ||
@@ -83,6 +85,8 @@ export default function OptimizedImage({
 
   // Для локальных изображений используем компонент Image
   if (isLocalImage) {
+    const imageStyle = style ? { ...style, objectFit } : { objectFit };
+    
     return (
       <Image
         src={src}
@@ -94,7 +98,7 @@ export default function OptimizedImage({
         sizes={sizes}
         loading={loading}
         fetchPriority={fetchPriority}
-        style={style}
+        style={imageStyle}
         onError={onError}
         placeholder={placeholder}
         blurDataURL={blurDataURL}
@@ -134,6 +138,8 @@ export default function OptimizedImage({
       placeholderProps = { placeholder };
     }
 
+    const imageStyle = style ? { ...style, objectFit } : { objectFit };
+    
     return (
       <Image
         src={optimizedSrc}
@@ -145,7 +151,7 @@ export default function OptimizedImage({
         sizes={sizes}
         loading={loading}
         fetchPriority={fetchPriority}
-        style={style}
+        style={imageStyle}
         onError={onError}
         {...placeholderProps}
       />
@@ -155,7 +161,14 @@ export default function OptimizedImage({
   // Для остальных внешних изображений используем тег img напрямую
   if (fill) {
     // Объединяем классы, но избегаем дублирования
-    const combinedClassName = className ? `${styles.optimizedImageFill} ${className}` : styles.optimizedImageFill;
+    let combinedClassName = className || '';
+    
+    // Добавляем специальный класс, если objectFit равно 'contain'
+    if (objectFit === 'contain') {
+      combinedClassName = `${styles.optimizedImageContain} ${combinedClassName}`.trim();
+    } else {
+      combinedClassName = `${styles.optimizedImageFill} ${combinedClassName}`.trim();
+    }
 
     return (
       <img
@@ -164,22 +177,29 @@ export default function OptimizedImage({
         className={combinedClassName}
         loading={loading}
         fetchPriority={fetchPriority}
-        style={style}
+        style={{ ...style, objectFit }}
         onError={onError}
       />
     );
   } else {
     // Для обычных изображений используем тег img напрямую
+    let combinedClassName = className || '';
+    
+    // Добавляем специальный класс, если objectFit равно 'contain'
+    if (objectFit === 'contain') {
+      combinedClassName = `${styles.optimizedImageContain} ${combinedClassName}`.trim();
+    }
+
     return (
       <img
         src={src}
         alt={alt}
         width={width}
         height={height}
-        className={className}
+        className={combinedClassName}
         loading={loading}
         fetchPriority={fetchPriority}
-        style={style}
+        style={{ ...style, objectFit }}
         onError={onError}
       />
     );

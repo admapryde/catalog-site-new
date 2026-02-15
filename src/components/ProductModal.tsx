@@ -164,13 +164,17 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
               {/* Left column (media) */}
               <div className="relative">
                 <div className="mb-4 relative">
-                  <OptimizedImage
-                    src={currentImage ? currentImage.image_url : '/placeholder-product.jpg'}
-                    alt={product.name}
-                    width={600}
-                    height={600}
-                    className="w-full h-auto rounded-lg object-cover"
-                  />
+                  <div className="w-full bg-gray-50 rounded-lg overflow-hidden flex items-center justify-center min-h-[300px] md:min-h-[400px]">
+                    <div className="relative w-full h-[500px] md:h-[600px] max-h-[70vh] max-w-full flex items-center justify-center overflow-hidden">
+                      <OptimizedImage
+                        src={currentImage ? currentImage.image_url : '/placeholder-product.jpg'}
+                        alt={product.name}
+                        fill={true}
+                        objectFit="contain"
+                        className=""
+                      />
+                    </div>
+                  </div>
 
                   {/* Кнопка "расширить" в правом нижнем углу */}
                   <button
@@ -240,15 +244,15 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
                         className="flex-shrink-0 cursor-pointer"
                         onClick={(e) => { e.stopPropagation(); setCurrentImageIndex(index); }}
                       >
-                        <OptimizedImage
-                          src={image.image_url}
-                          alt={`Thumbnail ${image.id}`}
-                          width={80}
-                          height={80}
-                          className={`w-20 h-20 object-cover rounded ${
-                            index === currentImageIndex ? 'border-2 border-blue-500' : 'border-2 border-transparent hover:border-blue-500'
-                          }`}
-                        />
+                        <div className="relative w-20 h-20 overflow-hidden rounded">
+                          <OptimizedImage
+                            src={image.image_url}
+                            alt={`Thumbnail ${image.id}`}
+                            fill={true}
+                            objectFit="contain"
+                            className="object-contain"
+                          />
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -327,13 +331,19 @@ export default function ProductModal({ product, isOpen, onClose }: ProductModalP
               </button>
 
               {/* Увеличенное изображение */}
-              <OptimizedImage
-                src={currentImage.image_url}
-                alt={product.name}
-                width={1200}
-                height={1200}
-                className="max-w-full max-h-[85vh] object-contain rounded-lg"
-              />
+              <div className="relative w-full h-[70vh] max-h-[90vh] max-w-full flex items-center justify-center overflow-hidden">
+                <img
+                  src={currentImage.image_url}
+                  alt={product.name}
+                  style={{
+                    objectFit: 'contain',
+                    maxWidth: '100%',
+                    maxHeight: '100%',
+                    width: 'auto',
+                    height: 'auto'
+                  }}
+                />
+              </div>
 
               {/* Стрелка "назад" для увеличенного изображения */}
               {allImages.length > 1 && (
